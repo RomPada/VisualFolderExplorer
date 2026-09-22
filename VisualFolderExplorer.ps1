@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.6.2'
+$script:AppVersion = '0.7.0'
 $script:ImageSortField = 'Name'
 $script:ImageSortDescending = $false
 $script:InitializingSortControls = $true
@@ -106,7 +106,7 @@ $script:SendFolderToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.6.2" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.7.0" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -330,6 +330,147 @@ $script:SendFolderToRecycleBinAction = {
                 </Setter.Value>
             </Setter>
         </Style>
+
+<Style x:Key="ModernDialogSecondaryButton" TargetType="Button">
+    <Setter Property="Background" Value="#F3F6F8"/>
+    <Setter Property="Foreground" Value="#20262C"/>
+    <Setter Property="BorderBrush" Value="#D6DDE3"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="14,8"/>
+    <Setter Property="MinWidth" Value="92"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="Template">
+        <Setter.Value>
+            <ControlTemplate TargetType="Button">
+                <Border x:Name="BtnBorder"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="8"
+                        Padding="{TemplateBinding Padding}">
+                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter TargetName="BtnBorder" Property="Background" Value="#EAF0F4"/>
+                        <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#B8C6D1"/>
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter TargetName="BtnBorder" Property="Background" Value="#E0E9EF"/>
+                    </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.5"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+        </Setter.Value>
+    </Setter>
+</Style>
+
+<Style x:Key="ModernDialogPrimaryButton" TargetType="Button" BasedOn="{StaticResource ModernDialogSecondaryButton}">
+    <Setter Property="Background" Value="#E8F2FB"/>
+    <Setter Property="BorderBrush" Value="#7FB0D9"/>
+    <Setter Property="Foreground" Value="#1C4F7D"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Template">
+        <Setter.Value>
+            <ControlTemplate TargetType="Button">
+                <Border x:Name="BtnBorder"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="8"
+                        Padding="{TemplateBinding Padding}">
+                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter TargetName="BtnBorder" Property="Background" Value="#D9ECFB"/>
+                        <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#5F98CB"/>
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter TargetName="BtnBorder" Property="Background" Value="#CAE4F8"/>
+                    </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.5"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+        </Setter.Value>
+    </Setter>
+</Style>
+
+<Style x:Key="MinimalScrollBarThumb" TargetType="Thumb">
+    <Setter Property="Template">
+        <Setter.Value>
+            <ControlTemplate TargetType="Thumb">
+                <Border Background="#C7D3DC" CornerRadius="5"/>
+            </ControlTemplate>
+        </Setter.Value>
+    </Setter>
+</Style>
+
+<Style x:Key="MinimalScrollBarButton" TargetType="RepeatButton">
+    <Setter Property="Focusable" Value="False"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Template">
+        <Setter.Value>
+            <ControlTemplate TargetType="RepeatButton">
+                <Border Background="Transparent"/>
+            </ControlTemplate>
+        </Setter.Value>
+    </Setter>
+</Style>
+
+<Style TargetType="ScrollBar">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Width" Value="12"/>
+    <Setter Property="Template">
+        <Setter.Value>
+            <ControlTemplate TargetType="ScrollBar">
+                <Grid Background="Transparent" SnapsToDevicePixels="True">
+                    <Track x:Name="PART_Track" IsDirectionReversed="True">
+                        <Track.DecreaseRepeatButton>
+                            <RepeatButton Style="{StaticResource MinimalScrollBarButton}" Command="ScrollBar.PageUpCommand"/>
+                        </Track.DecreaseRepeatButton>
+                        <Track.Thumb>
+                            <Thumb Style="{StaticResource MinimalScrollBarThumb}"/>
+                        </Track.Thumb>
+                        <Track.IncreaseRepeatButton>
+                            <RepeatButton Style="{StaticResource MinimalScrollBarButton}" Command="ScrollBar.PageDownCommand"/>
+                        </Track.IncreaseRepeatButton>
+                    </Track>
+                </Grid>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="Orientation" Value="Horizontal">
+                        <Setter Property="Height" Value="12"/>
+                        <Setter Property="Width" Value="Auto"/>
+                        <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
+                        <Setter TargetName="PART_Track" Property="DecreaseRepeatButton">
+                            <Setter.Value>
+                                <RepeatButton Style="{StaticResource MinimalScrollBarButton}" Command="ScrollBar.PageLeftCommand"/>
+                            </Setter.Value>
+                        </Setter>
+                        <Setter TargetName="PART_Track" Property="IncreaseRepeatButton">
+                            <Setter.Value>
+                                <RepeatButton Style="{StaticResource MinimalScrollBarButton}" Command="ScrollBar.PageRightCommand"/>
+                            </Setter.Value>
+                        </Setter>
+                    </Trigger>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Opacity" Value="1"/>
+                    </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.35"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+        </Setter.Value>
+    </Setter>
+    <Setter Property="Opacity" Value="0.88"/>
+</Style>
+
     </Window.Resources>
 
     <Grid Margin="14">
@@ -439,8 +580,8 @@ $script:SendFolderToRecycleBinAction = {
                         </ComboBox>
                         <TextBlock x:Name="ImageCountText" Grid.Column="4" Foreground="#7A838B" FontSize="13" VerticalAlignment="Center"/>
                     </Grid>
-                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <WrapPanel x:Name="ImagePanel" Orientation="Horizontal"/>
+                    <ScrollViewer x:Name="ImageScrollViewer" Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="Transparent">
+                        <WrapPanel x:Name="ImagePanel" Orientation="Horizontal" Background="Transparent"/>
                     </ScrollViewer>
                 </Grid>
             </Border>
@@ -525,6 +666,7 @@ $ChooseRootButton= $window.FindName('ChooseRootButton')
 $PathText        = $window.FindName('PathText')
 $FolderList      = $window.FindName('FolderList')
 $ImagePanel      = $window.FindName('ImagePanel')
+$ImageScrollViewer = $window.FindName('ImageScrollViewer')
 $ImageCountText  = $window.FindName('ImageCountText')
 $ImageSortFieldCombo = $window.FindName('ImageSortFieldCombo')
 $ImageSortDirectionCombo = $window.FindName('ImageSortDirectionCombo')
@@ -552,6 +694,7 @@ function Get-NaturalSortKey([string]$name) {
 }
 
 
+
 function Show-TextInputDialog {
     param(
         [string]$Title,
@@ -570,6 +713,60 @@ function Show-TextInputDialog {
         ShowInTaskbar="False"
         Background="#F4F6F8"
         FontFamily="Segoe UI">
+    <Window.Resources>
+        <Style TargetType="Button" x:Key="DialogSecondaryButton">
+            <Setter Property="Background" Value="#F3F6F8"/>
+            <Setter Property="Foreground" Value="#20262C"/>
+            <Setter Property="BorderBrush" Value="#D6DDE3"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="MinWidth" Value="92"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#EAF0F4"/>
+                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#B8C6D1"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#E0E9EF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="Button" x:Key="DialogPrimaryButton" BasedOn="{StaticResource DialogSecondaryButton}">
+            <Setter Property="Background" Value="#E8F2FB"/>
+            <Setter Property="BorderBrush" Value="#7FB0D9"/>
+            <Setter Property="Foreground" Value="#1C4F7D"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#D9ECFB"/>
+                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#5F98CB"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#CAE4F8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <Border Background="White" BorderBrush="#E3E7EA" BorderThickness="1" CornerRadius="12" Padding="18">
         <Grid>
             <Grid.RowDefinitions>
@@ -579,34 +776,11 @@ function Show-TextInputDialog {
                 <RowDefinition Height="18"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TextBlock x:Name="PromptText"
-                       Grid.Row="0"
-                       TextWrapping="Wrap"
-                       Foreground="#2F3740"
-                       FontSize="14"/>
-            <TextBox x:Name="ValueTextBox"
-                     Grid.Row="2"
-                     MinWidth="400"
-                     Height="36"
-                     Padding="10,6"
-                     FontSize="14"
-                     VerticalContentAlignment="Center"
-                     BorderBrush="#CBD5DF"
-                     BorderThickness="1"
-                     Background="#FBFCFD"/>
+            <TextBlock x:Name="PromptText" Grid.Row="0" TextWrapping="Wrap" Foreground="#2F3740" FontSize="14"/>
+            <TextBox x:Name="ValueTextBox" Grid.Row="2" MinWidth="400" Height="38" Padding="10,6" FontSize="14" VerticalContentAlignment="Center" BorderBrush="#CBD5DF" BorderThickness="1" Background="#FBFCFD"/>
             <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="CancelButton"
-                        Content="Cancel"
-                        MinWidth="86"
-                        Margin="0,0,8,0"
-                        Padding="12,6"
-                        Cursor="Hand"/>
-                <Button x:Name="OkButton"
-                        Content="OK"
-                        MinWidth="86"
-                        Padding="12,6"
-                        Cursor="Hand"
-                        IsDefault="True"/>
+                <Button x:Name="CancelButton" Content="Cancel" Style="{StaticResource DialogSecondaryButton}" Margin="0,0,8,0"/>
+                <Button x:Name="OkButton" Content="OK" Style="{StaticResource DialogPrimaryButton}" IsDefault="True"/>
             </StackPanel>
         </Grid>
     </Border>
@@ -625,8 +799,6 @@ function Show-TextInputDialog {
 
     $promptText.Text = $Prompt
     $valueTextBox.Text = $DefaultText
-    $valueTextBox.SelectAll()
-    $valueTextBox.Focus() | Out-Null
 
     $okButton.Add_Click({
         $dialog.DialogResult = $true
@@ -653,6 +825,133 @@ function Show-TextInputDialog {
         return $valueTextBox.Text
     }
     return $null
+}
+
+function Show-ConfirmDialog {
+    param(
+        [string]$Title,
+        [string]$Message,
+        [string]$ConfirmText = 'Так',
+        [string]$CancelText = 'Ні'
+    )
+
+    [xml]$dialogXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Dialog"
+        SizeToContent="WidthAndHeight"
+        MinWidth="450"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="#F4F6F8"
+        FontFamily="Segoe UI">
+    <Window.Resources>
+        <Style TargetType="Button" x:Key="DialogSecondaryButton">
+            <Setter Property="Background" Value="#F3F6F8"/>
+            <Setter Property="Foreground" Value="#20262C"/>
+            <Setter Property="BorderBrush" Value="#D6DDE3"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="MinWidth" Value="92"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#EAF0F4"/>
+                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#B8C6D1"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#E0E9EF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="Button" x:Key="DialogPrimaryButton" BasedOn="{StaticResource DialogSecondaryButton}">
+            <Setter Property="Background" Value="#E8F2FB"/>
+            <Setter Property="BorderBrush" Value="#7FB0D9"/>
+            <Setter Property="Foreground" Value="#1C4F7D"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#D9ECFB"/>
+                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#5F98CB"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#CAE4F8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Border Background="White" BorderBrush="#E3E7EA" BorderThickness="1" CornerRadius="12" Padding="18">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="18"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Width="38" Height="38" CornerRadius="19" Background="#E8F2FB" VerticalAlignment="Top">
+                    <TextBlock Text="?" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" FontWeight="Bold" Foreground="#3D74A8"/>
+                </Border>
+                <TextBlock x:Name="MessageText" Grid.Column="2" TextWrapping="Wrap" Foreground="#1F262C" FontSize="14" VerticalAlignment="Center"/>
+            </Grid>
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="CancelButton" Content="Ні" Style="{StaticResource DialogSecondaryButton}" Margin="0,0,8,0" IsCancel="True"/>
+                <Button x:Name="ConfirmButton" Content="Так" Style="{StaticResource DialogPrimaryButton}" IsDefault="True"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
+"@
+
+    $dialogReader = New-Object System.Xml.XmlNodeReader $dialogXaml
+    $dialog = [Windows.Markup.XamlReader]::Load($dialogReader)
+    if ($window) { $dialog.Owner = $window }
+    $dialog.Title = $Title
+
+    $messageText = $dialog.FindName('MessageText')
+    $confirmButton = $dialog.FindName('ConfirmButton')
+    $cancelButton = $dialog.FindName('CancelButton')
+    $messageText.Text = $Message
+    $confirmButton.Content = $ConfirmText
+    $cancelButton.Content = $CancelText
+
+    $confirmButton.Add_Click({
+        $dialog.DialogResult = $true
+        $dialog.Close()
+    })
+    $cancelButton.Add_Click({
+        $dialog.DialogResult = $false
+        $dialog.Close()
+    })
+
+    $result = $dialog.ShowDialog()
+    return ($result -eq $true)
 }
 
 function New-ModernContextMenu {
@@ -1801,13 +2100,7 @@ $script:FolderDeleteHandler = {
     if (-not (Test-Path -LiteralPath $path -PathType Container)) { return }
     $name = [System.IO.Path]::GetFileName($path.TrimEnd([System.IO.Path]::DirectorySeparatorChar))
 
-    $answer = [System.Windows.MessageBox]::Show(
-        "Перемістити папку '$name' разом з усім вмістом до кошика?",
-        'Видалити папку',
-        [System.Windows.MessageBoxButton]::YesNo,
-        [System.Windows.MessageBoxImage]::Question
-    )
-    if ($answer -ne [System.Windows.MessageBoxResult]::Yes) { return }
+    if (-not (Show-ConfirmDialog -Title 'Видалити папку' -Message "Перемістити папку '$name' разом з усім вмістом до кошика?" -ConfirmText 'Так' -CancelText 'Ні')) { return }
 
     if (& $script:SendFolderToRecycleBinAction $path) {
         for ($i = $script:History.Count - 1; $i -ge 0; $i--) {
@@ -1920,13 +2213,7 @@ $script:ImageDeleteHandler = {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
     $name = [System.IO.Path]::GetFileName($path)
 
-    $answer = [System.Windows.MessageBox]::Show(
-        "Перемістити '$name' до кошика?",
-        'Видалити зображення',
-        [System.Windows.MessageBoxButton]::YesNo,
-        [System.Windows.MessageBoxImage]::Question
-    )
-    if ($answer -ne [System.Windows.MessageBoxResult]::Yes) { return }
+    if (-not (Show-ConfirmDialog -Title 'Видалити зображення' -Message "Перемістити '$name' до кошика?" -ConfirmText 'Так' -CancelText 'Ні')) { return }
 
     if (& $script:SendFileToRecycleBinAction $path) {
         if ($script:PreviewImagePath -and $script:PreviewImagePath.Equals($path, [System.StringComparison]::OrdinalIgnoreCase)) {
@@ -2002,13 +2289,7 @@ $script:TextDeleteHandler = {
     if (-not (Confirm-PendingTextChanges)) { return }
     $name = [System.IO.Path]::GetFileName($path)
 
-    $answer = [System.Windows.MessageBox]::Show(
-        "Перемістити '$name' до кошика?",
-        'Видалити текстовий файл',
-        [System.Windows.MessageBoxButton]::YesNo,
-        [System.Windows.MessageBoxImage]::Question
-    )
-    if ($answer -ne [System.Windows.MessageBoxResult]::Yes) { return }
+    if (-not (Show-ConfirmDialog -Title 'Видалити текстовий файл' -Message "Перемістити '$name' до кошика?" -ConfirmText 'Так' -CancelText 'Ні')) { return }
 
     if (& $script:SendFileToRecycleBinAction $path) {
         Load-Folders $script:CurrentFolder
@@ -2137,6 +2418,19 @@ $createMdMenuItem.Header = 'Створити Markdown-файл (.md)'
 $createMdMenuItem.Add_Click($script:CreateMdHandler)
 [void]$script:CreateTextMenu.Items.Add($createMdMenuItem)
 
+
+$script:CreateImageMenu = New-ModernContextMenu
+$imagePasteMenuItem = New-ModernMenuItem
+$imagePasteMenuItem.Header = 'Вставити'
+$imagePasteMenuItem.Add_Click({ Paste-ClipboardItems })
+[void]$script:CreateImageMenu.Items.Add($imagePasteMenuItem)
+
+$script:CreateImageMenu.Add_Opened({
+    $clip = Get-ClipboardFileDropInfo
+    $imagePasteMenuItem.IsEnabled = $clip.HasFiles
+    $imagePasteMenuItem.Visibility = if ($clip.HasFiles) { 'Visible' } else { 'Collapsed' }
+})
+
 $ImageSortFieldCombo.Add_SelectionChanged({
     if ($script:InitializingSortControls) { return }
     if ($null -eq $ImageSortFieldCombo.SelectedItem) { return }
@@ -2201,6 +2495,29 @@ $FolderList.Add_PreviewMouseRightButtonUp({
         }
     } catch {
         # A click on a scrollbar or other chrome should simply do nothing.
+    }
+})
+
+
+$ImageScrollViewer.Add_PreviewMouseRightButtonUp({
+    param($sender, $e)
+    try {
+        $source = $e.OriginalSource -as [System.Windows.DependencyObject]
+        $tileBorder = $null
+        while ($null -ne $source) {
+            if ($source -is [System.Windows.Controls.Border] -and $source.Tag) {
+                $tileBorder = $source
+                break
+            }
+            $source = [System.Windows.Media.VisualTreeHelper]::GetParent($source)
+        }
+        if ($null -eq $tileBorder) {
+            $script:CreateImageMenu.PlacementTarget = $ImageScrollViewer
+            $script:CreateImageMenu.IsOpen = $true
+            $e.Handled = $true
+        }
+    } catch {
+        # ignore
     }
 })
 
