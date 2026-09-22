@@ -3,6 +3,7 @@ Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName WindowsBase
 Add-Type -AssemblyName System.Xaml
 Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName Microsoft.VisualBasic
 
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
@@ -11,17 +12,66 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.2.0'
+$script:AppVersion = '0.3.0'
+$script:PreviewZoomed = $false
+$script:PreviewImagePath = $null
 $script:IsLoadingText = $false
 $script:TextDirty = $false
 $script:CurrentTextEncoding = [System.Text.UTF8Encoding]::new($false)
 $script:SettingsFolder = Join-Path $env:LOCALAPPDATA 'VisualFolderExplorer'
 $script:SettingsPath = Join-Path $script:SettingsFolder 'settings.json'
 
+# Shared file-operation actions used by dynamically created context menus.
+$script:SetFileClipboardAction = {
+    param([string]$Path, [bool]$Cut)
+    try {
+        $data = New-Object System.Windows.DataObject
+        $files = New-Object System.Collections.Specialized.StringCollection
+        [void]$files.Add($Path)
+        $data.SetFileDropList($files)
+
+        # Explorer understands Preferred DropEffect: 1 = copy, 2 = move/cut.
+        [byte[]]$effect = if ($Cut) { 2,0,0,0 } else { 1,0,0,0 }
+        $stream = [System.IO.MemoryStream]::new($effect)
+        $data.SetData('Preferred DropEffect', $stream)
+        [System.Windows.Clipboard]::SetDataObject($data, $true)
+        return $true
+    } catch {
+        [System.Windows.MessageBox]::Show(
+            "Не вдалося помістити файл у буфер обміну.`r`n`r`n$($_.Exception.Message)",
+            'Помилка буфера обміну',
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Error
+        ) | Out-Null
+        return $false
+    }
+}
+
+$script:SendFileToRecycleBinAction = {
+    param([string]$Path)
+    try {
+        [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile(
+            $Path,
+            [Microsoft.VisualBasic.FileIO.UIOption]::OnlyErrorDialogs,
+            [Microsoft.VisualBasic.FileIO.RecycleOption]::SendToRecycleBin,
+            [Microsoft.VisualBasic.FileIO.UICancelOption]::ThrowException
+        )
+        return $true
+    } catch {
+        [System.Windows.MessageBox]::Show(
+            "Не вдалося перемістити файл до кошика.`r`n`r`n$($_.Exception.Message)",
+            'Помилка видалення',
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Error
+        ) | Out-Null
+        return $false
+    }
+}
+
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.2.0" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.3.0" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -431,6 +481,10 @@ function Show-TextMode {
     $SaveTextButton.Visibility = 'Visible'
     $SidePanelTitle.Text = 'Текст'
     $PreviewImage.Source = $null
+    $PreviewImage.RenderTransform = [System.Windows.Media.ScaleTransform]::new(1, 1)
+    $PreviewImage.Cursor = [System.Windows.Input.Cursors]::Hand
+    $script:PreviewZoomed = $false
+    $script:PreviewImagePath = $null
     $PreviewError.Visibility = 'Collapsed'
     if ($script:TextFiles.Count -gt 0 -and $script:TextIndex -ge 0) {
         Set-TextDirty $script:TextDirty
@@ -505,6 +559,37 @@ function Load-TextFiles([string]$folder) {
     Update-TextNavigation
 }
 
+function Open-TextFileByPath([string]$path) {
+    if ([string]::IsNullOrWhiteSpace($path) -or -not (Test-Path -LiteralPath $path -PathType Leaf)) { return $false }
+
+    $targetIndex = -1
+    for ($i = 0; $i -lt $script:TextFiles.Count; $i++) {
+        if ($script:TextFiles[$i].FullName.Equals($path, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $targetIndex = $i
+            break
+        }
+    }
+
+    if ($targetIndex -lt 0) {
+        Load-TextFiles $script:CurrentFolder
+        for ($i = 0; $i -lt $script:TextFiles.Count; $i++) {
+            if ($script:TextFiles[$i].FullName.Equals($path, [System.StringComparison]::OrdinalIgnoreCase)) {
+                $targetIndex = $i
+                break
+            }
+        }
+    }
+
+    if ($targetIndex -lt 0) { return $false }
+    if ($targetIndex -ne $script:TextIndex -and -not (Confirm-PendingTextChanges)) { return $false }
+
+    $script:TextIndex = $targetIndex
+    Update-TextNavigation
+    Show-TextMode
+    $StatusText.Text = "Відкрито текстовий файл: $([System.IO.Path]::GetFileName($path))"
+    return $true
+}
+
 function Add-ImageTile([System.IO.FileInfo]$file) {
     $tile = New-Object System.Windows.Controls.Border
     $tile.Width = 190
@@ -516,6 +601,7 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
     $tile.CornerRadius = 10
     $tile.Cursor = [System.Windows.Input.Cursors]::Hand
     $tile.ToolTip = $file.Name
+    $tile.Tag = $file.FullName
 
     $grid = New-Object System.Windows.Controls.Grid
     $grid.Margin = 7
@@ -564,48 +650,37 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
     $grid.Children.Add($label) | Out-Null
 
     $tile.Child = $grid
+    $tile.Add_MouseLeftButtonUp($script:ImageTileClickHandler)
 
-    # Capture only UI references and the path. The preview is rendered directly in
-    # the right panel, so the click handler does not depend on a helper function.
-    $imagePath = $file.FullName
-    $previewImageRef = $PreviewImage
-    $previewErrorRef = $PreviewError
-    $textContentRef = $TextContentBorder
-    $previewContentRef = $PreviewContentBorder
-    $textNavRef = $TextNavigationPanel
-    $returnButtonRef = $ReturnToTextButton
-    $saveButtonRef = $SaveTextButton
-    $sideTitleRef = $SidePanelTitle
-    $fileNameRef = $TextFileName
+    $menu = New-Object System.Windows.Controls.ContextMenu
 
-    $clickHandler = {
-        try {
-            $bitmapPreview = New-Object System.Windows.Media.Imaging.BitmapImage
-            $bitmapPreview.BeginInit()
-            $bitmapPreview.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
-            $bitmapPreview.CreateOptions = [System.Windows.Media.Imaging.BitmapCreateOptions]::IgnoreImageCache
-            $bitmapPreview.DecodePixelWidth = 1600
-            $bitmapPreview.UriSource = New-Object System.Uri($imagePath, [System.UriKind]::Absolute)
-            $bitmapPreview.EndInit()
-            $bitmapPreview.Freeze()
+    $cut = New-Object System.Windows.Controls.MenuItem
+    $cut.Header = 'Вирізати'
+    $cut.Tag = $file.FullName
+    $cut.Add_Click($script:ImageCutHandler)
+    [void]$menu.Items.Add($cut)
 
-            $previewImageRef.Source = $bitmapPreview
-            $previewErrorRef.Visibility = 'Collapsed'
-        } catch {
-            $previewImageRef.Source = $null
-            $previewErrorRef.Visibility = 'Visible'
-        }
+    $copy = New-Object System.Windows.Controls.MenuItem
+    $copy.Header = 'Копіювати'
+    $copy.Tag = $file.FullName
+    $copy.Add_Click($script:ImageCopyHandler)
+    [void]$menu.Items.Add($copy)
 
-        $textContentRef.Visibility = 'Collapsed'
-        $previewContentRef.Visibility = 'Visible'
-        $textNavRef.Visibility = 'Collapsed'
-        $returnButtonRef.Visibility = 'Visible'
-        $saveButtonRef.Visibility = 'Collapsed'
-        $sideTitleRef.Text = "Прев'ю"
-        $fileNameRef.Text = [System.IO.Path]::GetFileName($imagePath)
-    }.GetNewClosure()
-    $tile.Add_MouseLeftButtonUp($clickHandler)
+    [void]$menu.Items.Add((New-Object System.Windows.Controls.Separator))
 
+    $rename = New-Object System.Windows.Controls.MenuItem
+    $rename.Header = 'Перейменувати'
+    $rename.Tag = $file.FullName
+    $rename.Add_Click($script:ImageRenameHandler)
+    [void]$menu.Items.Add($rename)
+
+    $delete = New-Object System.Windows.Controls.MenuItem
+    $delete.Header = 'Видалити'
+    $delete.Tag = $file.FullName
+    $delete.Add_Click($script:ImageDeleteHandler)
+    [void]$menu.Items.Add($delete)
+
+    $tile.ContextMenu = $menu
     $ImagePanel.Children.Add($tile) | Out-Null
 }
 
@@ -640,11 +715,61 @@ function Load-Folders([string]$folder) {
         foreach ($dir in $dirs) {
             $item = New-Object System.Windows.Controls.ListBoxItem
             $item.Content = "📁  $($dir.Name)"
-            $item.Tag = $dir.FullName
+            $item.Tag = [pscustomobject]@{ Type = 'Folder'; Path = $dir.FullName }
+            $FolderList.Items.Add($item) | Out-Null
+        }
+
+        $textFiles = @(Get-ChildItem -LiteralPath $folder -File -ErrorAction Stop | Where-Object {
+            $_.Extension -ieq '.txt' -or $_.Extension -ieq '.md'
+        } | Sort-Object { Get-NaturalSortKey $_.Name })
+
+        foreach ($file in $textFiles) {
+            $item = New-Object System.Windows.Controls.ListBoxItem
+            $icon = if ($file.Extension -ieq '.md') { '📝' } else { '📄' }
+            $item.Content = "$icon  $($file.Name)"
+            $item.Tag = [pscustomobject]@{ Type = 'Text'; Path = $file.FullName }
+
+            $menu = New-Object System.Windows.Controls.ContextMenu
+
+            $open = New-Object System.Windows.Controls.MenuItem
+            $open.Header = 'Відкрити'
+            $open.Tag = $file.FullName
+            $open.Add_Click($script:TextOpenHandler)
+            [void]$menu.Items.Add($open)
+
+            [void]$menu.Items.Add((New-Object System.Windows.Controls.Separator))
+
+            $cut = New-Object System.Windows.Controls.MenuItem
+            $cut.Header = 'Вирізати'
+            $cut.Tag = $file.FullName
+            $cut.Add_Click($script:TextCutHandler)
+            [void]$menu.Items.Add($cut)
+
+            $copy = New-Object System.Windows.Controls.MenuItem
+            $copy.Header = 'Копіювати'
+            $copy.Tag = $file.FullName
+            $copy.Add_Click($script:TextCopyHandler)
+            [void]$menu.Items.Add($copy)
+
+            [void]$menu.Items.Add((New-Object System.Windows.Controls.Separator))
+
+            $rename = New-Object System.Windows.Controls.MenuItem
+            $rename.Header = 'Перейменувати'
+            $rename.Tag = $file.FullName
+            $rename.Add_Click($script:TextRenameHandler)
+            [void]$menu.Items.Add($rename)
+
+            $delete = New-Object System.Windows.Controls.MenuItem
+            $delete.Header = 'Видалити'
+            $delete.Tag = $file.FullName
+            $delete.Add_Click($script:TextDeleteHandler)
+            [void]$menu.Items.Add($delete)
+
+            $item.ContextMenu = $menu
             $FolderList.Items.Add($item) | Out-Null
         }
     } catch {
-        $StatusText.Text = "Помилка читання папок: $($_.Exception.Message)"
+        $StatusText.Text = "Помилка читання папок і текстових файлів: $($_.Exception.Message)"
     }
 }
 
@@ -715,6 +840,281 @@ function Choose-RootFolder {
     }
 }
 
+# ---- Shared UI handlers -----------------------------------------------------
+# These handlers live in the main script scope (rather than per-tile closures),
+# which keeps them reliable when the app is launched through the BAT wrapper.
+
+$script:ImageTileClickHandler = {
+    param($sender, $e)
+    $imagePath = [string]$sender.Tag
+    if ([string]::IsNullOrWhiteSpace($imagePath) -or -not (Test-Path -LiteralPath $imagePath -PathType Leaf)) { return }
+
+    try {
+        $bitmapPreview = New-Object System.Windows.Media.Imaging.BitmapImage
+        $bitmapPreview.BeginInit()
+        $bitmapPreview.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+        $bitmapPreview.CreateOptions = [System.Windows.Media.Imaging.BitmapCreateOptions]::IgnoreImageCache
+        $bitmapPreview.DecodePixelWidth = 1800
+        $bitmapPreview.UriSource = New-Object System.Uri($imagePath, [System.UriKind]::Absolute)
+        $bitmapPreview.EndInit()
+        $bitmapPreview.Freeze()
+
+        $PreviewImage.Source = $bitmapPreview
+        $PreviewError.Visibility = 'Collapsed'
+    } catch {
+        $PreviewImage.Source = $null
+        $PreviewError.Visibility = 'Visible'
+    }
+
+    $script:PreviewImagePath = $imagePath
+    $script:PreviewZoomed = $false
+    $PreviewImage.RenderTransformOrigin = [System.Windows.Point]::new(0.5, 0.5)
+    $PreviewImage.RenderTransform = [System.Windows.Media.ScaleTransform]::new(1, 1)
+    $PreviewImage.Cursor = [System.Windows.Input.Cursors]::Hand
+
+    $TextContentBorder.Visibility = 'Collapsed'
+    $PreviewContentBorder.Visibility = 'Visible'
+    $TextNavigationPanel.Visibility = 'Collapsed'
+    $ReturnToTextButton.Visibility = 'Visible'
+    $SaveTextButton.Visibility = 'Collapsed'
+    $SidePanelTitle.Text = "Прев'ю"
+    $TextFileName.Text = [System.IO.Path]::GetFileName($imagePath)
+    $StatusText.Text = 'Лівий клік по прев’ю: збільшити / повернути розмір'
+    $e.Handled = $true
+}
+
+$script:ImageCutHandler = {
+    param($sender, $e)
+    $path = [string]$sender.Tag
+    if (& $script:SetFileClipboardAction $path $true) {
+        $StatusText.Text = "Вирізано до буфера обміну: $([System.IO.Path]::GetFileName($path))"
+    }
+}
+
+$script:ImageCopyHandler = {
+    param($sender, $e)
+    $path = [string]$sender.Tag
+    if (& $script:SetFileClipboardAction $path $false) {
+        $StatusText.Text = "Скопійовано до буфера обміну: $([System.IO.Path]::GetFileName($path))"
+    }
+}
+
+$script:ImageRenameHandler = {
+    param($sender, $e)
+    $path = [string]$sender.Tag
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
+
+    $oldName = [System.IO.Path]::GetFileName($path)
+    $newName = [Microsoft.VisualBasic.Interaction]::InputBox(
+        'Введіть нову назву файлу:',
+        'Перейменувати зображення',
+        $oldName
+    )
+    if ([string]::IsNullOrWhiteSpace($newName) -or $newName -eq $oldName) { return }
+
+    if ([System.IO.Path]::GetFileName($newName) -ne $newName -or $newName.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
+        [System.Windows.MessageBox]::Show('Назва файлу містить недопустимі символи.', 'Некоректна назва') | Out-Null
+        return
+    }
+
+    $destination = Join-Path ([System.IO.Path]::GetDirectoryName($path)) $newName
+    if (Test-Path -LiteralPath $destination) {
+        [System.Windows.MessageBox]::Show('Файл з такою назвою вже існує.', 'Перейменування') | Out-Null
+        return
+    }
+
+    try {
+        Move-Item -LiteralPath $path -Destination $destination -ErrorAction Stop
+        if ($script:PreviewImagePath -and $script:PreviewImagePath.Equals($path, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $script:PreviewImagePath = $destination
+            $TextFileName.Text = $newName
+        }
+        Load-Images $script:CurrentFolder
+        $StatusText.Text = "Перейменовано: $newName"
+    } catch {
+        [System.Windows.MessageBox]::Show("Не вдалося перейменувати файл.`r`n`r`n$($_.Exception.Message)", 'Помилка') | Out-Null
+    }
+}
+
+$script:ImageDeleteHandler = {
+    param($sender, $e)
+    $path = [string]$sender.Tag
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
+    $name = [System.IO.Path]::GetFileName($path)
+
+    $answer = [System.Windows.MessageBox]::Show(
+        "Перемістити '$name' до кошика?",
+        'Видалити зображення',
+        [System.Windows.MessageBoxButton]::YesNo,
+        [System.Windows.MessageBoxImage]::Question
+    )
+    if ($answer -ne [System.Windows.MessageBoxResult]::Yes) { return }
+
+    if (& $script:SendFileToRecycleBinAction $path) {
+        if ($script:PreviewImagePath -and $script:PreviewImagePath.Equals($path, [System.StringComparison]::OrdinalIgnoreCase)) {
+            Show-TextMode
+        }
+        Load-Images $script:CurrentFolder
+        $StatusText.Text = "Переміщено до кошика: $name"
+    }
+}
+
+$script:TextOpenHandler = {
+    param($sender, $e)
+    Open-TextFileByPath ([string]$sender.Tag) | Out-Null
+}
+
+$script:TextCutHandler = {
+    param($sender, $e)
+    $path = [string]$sender.Tag
+    if (& $script:SetFileClipboardAction $path $true) {
+        $StatusText.Text = "Вирізано до буфера обміну: $([System.IO.Path]::GetFileName($path))"
+    }
+}
+
+$script:TextCopyHandler = {
+    param($sender, $e)
+    $path = [string]$sender.Tag
+    if (& $script:SetFileClipboardAction $path $false) {
+        $StatusText.Text = "Скопійовано до буфера обміну: $([System.IO.Path]::GetFileName($path))"
+    }
+}
+
+$script:TextRenameHandler = {
+    param($sender, $e)
+    $path = [string]$sender.Tag
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
+    if (-not (Confirm-PendingTextChanges)) { return }
+
+    $oldName = [System.IO.Path]::GetFileName($path)
+    $newName = [Microsoft.VisualBasic.Interaction]::InputBox(
+        'Введіть нову назву файлу:',
+        'Перейменувати текстовий файл',
+        $oldName
+    )
+    if ([string]::IsNullOrWhiteSpace($newName) -or $newName -eq $oldName) { return }
+
+    if ([System.IO.Path]::GetFileName($newName) -ne $newName -or $newName.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
+        [System.Windows.MessageBox]::Show('Назва файлу містить недопустимі символи.', 'Некоректна назва') | Out-Null
+        return
+    }
+
+    $destination = Join-Path ([System.IO.Path]::GetDirectoryName($path)) $newName
+    if (Test-Path -LiteralPath $destination) {
+        [System.Windows.MessageBox]::Show('Файл з такою назвою вже існує.', 'Перейменування') | Out-Null
+        return
+    }
+
+    try {
+        Move-Item -LiteralPath $path -Destination $destination -ErrorAction Stop
+        Load-Folders $script:CurrentFolder
+        Load-TextFiles $script:CurrentFolder
+        if ([System.IO.Path]::GetExtension($destination) -ieq '.txt' -or [System.IO.Path]::GetExtension($destination) -ieq '.md') {
+            Open-TextFileByPath $destination | Out-Null
+        }
+        $StatusText.Text = "Перейменовано: $newName"
+    } catch {
+        [System.Windows.MessageBox]::Show("Не вдалося перейменувати файл.`r`n`r`n$($_.Exception.Message)", 'Помилка') | Out-Null
+    }
+}
+
+$script:TextDeleteHandler = {
+    param($sender, $e)
+    $path = [string]$sender.Tag
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
+    if (-not (Confirm-PendingTextChanges)) { return }
+    $name = [System.IO.Path]::GetFileName($path)
+
+    $answer = [System.Windows.MessageBox]::Show(
+        "Перемістити '$name' до кошика?",
+        'Видалити текстовий файл',
+        [System.Windows.MessageBoxButton]::YesNo,
+        [System.Windows.MessageBoxImage]::Question
+    )
+    if ($answer -ne [System.Windows.MessageBoxResult]::Yes) { return }
+
+    if (& $script:SendFileToRecycleBinAction $path) {
+        Load-Folders $script:CurrentFolder
+        Load-TextFiles $script:CurrentFolder
+        Show-TextMode
+        $StatusText.Text = "Переміщено до кошика: $name"
+    }
+}
+
+$script:CreateTxtHandler = {
+    param($sender, $e)
+    if (-not $script:CurrentFolder) { return }
+    if (-not (Confirm-PendingTextChanges)) { return }
+
+    $name = [Microsoft.VisualBasic.Interaction]::InputBox('Назва нового TXT-файлу:', 'Створити TXT', 'Новий файл.txt')
+    if ([string]::IsNullOrWhiteSpace($name)) { return }
+    if (-not $name.EndsWith('.txt', [System.StringComparison]::OrdinalIgnoreCase)) { $name += '.txt' }
+
+    if ([System.IO.Path]::GetFileName($name) -ne $name -or $name.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
+        [System.Windows.MessageBox]::Show('Назва файлу містить недопустимі символи.', 'Некоректна назва') | Out-Null
+        return
+    }
+
+    $path = Join-Path $script:CurrentFolder $name
+    if (Test-Path -LiteralPath $path) {
+        [System.Windows.MessageBox]::Show('Файл з такою назвою вже існує.', 'Створення файлу') | Out-Null
+        return
+    }
+
+    try {
+        [System.IO.File]::WriteAllText($path, '', [System.Text.UTF8Encoding]::new($false))
+        Load-Folders $script:CurrentFolder
+        Load-TextFiles $script:CurrentFolder
+        Open-TextFileByPath $path | Out-Null
+        $StatusText.Text = "Створено: $name"
+    } catch {
+        [System.Windows.MessageBox]::Show("Не вдалося створити файл.`r`n`r`n$($_.Exception.Message)", 'Помилка') | Out-Null
+    }
+}
+
+$script:CreateMdHandler = {
+    param($sender, $e)
+    if (-not $script:CurrentFolder) { return }
+    if (-not (Confirm-PendingTextChanges)) { return }
+
+    $name = [Microsoft.VisualBasic.Interaction]::InputBox('Назва нового Markdown-файлу:', 'Створити Markdown', 'Новий файл.md')
+    if ([string]::IsNullOrWhiteSpace($name)) { return }
+    if (-not $name.EndsWith('.md', [System.StringComparison]::OrdinalIgnoreCase)) { $name += '.md' }
+
+    if ([System.IO.Path]::GetFileName($name) -ne $name -or $name.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
+        [System.Windows.MessageBox]::Show('Назва файлу містить недопустимі символи.', 'Некоректна назва') | Out-Null
+        return
+    }
+
+    $path = Join-Path $script:CurrentFolder $name
+    if (Test-Path -LiteralPath $path) {
+        [System.Windows.MessageBox]::Show('Файл з такою назвою вже існує.', 'Створення файлу') | Out-Null
+        return
+    }
+
+    try {
+        [System.IO.File]::WriteAllText($path, '', [System.Text.UTF8Encoding]::new($false))
+        Load-Folders $script:CurrentFolder
+        Load-TextFiles $script:CurrentFolder
+        Open-TextFileByPath $path | Out-Null
+        $StatusText.Text = "Створено: $name"
+    } catch {
+        [System.Windows.MessageBox]::Show("Не вдалося створити файл.`r`n`r`n$($_.Exception.Message)", 'Помилка') | Out-Null
+    }
+}
+
+# Context menu shown only when the user right-clicks an empty area in "Папки".
+$script:CreateTextMenu = New-Object System.Windows.Controls.ContextMenu
+$createTxtMenuItem = New-Object System.Windows.Controls.MenuItem
+$createTxtMenuItem.Header = 'Створити TXT-файл'
+$createTxtMenuItem.Add_Click($script:CreateTxtHandler)
+[void]$script:CreateTextMenu.Items.Add($createTxtMenuItem)
+
+$createMdMenuItem = New-Object System.Windows.Controls.MenuItem
+$createMdMenuItem.Header = 'Створити Markdown-файл (.md)'
+$createMdMenuItem.Add_Click($script:CreateMdHandler)
+[void]$script:CreateTextMenu.Items.Add($createMdMenuItem)
+
 $ChooseRootButton.Add_Click({ Choose-RootFolder })
 $ReturnToTextButton.Add_Click({ Show-TextMode })
 $SaveTextButton.Add_Click({ Save-CurrentTextFile | Out-Null })
@@ -727,9 +1127,47 @@ $TextViewer.Add_TextChanged({
 })
 
 $FolderList.Add_MouseDoubleClick({
-    if ($FolderList.SelectedItem -and $FolderList.SelectedItem.Tag) {
-        Navigate-To ([string]$FolderList.SelectedItem.Tag)
+    if (-not $FolderList.SelectedItem -or -not $FolderList.SelectedItem.Tag) { return }
+    $tag = $FolderList.SelectedItem.Tag
+    if ($tag.Type -eq 'Folder') {
+        Navigate-To ([string]$tag.Path)
+    } elseif ($tag.Type -eq 'Text') {
+        Open-TextFileByPath ([string]$tag.Path) | Out-Null
     }
+})
+
+$FolderList.Add_PreviewMouseRightButtonUp({
+    param($sender, $e)
+    try {
+        $source = $e.OriginalSource -as [System.Windows.DependencyObject]
+        $container = $null
+        if ($null -ne $source) {
+            $container = [System.Windows.Controls.ItemsControl]::ContainerFromElement($FolderList, $source)
+        }
+        if ($null -eq $container) {
+            $script:CreateTextMenu.PlacementTarget = $FolderList
+            $script:CreateTextMenu.IsOpen = $true
+            $e.Handled = $true
+        }
+    } catch {
+        # A click on a scrollbar or other chrome should simply do nothing.
+    }
+})
+
+$PreviewImage.Add_MouseLeftButtonUp({
+    param($sender, $e)
+    if ($PreviewContentBorder.Visibility -ne 'Visible' -or $null -eq $PreviewImage.Source) { return }
+
+    if ($script:PreviewZoomed) {
+        $PreviewImage.RenderTransform = [System.Windows.Media.ScaleTransform]::new(1, 1)
+        $script:PreviewZoomed = $false
+        $StatusText.Text = 'Масштаб прев’ю: стандартний'
+    } else {
+        $PreviewImage.RenderTransform = [System.Windows.Media.ScaleTransform]::new(2, 2)
+        $script:PreviewZoomed = $true
+        $StatusText.Text = 'Масштаб прев’ю: 200% — натисніть ще раз, щоб повернути'
+    }
+    $e.Handled = $true
 })
 
 $BackButton.Add_Click({
