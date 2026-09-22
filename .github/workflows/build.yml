@@ -28,15 +28,21 @@ jobs:
           -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false -p:NuGetAudit=false
           -o publish/win-x64-portable
 
-      - name: Create portable ZIP
+      - name: Create build manifest
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path release | Out-Null
-          Compress-Archive -Path publish/win-x64-portable/* -DestinationPath release/VisualFolderExplorer_v1.0.3_win-x64-portable.zip -Force
+          $exe = 'publish/win-x64-portable/VisualFolderExplorer.exe'
+          if (-not (Test-Path $exe)) { throw "Portable EXE was not created: $exe" }
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash
+          "Visual Folder Explorer v1.0.4`nVisualFolderExplorer.exe SHA256: $hash" | Set-Content -Encoding UTF8 publish/win-x64-portable/BUILD_INFO.txt
 
-      - name: Upload portable ZIP
+      # Upload the published folder directly. GitHub Actions creates ONE artifact ZIP
+      # automatically, so users only need to extract once. Do not wrap another ZIP
+      # inside the artifact: Windows Explorer can behave badly with ZIP-inside-ZIP.
+      - name: Upload portable build
         uses: actions/upload-artifact@v4
         with:
-          name: VisualFolderExplorer_v1.0.3_win-x64-portable
-          path: release/VisualFolderExplorer_v1.0.3_win-x64-portable.zip
+          name: VisualFolderExplorer_v1.0.4_win-x64-portable
+          path: publish/win-x64-portable/
           if-no-files-found: error
+          compression-level: 0

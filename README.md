@@ -1,8 +1,8 @@
-﻿# Visual Folder Explorer v1.0.3
+﻿# Visual Folder Explorer v1.0.4
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.0.3 is the first deployment/hardening patch after the C#/.NET 8 WPF rewrite.** The goal of the rewrite is better performance, maintainability, asynchronous image loading, thumbnail caching, and a cleaner foundation for future features.
+**v1.0.4 is the first deployment/hardening patch after the C#/.NET 8 WPF rewrite.** The goal of the rewrite is better performance, maintainability, asynchronous image loading, thumbnail caching, and a cleaner foundation for future features.
 
 ## Requirements
 
@@ -128,4 +128,8 @@ Semantic Versioning is used:
 - MINOR — backward-compatible features;
 - MAJOR — major/breaking changes or architecture migrations.
 
-The PowerShell → C# rewrite was released as **v1.0.0**. Deployment/offline-restore fixes are released as **v1.0.3**.
+The PowerShell → C# rewrite was released as **v1.0.0**. Deployment/offline-restore fixes are released as **v1.0.4**.
+
+## GitHub Actions artifact
+
+GitHub Actions now uploads the **published portable folder directly as the artifact**. GitHub creates the single downloadable ZIP itself, so the user extracts only once. The archive contains `VisualFolderExplorer.exe`, the self-contained runtime files, and `BUILD_INFO.txt` with the EXE SHA-256 hash. There is no nested ZIP.

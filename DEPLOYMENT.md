@@ -8,7 +8,7 @@ Use `PublishWin64.bat` on a build/developer PC. It creates a self-contained `pub
 
 ### Why the old build failed with NU1301
 
-`dotnet run` performs NuGet restore before compiling. The project has no third-party NuGet packages, but NuGet still tried to reach the configured `https://api.nuget.org/v3/index.json` source (including vulnerability/audit metadata). A corporate firewall/socket policy blocked that request. v1.0.3 adds a local `NuGet.Config` that clears external package sources and disables NuGet audit for this project.
+`dotnet run` performs NuGet restore before compiling. The project has no third-party NuGet packages, but NuGet still tried to reach the configured `https://api.nuget.org/v3/index.json` source (including vulnerability/audit metadata). A corporate firewall/socket policy blocked that request. v1.0.4 adds a local `NuGet.Config` that clears external package sources and disables NuGet audit for this project.
 
 ### Corporate PCs
 
@@ -31,7 +31,7 @@ The optional `PublishSingleFileWin64.bat` is convenient for personal PCs, but a 
 
 ### Чому стара збірка падала з NU1301
 
-`dotnet run` перед компіляцією виконує NuGet restore. У проєкті немає сторонніх NuGet-пакетів, але NuGet усе одно намагався звертатися до налаштованого `https://api.nuget.org/v3/index.json` (у тому числі для audit/vulnerability metadata). Корпоративна мережева/socket-політика заблокувала цей запит. У v1.0.3 додано локальний `NuGet.Config`, який очищає зовнішні package sources і вимикає NuGet audit для цього проєкту.
+`dotnet run` перед компіляцією виконує NuGet restore. У проєкті немає сторонніх NuGet-пакетів, але NuGet усе одно намагався звертатися до налаштованого `https://api.nuget.org/v3/index.json` (у тому числі для audit/vulnerability metadata). Корпоративна мережева/socket-політика заблокувала цей запит. У v1.0.4 додано локальний `NuGet.Config`, який очищає зовнішні package sources і вимикає NuGet audit для цього проєкту.
 
 ### Корпоративні ПК
 

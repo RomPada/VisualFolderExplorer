@@ -5,6 +5,20 @@ This file is maintained for every release in English and Ukrainian.
 
 ---
 
+## v1.0.4 — 2026-09-22
+
+**English**
+- Fixed portable artifact packaging: GitHub Actions now uploads the published folder directly instead of putting a portable ZIP inside the GitHub artifact ZIP.
+- This removes the nested-ZIP extraction path that could trigger misleading password prompts in Windows Explorer.
+- Added `BUILD_INFO.txt` with the SHA-256 hash of `VisualFolderExplorer.exe`.
+- The artifact is now downloaded and extracted only once.
+
+**Українська**
+- Виправлено пакування portable-збірки: GitHub Actions тепер завантажує готову папку publish напряму, без вкладеного portable ZIP усередині ZIP-артефакту GitHub.
+- Це прибирає сценарій ZIP-в-ZIP, через який Провідник Windows міг показувати помилковий запит пароля під час розпакування.
+- Додано `BUILD_INFO.txt` із SHA-256 хешем `VisualFolderExplorer.exe`.
+- Артефакт тепер потрібно завантажити та розпакувати лише один раз.
+
 ## v1.0.3 — 2026-09-22
 
 **English**
