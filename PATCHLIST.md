@@ -1,311 +1,274 @@
-# Visual Folder Explorer — Patch List / Історія змін
+# Visual Folder Explorer — Patch List / Список змін
 
-Every release of Visual Folder Explorer is recorded here. Each entry is provided in English and Ukrainian.
-
-Кожна версія Visual Folder Explorer фіксується у цьому файлі. Для кожного релізу наведено англійський та український опис.
+This file is maintained for every release in English and Ukrainian.  
+Цей файл оновлюється для кожної версії англійською та українською мовами.
 
 ---
+
+## v1.0.2 — 2026-09-22
+
+**English**
+- Fixed the build pipeline for self-contained Windows x64 publishing.
+- Split NuGet configuration into `NuGet.Offline.Config` for local corporate/offline development and `NuGet.Config` for CI/publishing runtime packs.
+- GitHub Actions now creates a ready-to-download `VisualFolderExplorer_v1.0.2_win-x64-portable.zip` containing `VisualFolderExplorer.exe` and all required .NET runtime files.
+- The portable package requires no .NET SDK or .NET Desktop Runtime on the target Windows 10/11 x64 PC.
+
+**Українська**
+- Виправлено pipeline збірки self-contained Windows x64 версії.
+- NuGet-конфігурацію розділено на `NuGet.Offline.Config` для локальної/корпоративної розробки без інтернету та `NuGet.Config` для CI/publish runtime-пакетів.
+- GitHub Actions тепер формує готовий `VisualFolderExplorer_v1.0.2_win-x64-portable.zip` з `VisualFolderExplorer.exe` та всіма необхідними файлами .NET runtime.
+- На цільовому Windows 10/11 x64 ПК не потрібно встановлювати .NET SDK або .NET Desktop Runtime.
+
+## v1.0.1 — 2026-09-22
+
+**English**
+- Fixed corporate/offline source builds that failed with `NU1301` when `api.nuget.org` was blocked.
+- Added repository `NuGet.Config` with external sources cleared; the project has no third-party NuGet package dependencies.
+- Disabled NuGet vulnerability audit for local restore/build to prevent unnecessary network calls.
+- Updated `StartDev.bat` and `BuildRelease.bat` to perform offline-safe restore and then build/run with `--no-restore`.
+- Changed `PublishWin64.bat` to create a **self-contained Windows x64 portable folder** that requires no .NET runtime/SDK on the target PC.
+- Added optional `PublishSingleFileWin64.bat` and `RunPublished.bat`.
+- Updated GitHub Actions to publish both self-contained portable-folder and single-file artifacts.
+- Added corporate deployment guidance covering code signing and legitimate IT allowlisting.
+
+**Українська**
+- Виправлено збірку з вихідного коду в корпоративних/offline-мережах, де блокування `api.nuget.org` спричиняло `NU1301`.
+- Додано локальний `NuGet.Config` з очищеними зовнішніми sources; у проєкті немає сторонніх NuGet-залежностей.
+- Вимкнено NuGet vulnerability audit для локального restore/build, щоб прибрати зайві мережеві звернення.
+- `StartDev.bat` і `BuildRelease.bat` тепер роблять offline-safe restore, після чого запускають build/run з `--no-restore`.
+- `PublishWin64.bat` тепер створює **self-contained portable Windows x64 папку**, яка не потребує .NET runtime/SDK на цільовому ПК.
+- Додано `PublishSingleFileWin64.bat` та `RunPublished.bat`.
+- GitHub Actions тепер створює обидва self-contained artifacts: portable folder і single-file.
+- Додано рекомендації для корпоративного розгортання через code signing та офіційний IT allowlisting.
+
+## v1.0.0 — 2026-09-22
+
+**English**
+- Full architecture migration from PowerShell/WPF to C#/.NET 8 WPF.
+- Split the application into models, services, reusable windows, XAML resources, and main-window orchestration.
+- Added asynchronous thumbnail loading with bounded concurrency and cancellation.
+- Added persistent disk + memory thumbnail caching.
+- Preserved explorer, text/Markdown workflow, image preview, 300% zoom/pan, sorting, clipboard operations, Recycle Bin deletion, auto-rename conflicts, UA/EN localization, remembered settings, custom folder picker, image mover, and selected-image scrollbar marker.
+- Added multi-select image copy/cut support.
+- Added Visual Studio solution, Release build script, development launcher, Win64 publish script, and GitHub Actions Windows build workflow.
+- Centralized shared C# WPF styles in `Resources/Styles.xaml`.
+
+**Українська**
+- Повністю перенесено архітектуру з PowerShell/WPF на C#/.NET 8 WPF.
+- Код розділено на моделі, сервіси, повторно використовувані вікна, XAML-ресурси та логіку головного вікна.
+- Додано асинхронне завантаження thumbnail із контрольованою паралельністю та скасуванням попереднього завантаження.
+- Додано постійний дисковий і оперативний кеш мініатюр.
+- Збережено Провідник, роботу з TXT/Markdown, прев'ю, zoom 300% і pan, сортування, clipboard, видалення до Кошика, автоперейменування конфліктів, UA/EN, збереження налаштувань, власний вибір папки, перенесення картинок і маркер вибраного зображення на скролбарі.
+- Додано мультивибір картинок для копіювання/вирізання.
+- Додано Visual Studio solution, Release build script, dev launcher, Win64 publish script і GitHub Actions workflow для Windows-збірки.
+- Спільні стилі C# WPF винесено в `Resources/Styles.xaml`.
 
 ## v0.11.1 — 2026-09-22
 
 **English**
-- Fixed vertical clipping/alignment of source and destination path fields in the image mover.
-- The Move images popup now remains open while choosing a source or destination folder.
-- Replaced the legacy Windows folder browser with a styled bilingual WPF folder picker that matches the application UI.
-- Added shared folder-picker list styling to `Styles.xaml`.
+- Fixed path-field vertical clipping in the image mover.
+- Kept the mover open while selecting folders.
+- Replaced the legacy system folder browser with a styled bilingual WPF folder picker.
 
 **Українська**
-- Виправлено вертикальне відображення та обрізання шляхів у полях «Звідки» і «Куди».
-- Панель «Перенесення зображень» тепер не закривається під час вибору папки-джерела або папки призначення.
-- Старе системне вікно вибору папок Windows замінено на стилізований двомовний WPF-провідник у стилі програми.
-- Стиль елементів вибору папок винесено до спільного `Styles.xaml`.
+- Виправлено обрізання тексту в полях шляхів меню перенесення.
+- Панель перенесення більше не закривалася під час вибору папки.
+- Системний Folder Browser замінено на стилізований двомовний WPF-вибір папки.
 
 ## v0.11.0 — 2026-09-22
 
 **English**
-- Centralized reusable interface styling in the new `Styles.xaml` file so buttons, menus, fields, dialogs, popups, ComboBoxes, and scrollbars can share one visual system.
-- Added a **Move images** drop-down panel between **Choose folder** and the UA/EN language selector.
-- The move source defaults to the currently open folder; the destination restores the last successful move destination and is empty until one exists.
-- Added folder pickers for source and destination.
-- Moving supports all image extensions recognized by the application, scans only the selected source folder, preserves original filenames, and resolves conflicts using `_1`, `_2`, etc.
-- The last successful move destination is stored in `settings.json`.
-- Added Ukrainian and English localization for the new image-moving UI.
-- Updated both READMEs and corrected the Semantic Versioning examples.
+- Added shared `Styles.xaml`.
+- Added the image mover between Choose folder and UA/EN.
+- Added remembered destination and `_1`, `_2` conflict renaming.
 
 **Українська**
-- Повторно використовувані стилі інтерфейсу винесено в новий файл `Styles.xaml`, щоб кнопки, меню, поля, діалоги, popup-панелі, ComboBox і скролбари використовували єдину візуальну систему.
-- Між кнопкою **«Обрати папку»** та перемикачем UA/EN додано випадаючу панель **«Перенести»** для перенесення зображень.
-- Поле джерела за замовчуванням містить поточну відкриту папку; поле призначення відновлює останню успішну адресу і до першого перенесення залишається порожнім.
-- Додано вибір папок для джерела та призначення.
-- Переносяться всі формати зображень, які підтримує програма, лише з вибраної папки без підпапок; початкові назви зберігаються, а конфлікти вирішуються суфіксами `_1`, `_2` тощо.
-- Остання успішна папка призначення зберігається у `settings.json`.
-- Новий інтерфейс перенесення локалізовано українською та англійською.
-- Оновлено обидва README та виправлено приклади Semantic Versioning.
+- Додано спільний `Styles.xaml`.
+- Додано меню перенесення зображень між «Обрати папку» та UA/EN.
+- Додано запам'ятовування призначення та перейменування `_1`, `_2` при конфліктах.
 
 ## v0.10.0 — 2026-09-22
 
 **English**
-- Added a persistent UA / EN language switcher in the top-right toolbar and made the application bilingual.
-- Added localized main UI labels, image sorting controls, context menus, create/rename/delete dialogs, and common status text.
-- Replaced the default Windows text-edit context menu with the application's modern styled menu and localized Cut / Copy / Paste / Select all actions.
-- Replaced the old system unsaved-changes MessageBox with a modern three-button Save / Don't save / Cancel dialog.
-- The selected interface language is now stored in `settings.json`.
-- Kept only `README.md` (English) and `README_UA.md` (Ukrainian); the legacy `README.txt` is not included.
+- Added persistent UA/EN localization.
+- Replaced default text context menu and unsaved-changes MessageBox with styled application dialogs.
+- Standardized README/PATCHLIST workflow.
 
 **Українська**
-- Додано перемикач UA / EN у правому верхньому куті та двомовний інтерфейс програми.
-- Локалізовано основні написи, сортування зображень, контекстні меню, вікна створення/перейменування/видалення та основні статусні повідомлення.
-- Стандартне системне меню редагування тексту замінено на сучасне меню програми з локалізованими діями «Вирізати / Копіювати / Вставити / Виділити все».
-- Системне попередження про незбережений текст замінено на сучасне трикнопкове вікно «Зберегти / Не зберігати / Скасувати».
-- Обрана мова інтерфейсу тепер зберігається у `settings.json`.
-- У комплекті залишаються лише `README.md` (англійською) та `README_UA.md` (українською); старий `README.txt` не додається.
+- Додано постійне перемикання UA/EN.
+- Стандартне меню тексту й системне попередження про незбережені зміни замінено стилізованими елементами програми.
+- Стандартизовано README/PATCHLIST.
 
 ## v0.9.1 — 2026-09-22
 
 **English**
-- Added this bilingual `PATCHLIST.md` and established it as the permanent release history.
-- Replaced the old Ukrainian-only `README.txt` with `README.md` as the primary English documentation.
-- Added `README_UA.md` as the Ukrainian documentation.
-- Updated the version number in the application and launcher.
+- Added English `README.md`, Ukrainian `README_UA.md`, and bilingual `PATCHLIST.md`.
 
 **Українська**
-- Додано двомовний `PATCHLIST.md`, який надалі є постійною історією релізів.
-- Старий україномовний `README.txt` замінено на основний англомовний `README.md`.
-- Додано окремий україномовний `README_UA.md`.
-- Оновлено номер версії у програмі та файлі запуску.
+- Додано англійський `README.md`, український `README_UA.md` і двомовний `PATCHLIST.md`.
 
 ## v0.9.0 — 2026-09-22
 
 **English**
-- Major performance optimization for folders containing hundreds or 1000+ images.
-- Added progressive thumbnail loading so the UI stays responsive while previews are created.
-- Reduced thumbnail decode size and memory usage.
-- Image context menus are now created on demand instead of for every tile at startup.
-- Removed repeated full-tile selection refreshes during image loading.
-- Folder contents are enumerated once per navigation and reused by Explorer, Images, and Text.
-- Large image collections are processed in smaller adaptive batches.
+- Major performance pass for 200–1000 image folders.
+- Added progressive batched thumbnails, smaller decode size, shared directory scan, and lazy image context menus.
 
 **Українська**
-- Значно оптимізовано роботу з папками, у яких сотні або 1000+ зображень.
-- Додано поступове завантаження прев'ю, щоб інтерфейс залишався доступним під час підвантаження.
-- Зменшено технічний розмір thumbnail та використання пам'яті.
-- Контекстні меню картинок створюються лише за потреби, а не для кожної плитки під час запуску.
-- Прибрано повторний повний перерахунок стану всіх плиток під час завантаження.
-- Вміст папки читається один раз і повторно використовується блоками «Провідник», «Зображення» та «Текст».
-- Великі колекції зображень обробляються невеликими адаптивними порціями.
+- Значна оптимізація папок із 200–1000 зображень.
+- Додано пакетне завантаження прев'ю, менший decode size, спільне сканування папки й ліниве створення контекстних меню.
 
-## v0.8.2 — 2026-09-21
+## v0.8.2 — 2026-09-22
 
 **English**
-- Fixed the selected-image scrollbar marker by positioning it relative to the actual scrollbar thumb instead of a hard-coded offset.
+- Reworked selected-image scrollbar marker alignment using the real scrollbar thumb.
 
 **Українська**
-- Виправлено позицію маркера вибраної картинки: тепер він прив'язується до фактичного повзунка скролбара, а не до фіксованого відступу.
+- Вирівнювання маркера вибраної картинки перероблено відносно реального thumb скролбара.
 
-## v0.8.1 — 2026-09-21
+## v0.8.1 — 2026-09-22
 
 **English**
-- First visual alignment fix for the selected-image scrollbar marker.
+- Visual adjustment of the selected-image scrollbar marker.
 
 **Українська**
-- Перше візуальне виправлення вирівнювання маркера вибраної картинки на скролбарі.
+- Візуально скориговано маркер вибраної картинки на скролбарі.
 
-## v0.8.0 — 2026-09-21
+## v0.8.0 — 2026-09-22
 
 **English**
-- Paste name conflicts now create a unique name such as `name_1`, `name_2`, etc. instead of skipping the item.
-- Switching TXT/MD files with the text-panel arrows now also selects and scrolls to the matching file in Explorer.
-- Added a persistent marker on the Images scrollbar to show approximately where the last selected image is located.
+- Added automatic `_1`, `_2` naming for paste conflicts.
+- Synced text-arrow navigation with Explorer selection.
+- Added a persistent selected-image level marker near the image scrollbar.
 
 **Українська**
-- При конфлікті назв під час вставлення новий файл або папка автоматично отримує унікальну назву на кшталт `назва_1`, `назва_2` тощо.
-- Перемикання TXT/MD стрілками в блоці «Текст» тепер також виділяє та прокручує до відповідного файла у «Провіднику».
-- Додано постійний маркер на скролбарі блока «Зображення», який показує приблизне положення останньої вибраної картинки.
+- Додано автоматичні `_1`, `_2` при конфліктах вставлення.
+- Стрілки текстових файлів синхронізовано з вибором у Провіднику.
+- Додано постійний маркер рівня вибраної картинки біля скролбара.
 
-## v0.7.2 — 2026-09-21
+## v0.7.2 — 2026-09-22
 
 **English**
-- Fixed a WPF startup crash caused by a forward `StaticResource` reference in the scrollbar styling.
+- Fixed remaining WPF `StaticResource` startup error.
 
 **Українська**
-- Виправлено падіння WPF під час запуску через передчасне посилання `StaticResource` у стилях скролбара.
+- Виправлено залишкову помилку запуску WPF `StaticResource`.
 
-## v0.7.1 — 2026-09-21
+## v0.7.1 — 2026-09-22
 
 **English**
-- Reworked the custom scrollbar XAML for better Windows PowerShell 5.1 / WPF compatibility.
-- Corrected the version displayed by the BAT launcher.
+- Fixed XAML startup error introduced by custom scrollbar styling.
 
 **Українська**
-- Перероблено XAML кастомного скролбара для кращої сумісності з Windows PowerShell 5.1 / WPF.
-- Виправлено номер версії, який показував BAT-файл запуску.
+- Виправлено XAML-помилку запуску, пов'язану зі стилізацією скролбара.
 
-## v0.7.0 — 2026-09-21
+## v0.7.0 — 2026-09-22
 
 **English**
-- Added styled buttons to rename/create dialogs.
-- Added custom styled delete confirmation dialogs.
-- Added paste to the empty area of the Images panel.
-- Added a custom scrollbar appearance and continued general UI polishing.
+- Styled rename/delete dialogs and buttons.
+- Added paste on empty image-panel area.
+- Added custom scrollbar visual styling.
 
 **Українська**
-- Додано стилізовані кнопки у вікнах перейменування та створення.
-- Додано власні стилізовані вікна підтвердження видалення.
-- Додано вставлення через правий клік по порожньому місцю блока «Зображення».
-- Додано кастомний вигляд скролбарів та продовжено загальне полірування інтерфейсу.
+- Стилізовано діалоги перейменування/видалення та кнопки.
+- Додано вставлення по порожньому місцю блока «Зображення».
+- Додано власне оформлення скролбара.
 
-## v0.6.2 — 2026-09-21
+## v0.6.2 — 2026-09-22
 
 **English**
-- Styled right-click context menus.
-- Styled image sorting ComboBoxes and their drop-down lists.
+- Styled right-click context menus and image-sort dropdowns.
 
 **Українська**
-- Стилізовано контекстні меню правої кнопки миші.
-- Стилізовано поля сортування зображень та їхні випадаючі списки.
+- Стилізовано контекстні меню та dropdown сортування зображень.
 
-## v0.6.1 — 2026-09-21
+## v0.6.1 — 2026-09-22
 
 **English**
-- Replaced the old Visual Basic InputBox with a cleaner custom text input dialog.
-- Improved spacing and width of image sorting controls.
+- Replaced old system rename/create input boxes with styled WPF dialogs.
 
 **Українська**
-- Старий Visual Basic InputBox замінено на акуратніше власне вікно вводу.
-- Покращено відступи та ширину елементів сортування зображень.
+- Старі системні InputBox для створення/перейменування замінено стилізованими WPF-діалогами.
 
-## v0.6.0 — 2026-09-21
+## v0.6.0 — 2026-09-22
 
 **English**
-- Renamed the left panel from “Folders” to “Explorer”.
-- Added image sorting by name, modified date, creation date, and size, with ascending/descending order.
-- Sorting preference is saved between launches.
-- Added folder creation plus cut/copy/rename/delete operations for folders.
-- Folder deletion sends the folder to the Windows Recycle Bin.
+- Renamed the left block to Explorer.
+- Added image sorting by name/date/size and ascending/descending direction.
+- Added create/cut/copy/rename/delete folder operations.
 
 **Українська**
-- Лівий блок «Папки» перейменовано на «Провідник».
-- Додано сортування зображень за назвою, датою зміни, датою створення та розміром, зі звичайним і зворотним напрямком.
-- Обраний тип сортування запам'ятовується між запусками.
-- Додано створення папок та операції вирізання, копіювання, перейменування і видалення папок.
-- Видалені папки відправляються до Кошика Windows.
+- Лівий блок перейменовано на «Провідник».
+- Додано сортування зображень за назвою/датою/розміром та прямим/зворотним порядком.
+- Додано створення, вирізання, копіювання, перейменування та видалення папок.
 
-## v0.5.0 — 2026-09-21
+## v0.5.0 — 2026-09-22
 
 **English**
-- Preview zoom changed to 300%.
-- Added active and soft “last selected” image highlights.
-- Markdown files now open in rendered Markdown view by default.
-- Added Edit/Preview switching for Markdown.
+- Increased image preview zoom to 300%.
+- Added active/last-image tile highlighting.
+- Added rendered Markdown view with edit/preview switching.
 
 **Українська**
-- Зум прев'ю змінено на 300%.
-- Додано яскраве виділення активної картинки та м'яке виділення останньої вибраної.
-- Markdown-файли тепер за замовчуванням відкриваються у відформатованому вигляді.
-- Додано перемикання Markdown між режимами «Редагувати» та «Перегляд».
+- Zoom прев'ю збільшено до 300%.
+- Додано активне/м'яке виділення вибраної картинки.
+- Додано відформатований Markdown та перемикання редагування/перегляду.
 
-## v0.4.1 — 2026-09-21
+## v0.4.1 — 2026-09-22
 
 **English**
-- Added persistence of window size and maximized state between launches.
+- Remembered window size and maximized state.
 
 **Українська**
-- Додано запам'ятовування розміру вікна та стану «на весь екран» між запусками.
+- Додано запам'ятовування розміру та розгорнутого стану вікна.
 
-## v0.4.0 — 2026-09-21
+## v0.4.0 — 2026-09-22
 
 **English**
-- Added panning of zoomed image previews by dragging with the left mouse button.
-- Added Paste to the Explorer empty-area context menu and `Ctrl+V` support.
-- Improved visibility of the current text filename.
-- TXT/MD files open with a single click in Explorer.
+- Added 200% preview pan.
+- Added paste from Windows clipboard / Ctrl+V.
+- Improved text filename visibility and one-click text opening.
 
 **Українська**
-- Додано переміщення збільшеного прев'ю затиснутою лівою кнопкою миші.
-- Додано «Вставити» у контекстне меню порожнього місця «Провідника» та підтримку `Ctrl+V`.
-- Покращено видимість назви поточного текстового файла.
-- TXT/MD-файли відкриваються одним кліком у «Провіднику».
+- Додано перетягування збільшеного до 200% прев'ю.
+- Додано вставлення з Windows clipboard / Ctrl+V.
+- Покращено відображення назви текстового файла та відкриття одним кліком.
 
-## v0.3.1 — 2026-09-21
+## v0.3.1 — 2026-09-22
 
 **English**
-- Fixed a PowerShell parsing error caused by typographic apostrophes in UI strings.
+- Fixed PowerShell parse error caused by typographic apostrophes.
 
 **Українська**
-- Виправлено помилку парсингу PowerShell, спричинену типографічними апострофами у текстах інтерфейсу.
+- Виправлено PowerShell ParseException через типографічні апострофи.
 
-## v0.3.0 — 2026-09-21
+## v0.3.0 — 2026-09-22
 
 **English**
-- Added click-to-zoom image preview behavior.
-- Added image context menu: cut, copy, rename, delete.
-- TXT/MD files are now listed in Explorer and have their own context menu.
-- Added creation of TXT and Markdown files from the Explorer empty area.
-- Deletes now go to the Windows Recycle Bin.
+- Added image zoom, image/text context menus, text files in Explorer, create TXT/MD, and Recycle Bin deletion.
 
 **Українська**
-- Додано збільшення картинки кліком у прев'ю.
-- Додано контекстне меню картинок: вирізати, копіювати, перейменувати, видалити.
-- TXT/MD-файли додано до «Провідника» з окремим контекстним меню.
-- Додано створення TXT і Markdown-файлів через правий клік по порожньому місцю.
-- Видалення тепер відправляє файли до Кошика Windows.
+- Додано zoom, контекстні меню зображень/тексту, текстові файли в Провіднику, створення TXT/MD і видалення до Кошика.
 
-## v0.2.0 — 2026-09-21
+## v0.2.0 — legacy PowerShell branch
 
 **English**
-- Added editing and saving of TXT and Markdown files.
-- Added `Ctrl+S`.
-- Added unsaved-change prompts when switching files/folders or closing the app.
-- Added basic encoding preservation.
+- Added TXT/MD editing and save workflow, text-file navigation, image preview in the right panel, last-folder memory, and navigation history.
 
 **Українська**
-- Додано редагування та збереження TXT і Markdown-файлів.
-- Додано `Ctrl+S`.
-- Додано попередження про незбережені зміни при переходах або закритті програми.
-- Додано базове збереження початкового кодування файла.
+- Додано редагування/збереження TXT/MD, навігацію між текстовими файлами, прев'ю праворуч, пам'ять останньої папки та історію навігації.
 
-## v0.1.1 — 2026-09-21
+## v0.1.0 — legacy PowerShell branch
 
 **English**
-- Moved the “Back to text” button to the left side.
-- Fixed navigation buttons so they work immediately when the last folder is restored at startup.
-- Improved restored navigation history behavior.
+- Added the first stable Explorer/Image/Text layout and folder navigation workflow.
 
 **Українська**
-- Кнопку «До тексту» перенесено в ліву частину панелі.
-- Виправлено кнопки навігації, щоб вони працювали одразу після автоматичного відкриття останньої папки.
-- Покращено відновлення історії навігації.
+- Додано першу стабільну структуру Провідник/Зображення/Текст і навігацію по папках.
 
-## v0.1.0 — 2026-09-21
+## v0.0.1–v0.0.x — prototype branch
 
 **English**
-- Fixed image preview invocation errors.
-- Image preview moved into the right panel instead of a separate window.
-- Added “Back to text”.
-- Added remembering and restoring the last opened folder.
+- Initial PowerShell/WPF prototype: choose a folder, show image tiles and text files, switch between text descriptions.
 
 **Українська**
-- Виправлено помилки виклику прев'ю зображення.
-- Прев'ю перенесено у праву панель замість окремого вікна.
-- Додано кнопку «До тексту».
-- Додано запам'ятовування та відновлення останньої відкритої папки.
-
-## v0.0.2 — 2026-09-21
-
-**English**
-- Reworked the launcher to avoid the common unsigned PowerShell script execution-policy block.
-
-**Українська**
-- Перероблено запуск, щоб обійти типове блокування непідписаних PowerShell-скриптів політикою виконання Windows.
-
-## v0.0.1 — 2026-09-21
-
-**English**
-- Initial working prototype.
-- Folder navigation, image thumbnails, and TXT viewing in a right-side panel.
-- Added switching between multiple text files using arrow buttons.
-
-**Українська**
-- Перша робоча версія.
-- Навігація по папках, плитки зображень та перегляд TXT у правій панелі.
-- Додано перемикання між кількома текстовими файлами стрілками.
+- Початковий прототип PowerShell/WPF: вибір папки, плитки зображень, текстові файли та перемикання між описами.

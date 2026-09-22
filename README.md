@@ -1,124 +1,131 @@
-# Visual Folder Explorer v0.11.1
+# Visual Folder Explorer v1.0.2
 
-Visual Folder Explorer is a lightweight Windows desktop application for browsing folders that contain many images together with TXT or Markdown notes. It is designed for a workflow where images are shown as thumbnails while the related text remains available in the same window.
+Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-> Ukrainian documentation: see `README_UA.md`.
-> Release history: see `PATCHLIST.md`.
+**v1.0.2 is the first deployment/hardening patch after the C#/.NET 8 WPF rewrite.** The goal of the rewrite is better performance, maintainability, asynchronous image loading, thumbnail caching, and a cleaner foundation for future features.
 
 ## Requirements
 
-- Windows 10 or Windows 11
-- Windows PowerShell 5.1
-- .NET Framework / WPF available in Windows
-- No Python, Node.js, or third-party runtime is required
+### End users
 
-## Start
+- Windows 10 or Windows 11 x64.
+- Use the **self-contained published build**. It does **not** require the .NET SDK or .NET Desktop Runtime to be installed.
 
-1. Extract the entire `VisualFolderExplorer_v0.11.1` folder.
-2. Double-click `Start Visual Folder Explorer.bat`.
-3. On first launch, choose the root folder with your materials.
-4. On later launches, the application restores the last opened folder and saved window state.
+### Developers / build machines
 
-## Main layout
+- .NET 8 SDK, or Visual Studio 2022 with the **.NET desktop development** workload.
+- Internet access is not required for this project itself because it has no third-party `PackageReference` dependencies. `NuGet.Config` clears external package sources and NuGet audit is disabled for local restore.
 
-- **Explorer** — folders plus TXT/MD files in the current location.
-- **Images** — image thumbnails with sorting and file operations.
-- **Text / Preview** — TXT/Markdown content or the selected image preview.
+## Run / publish
 
-## Explorer
+### Development
 
-- Double-click a folder to open it.
-- Click a `.txt` or `.md` file to open it in the right panel.
-- Right-click folders or text files for file operations.
-- Right-click empty space to paste items, create a folder, create a TXT file, or create a Markdown file.
-- Cut/copy/paste works with the Windows clipboard.
-- Name conflicts during paste are resolved automatically using suffixes such as `_1`, `_2`, and so on.
-- Deleted files and folders are sent to the Windows Recycle Bin.
+- Open `VisualFolderExplorer.sln` in Visual Studio and press **F5**, or
+- run `StartDev.bat` on a machine with the .NET 8 SDK.
 
-## Images
+`StartDev.bat` now restores with the repository's offline-safe `NuGet.Config`, so a corporate firewall blocking `api.nuget.org` no longer breaks this project when the local SDK contains the required Windows Desktop reference packs.
 
-Supported formats: JPG, JPEG, PNG, BMP, GIF, TIFF/TIF, and WEBP when the required WPF codec is available.
+### End-user build without .NET installed
 
-- Images are shown as thumbnails.
-- Sort by name, modification date, creation date, or file size.
-- Use ascending or descending order.
-- The chosen sorting mode is remembered between launches.
-- Click an image to open it in the right preview panel.
-- The image currently open in preview is strongly highlighted.
-- After returning to text, the last selected image remains softly highlighted.
-- A marker on the image scrollbar shows approximately where the selected image is located in a large folder.
-- Right-click an image for cut, copy, rename, or delete.
-- Right-click empty space in the Images area to paste clipboard items into the current folder.
+Run `PublishWin64.bat` on the **developer/build machine**. It creates:
 
-### Preview zoom
+`publish\win-x64-portable\`
 
-- Click the preview to zoom to **300%**.
-- While zoomed, hold the left mouse button and drag to pan around the image.
-- Click without dragging to return to 100%.
+Copy the entire folder to the target PC and run `VisualFolderExplorer.exe`. The target PC does **not** need .NET or the SDK installed.
 
-## TXT and Markdown
+`PublishSingleFileWin64.bat` additionally creates an optional self-contained single-file build. For tightly managed enterprise PCs, the portable self-contained folder is generally preferable because security/IT teams can inspect and allowlist the executable and its runtime files without a self-extracting bundle.
 
-- TXT files open in the text editor.
-- Markdown files open in rendered Markdown mode by default.
-- Use **Edit** to show Markdown source and **Preview** to return to formatted view.
-- Save with the **Save** button or `Ctrl+S`.
-- Use the left/right arrows below the text panel to switch between text files.
-- The corresponding file is also selected in Explorer when switching with the arrows.
+GitHub Actions now publishes both self-contained variants automatically.
 
 
-## Move images
+## Corporate deployment
 
-A **Move images** button is located between **Choose folder** and the UA/EN language selector. It opens a styled drop-down panel:
+Self-contained publishing removes the .NET installation requirement, but it does **not** bypass enterprise security controls. On managed PCs, execution may still be governed by Microsoft Defender, SmartScreen, AppLocker, WDAC, EDR, or organization-specific allowlists.
 
-- **From** defaults to the folder currently open in Visual Folder Explorer.
-- **To** restores the last successful destination; it is empty until a destination has been used.
-- Browse buttons can be used for both paths. They open the built-in styled WPF folder picker while keeping the Move images panel open in the background.
-- Supported image files in the source folder are moved without scanning subfolders.
-- Original filenames are preserved. If the destination already contains the same name, the moved file is renamed automatically using `_1`, `_2`, and so on.
-- The last successful destination is saved in `settings.json`.
+For legitimate enterprise deployment:
 
-## Shared UI styles
+- prefer the self-contained **portable folder** build;
+- Authenticode-sign `VisualFolderExplorer.exe` with an organization-trusted code-signing certificate;
+- ask IT to allowlist the signed publisher or approved application hash/path according to company policy;
+- for broad deployment, package the signed build as MSI/MSIX through the organization's normal software-distribution process.
 
-All reusable UI styling is centralized in `Styles.xaml`. New buttons, context menus, combo boxes, text fields, dialogs, popups, and scrollbars should use these shared styles so new features match the rest of the application automatically.
+See `DEPLOYMENT.md` for details.
 
-## Interface languages
+## Main features
 
-Use the **UA / EN** drop-down in the top-right corner to switch the entire interface between Ukrainian and English. The selected language is remembered between launches. Context menus, file-operation dialogs, unsaved-change prompts, sorting controls, and main navigation labels follow the selected language.
+- Explorer panel with folders and `.txt` / `.md` files.
+- Image tile browser with sorting by name, modified date, creation date, and size, in ascending or descending order.
+- Progressive asynchronous thumbnail loading so large folders remain responsive.
+- Persistent thumbnail cache under `%LOCALAPPDATA%\VisualFolderExplorer\thumbcache`.
+- Large image preview with 300% zoom and mouse panning.
+- Last selected image marker next to the image scrollbar.
+- Text editing with save / `Ctrl+S` workflow and unsaved-change confirmation.
+- Markdown files open in rendered preview mode and can be switched to source-edit mode.
+- Previous/next text-file navigation synchronized with the Explorer selection.
+- Copy, cut, paste, rename, create, and delete operations for files/folders.
+- Deleted items go to the Windows Recycle Bin.
+- Paste conflicts are resolved automatically with `_1`, `_2`, etc.
+- Multi-select images with Ctrl/Shift for copy/cut operations.
+- Styled image-moving dialog with remembered destination and automatic conflict renaming.
+- Custom styled folder picker.
+- UA / EN interface switch, remembered between launches.
+- Window size/state, last folder, sorting, language, last image, and move destination are persisted in `settings.json`.
 
-## Performance
+## Architecture
 
-Version 0.9.x is optimized for folders containing hundreds or even 1000+ images:
+The rewrite separates responsibilities instead of keeping everything in one script:
 
-- progressive thumbnail loading keeps the window responsive;
-- thumbnail decode size is reduced to lower memory and CPU usage;
-- image context menus are created only when needed;
-- repeated full-tile selection refreshes during loading were removed;
-- folder contents are enumerated once per navigation and reused across panels;
-- large image collections are processed in smaller batches.
+- `MainWindow.xaml/.cs` — main UI and orchestration.
+- `Models/` — explorer and image data models.
+- `Services/SettingsService.cs` — JSON settings persistence.
+- `Services/ThumbnailService.cs` — async thumbnail generation + disk/memory cache.
+- `Services/FileService.cs` — clipboard, recycle-bin, copy/move, conflict-safe naming.
+- `Services/LocalizationService.cs` — Ukrainian/English UI text.
+- `Services/MarkdownService.cs` — basic Markdown rendering.
+- `Windows/` — reusable styled dialogs and folder/image-move windows.
+- `Resources/Styles.xaml` — the single shared visual-style file for buttons, menus, fields, ComboBoxes, list items, dialogs, and other controls.
 
-## Saved settings
+## Shared styles
 
-Application state is stored in:
+New UI should reuse styles from `Resources/Styles.xaml`. There are also implicit styles for common controls, so new buttons, text fields, ComboBoxes, context menus, menu items, separators, and scrollbars automatically start with the same visual language.
 
-```text
-%LOCALAPPDATA%\VisualFolderExplorer\settings.json
-```
+## Large-folder performance
 
-The application remembers the last folder, navigation history, window size/state, image sorting preferences, selected interface language, and the last image-move destination.
+The C# version improves the 200–1000+ image workflow with:
 
-## Project files
+- one directory scan per navigation;
+- batched model insertion;
+- bounded-concurrency thumbnail loading;
+- background decode work;
+- 240 px tile thumbnails;
+- frozen WPF bitmap sources;
+- persistent thumbnail cache;
+- cancellation when the user switches folders/sorting before the previous load completes.
 
-- `VisualFolderExplorer.ps1` — application code
-- `Styles.xaml` — shared visual styles for buttons, menus, fields, popups, dialogs, and scrollbars
-- `Start Visual Folder Explorer.bat` — launcher
-- `README.md` — primary English documentation
-- `README_UA.md` — Ukrainian documentation
-- `PATCHLIST.md` — bilingual release history
+The current tile layout still uses a WPF `WrapPanel`; a future release can add true virtualized wrapping for even larger libraries (several thousand images).
+
+## Settings and cache
+
+Settings:
+
+`%LOCALAPPDATA%\VisualFolderExplorer\settings.json`
+
+The C# rewrite keeps the legacy settings property names, so existing PowerShell-era settings can be reused where compatible.
+
+Thumbnail cache:
+
+`%LOCALAPPDATA%\VisualFolderExplorer\thumbcache`
+
+## Supported image formats
+
+JPG, JPEG, PNG, BMP, GIF, TIFF/TIF and WEBP when the Windows/WPF codec can decode it.
 
 ## Versioning
 
-The project uses Semantic Versioning-style release numbers:
+Semantic Versioning is used:
 
-- PATCH: fixes and small non-breaking changes, e.g. `v0.10.0 → v0.10.1`
-- MINOR: new backward-compatible features, e.g. `v0.10.1 → v0.11.1`
-- MAJOR: major or breaking releases, e.g. `v0.x.x → v1.0.0`
+- PATCH — fixes and small compatible changes;
+- MINOR — backward-compatible features;
+- MAJOR — major/breaking changes or architecture migrations.
+
+The PowerShell → C# rewrite was released as **v1.0.0**. Deployment/offline-restore fixes are released as **v1.0.2**.
