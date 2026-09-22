@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.7.2'
+$script:AppVersion = '0.8.0'
 $script:ImageSortField = 'Name'
 $script:ImageSortDescending = $false
 $script:InitializingSortControls = $true
@@ -27,6 +27,7 @@ $script:PreviewScaleTransform = $null
 $script:PreviewTranslateTransform = $null
 $script:LastSelectedImagePath = $null
 $script:ImageTiles = @{}
+$script:SyncingExplorerSelection = $false
 $script:IsCurrentMarkdown = $false
 $script:MarkdownRendered = $false
 $script:IsLoadingText = $false
@@ -106,7 +107,7 @@ $script:SendFolderToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.7.2" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.8.0" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -575,12 +576,31 @@ $script:SendFolderToRecycleBinAction = {
                         </ComboBox>
                         <TextBlock x:Name="ImageCountText" Grid.Column="4" Foreground="#7A838B" FontSize="13" VerticalAlignment="Center"/>
                     </Grid>
-                    <ScrollViewer x:Name="ImageScrollViewer" Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="Transparent">
-                        <ScrollViewer.Resources>
-                            <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernVerticalScrollBar}"/>
-                        </ScrollViewer.Resources>
-                        <WrapPanel x:Name="ImagePanel" Orientation="Horizontal" Background="Transparent"/>
-                    </ScrollViewer>
+                    <Grid Grid.Row="2">
+                        <ScrollViewer x:Name="ImageScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="Transparent">
+                            <ScrollViewer.Resources>
+                                <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernVerticalScrollBar}"/>
+                            </ScrollViewer.Resources>
+                            <WrapPanel x:Name="ImagePanel" Orientation="Horizontal" Background="Transparent"/>
+                        </ScrollViewer>
+                        <Canvas x:Name="ImageScrollMarkerLayer"
+                                Width="12"
+                                Margin="0,3,0,3"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Stretch"
+                                IsHitTestVisible="False"
+                                Panel.ZIndex="50">
+                            <Border x:Name="ImageScrollMarker"
+                                    Width="10"
+                                    Height="4"
+                                    Canvas.Left="1"
+                                    Background="#2B7CD3"
+                                    BorderBrush="White"
+                                    BorderThickness="1"
+                                    CornerRadius="2"
+                                    Visibility="Collapsed"/>
+                        </Canvas>
+                    </Grid>
                 </Grid>
             </Border>
 
@@ -673,6 +693,8 @@ $PathText        = $window.FindName('PathText')
 $FolderList      = $window.FindName('FolderList')
 $ImagePanel      = $window.FindName('ImagePanel')
 $ImageScrollViewer = $window.FindName('ImageScrollViewer')
+$ImageScrollMarkerLayer = $window.FindName('ImageScrollMarkerLayer')
+$ImageScrollMarker = $window.FindName('ImageScrollMarker')
 $ImageCountText  = $window.FindName('ImageCountText')
 $ImageSortFieldCombo = $window.FindName('ImageSortFieldCombo')
 $ImageSortDirectionCombo = $window.FindName('ImageSortDirectionCombo')
@@ -994,6 +1016,97 @@ function New-BitmapImage([string]$path, [int]$decodeWidth = 0) {
     }
 }
 
+
+function Get-UniqueDestinationPath {
+    param(
+        [string]$Destination,
+        [bool]$IsDirectory
+    )
+
+    if (-not (Test-Path -LiteralPath $Destination)) { return $Destination }
+
+    $directory = [System.IO.Path]::GetDirectoryName($Destination)
+    $leaf = [System.IO.Path]::GetFileName($Destination)
+    if ($IsDirectory) {
+        $baseName = $leaf
+        $extension = ''
+    } else {
+        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($leaf)
+        $extension = [System.IO.Path]::GetExtension($leaf)
+    }
+
+    $counter = 1
+    do {
+        $candidateName = "${baseName}_$counter$extension"
+        $candidate = Join-Path $directory $candidateName
+        $counter++
+    } while (Test-Path -LiteralPath $candidate)
+
+    return $candidate
+}
+
+function Sync-ExplorerSelectionToCurrentText {
+    if ($script:TextFiles.Count -eq 0 -or $script:TextIndex -lt 0 -or $script:TextIndex -ge $script:TextFiles.Count) { return }
+    $targetPath = $script:TextFiles[$script:TextIndex].FullName
+
+    foreach ($item in @($FolderList.Items)) {
+        if ($null -eq $item -or $null -eq $item.Tag) { continue }
+        $tag = $item.Tag
+        if ($tag.Type -eq 'Text' -and ([string]$tag.Path).Equals($targetPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $script:SyncingExplorerSelection = $true
+            try {
+                $FolderList.SelectedItem = $item
+                $FolderList.ScrollIntoView($item)
+            } finally {
+                $script:SyncingExplorerSelection = $false
+            }
+            break
+        }
+    }
+}
+
+function Update-ImageScrollMarker {
+    if ($null -eq $ImageScrollMarker -or $null -eq $ImageScrollMarkerLayer) { return }
+
+    if ([string]::IsNullOrWhiteSpace($script:LastSelectedImagePath) -or
+        -not $script:ImageTiles.ContainsKey($script:LastSelectedImagePath)) {
+        $ImageScrollMarker.Visibility = 'Collapsed'
+        return
+    }
+
+    $tile = $script:ImageTiles[$script:LastSelectedImagePath]
+    if ($null -eq $tile) {
+        $ImageScrollMarker.Visibility = 'Collapsed'
+        return
+    }
+
+    $contentHeight = [double]$ImagePanel.ActualHeight
+    $trackHeight = [double]$ImageScrollMarkerLayer.ActualHeight
+    if ($contentHeight -le 0 -or $trackHeight -le 0) {
+        $ImageScrollMarker.Visibility = 'Collapsed'
+        return
+    }
+
+    try {
+        $point = $tile.TranslatePoint([System.Windows.Point]::new(0, 0), $ImagePanel)
+        $tileHeight = [double]$tile.ActualHeight
+        if ($tileHeight -le 0) { $tileHeight = [double]$tile.Height }
+        $centerY = [double]$point.Y + ($tileHeight / 2.0)
+        $ratio = $centerY / $contentHeight
+        if ($ratio -lt 0) { $ratio = 0 }
+        if ($ratio -gt 1) { $ratio = 1 }
+
+        $markerHeight = [double]$ImageScrollMarker.ActualHeight
+        if ($markerHeight -le 0) { $markerHeight = 4.0 }
+        $available = [Math]::Max(0.0, $trackHeight - $markerHeight)
+        $top = [Math]::Max(0.0, [Math]::Min($available, $ratio * $available))
+        [System.Windows.Controls.Canvas]::SetTop($ImageScrollMarker, $top)
+        $ImageScrollMarker.Visibility = 'Visible'
+    } catch {
+        $ImageScrollMarker.Visibility = 'Collapsed'
+    }
+}
+
 function Update-ImageTileSelection {
     foreach ($entry in @($script:ImageTiles.GetEnumerator())) {
         $path = [string]$entry.Key
@@ -1020,6 +1133,7 @@ function Update-ImageTileSelection {
             $tile.BorderThickness = [System.Windows.Thickness]::new(1)
         }
     }
+    Update-ImageScrollMarker
 }
 
 function Add-MarkdownInlineContent {
@@ -1322,6 +1436,7 @@ function Paste-ClipboardItems {
 
     $successCount = 0
     $skipCount = 0
+    $renamedCount = 0
     $errors = New-Object System.Collections.Generic.List[string]
 
     foreach ($source in @($clip.Paths)) {
@@ -1329,20 +1444,21 @@ function Paste-ClipboardItems {
             if (-not (Test-Path -LiteralPath $source)) { $skipCount++; continue }
             $name = Split-Path -Leaf $source
             $destination = Join-Path $script:CurrentFolder $name
+            $sourceIsDirectory = (Test-Path -LiteralPath $source -PathType Container)
 
             $resolvedSource = (Resolve-Path -LiteralPath $source).Path
-            if ($resolvedSource.Equals($destination, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $sameAsDestination = $resolvedSource.Equals($destination, [System.StringComparison]::OrdinalIgnoreCase)
+            if ($sameAsDestination -and $clip.IsCut) {
                 $skipCount++
                 continue
             }
 
             if (Test-Path -LiteralPath $destination) {
-                $errors.Add("'$name' вже існує у поточній папці.")
-                $skipCount++
-                continue
+                $destination = Get-UniqueDestinationPath -Destination $destination -IsDirectory $sourceIsDirectory
+                $renamedCount++
             }
 
-            if (Test-Path -LiteralPath $source -PathType Container) {
+            if ($sourceIsDirectory) {
                 $sourcePrefix = $resolvedSource.TrimEnd('\') + '\'
                 $targetResolved = [System.IO.Path]::GetFullPath($script:CurrentFolder).TrimEnd('\') + '\'
                 if ($targetResolved.StartsWith($sourcePrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
@@ -1355,7 +1471,7 @@ function Paste-ClipboardItems {
             if ($clip.IsCut) {
                 Move-Item -LiteralPath $source -Destination $destination -ErrorAction Stop
             } else {
-                if (Test-Path -LiteralPath $source -PathType Container) {
+                if ($sourceIsDirectory) {
                     Copy-Item -LiteralPath $source -Destination $destination -Recurse -ErrorAction Stop
                 } else {
                     Copy-Item -LiteralPath $source -Destination $destination -ErrorAction Stop
@@ -1380,7 +1496,8 @@ function Paste-ClipboardItems {
     }
 
     $actionWord = if ($clip.IsCut) { 'Переміщено' } else { 'Скопійовано' }
-    $StatusText.Text = "${actionWord}: $successCount. Пропущено: $skipCount."
+    $renameInfo = if ($renamedCount -gt 0) { " Автоперейменовано через збіг назв: $renamedCount." } else { '' }
+    $StatusText.Text = "${actionWord}: $successCount. Пропущено: $skipCount.$renameInfo"
 
     if ($errors.Count -gt 0) {
         [System.Windows.MessageBox]::Show(
@@ -1660,6 +1777,7 @@ Reset-PreviewTransform
             Set-MarkdownViewMode $false
         }
         Set-TextDirty $false
+        Sync-ExplorerSelectionToCurrentText
     } finally {
         $script:IsLoadingText = $false
     }
@@ -1857,6 +1975,11 @@ function Load-Images([string]$folder) {
             $empty.FontSize = 14
             $ImagePanel.Children.Add($empty) | Out-Null
         }
+
+        $window.Dispatcher.BeginInvoke([System.Action]{
+            Update-ImageTileSelection
+            Update-ImageScrollMarker
+        }, [System.Windows.Threading.DispatcherPriority]::Loaded) | Out-Null
     } catch {
         $ImageCountText.Text = '0 файлів'
         $StatusText.Text = "Помилка читання зображень: $($_.Exception.Message)"
@@ -2471,6 +2594,7 @@ $TextViewer.Add_TextChanged({
 })
 
 $FolderList.Add_SelectionChanged({
+    if ($script:SyncingExplorerSelection) { return }
     if (-not $FolderList.SelectedItem -or -not $FolderList.SelectedItem.Tag) { return }
     $tag = $FolderList.SelectedItem.Tag
     if ($tag.Type -eq 'Text') {
@@ -2525,6 +2649,15 @@ $ImageScrollViewer.Add_PreviewMouseRightButtonUp({
     } catch {
         # ignore
     }
+})
+
+
+$ImagePanel.Add_SizeChanged({
+    Update-ImageScrollMarker
+})
+
+$ImageScrollViewer.Add_SizeChanged({
+    Update-ImageScrollMarker
 })
 
 $PreviewImage.Add_PreviewMouseLeftButtonDown({
