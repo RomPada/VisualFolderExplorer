@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.9.0'
+$script:AppVersion = '0.9.1'
 $script:ImageSortField = 'Name'
 $script:ImageSortDescending = $false
 $script:InitializingSortControls = $true
@@ -136,7 +136,7 @@ $script:SendFolderToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.9.0" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.9.1" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
