@@ -1,4 +1,4 @@
-# Visual Folder Explorer v0.10.0
+# Visual Folder Explorer v0.11.0
 
 Visual Folder Explorer is a lightweight Windows desktop application for browsing folders that contain many images together with TXT or Markdown notes. It is designed for a workflow where images are shown as thumbnails while the related text remains available in the same window.
 
@@ -14,7 +14,7 @@ Visual Folder Explorer is a lightweight Windows desktop application for browsing
 
 ## Start
 
-1. Extract the entire `VisualFolderExplorer_v0.10.0` folder.
+1. Extract the entire `VisualFolderExplorer_v0.11.0` folder.
 2. Double-click `Start Visual Folder Explorer.bat`.
 3. On first launch, choose the root folder with your materials.
 4. On later launches, the application restores the last opened folder and saved window state.
@@ -66,6 +66,21 @@ Supported formats: JPG, JPEG, PNG, BMP, GIF, TIFF/TIF, and WEBP when the require
 - The corresponding file is also selected in Explorer when switching with the arrows.
 
 
+## Move images
+
+A **Move images** button is located between **Choose folder** and the UA/EN language selector. It opens a styled drop-down panel:
+
+- **From** defaults to the folder currently open in Visual Folder Explorer.
+- **To** restores the last successful destination; it is empty until a destination has been used.
+- Browse buttons can be used for both paths.
+- Supported image files in the source folder are moved without scanning subfolders.
+- Original filenames are preserved. If the destination already contains the same name, the moved file is renamed automatically using `_1`, `_2`, and so on.
+- The last successful destination is saved in `settings.json`.
+
+## Shared UI styles
+
+All reusable UI styling is centralized in `Styles.xaml`. New buttons, context menus, combo boxes, text fields, dialogs, popups, and scrollbars should use these shared styles so new features match the rest of the application automatically.
+
 ## Interface languages
 
 Use the **UA / EN** drop-down in the top-right corner to switch the entire interface between Ukrainian and English. The selected language is remembered between launches. Context menus, file-operation dialogs, unsaved-change prompts, sorting controls, and main navigation labels follow the selected language.
@@ -89,11 +104,12 @@ Application state is stored in:
 %LOCALAPPDATA%\VisualFolderExplorer\settings.json
 ```
 
-The application remembers the last folder, navigation history, window size/state, image sorting preferences, and selected interface language.
+The application remembers the last folder, navigation history, window size/state, image sorting preferences, selected interface language, and the last image-move destination.
 
 ## Project files
 
 - `VisualFolderExplorer.ps1` — application code
+- `Styles.xaml` — shared visual styles for buttons, menus, fields, popups, dialogs, and scrollbars
 - `Start Visual Folder Explorer.bat` — launcher
 - `README.md` — primary English documentation
 - `README_UA.md` — Ukrainian documentation
@@ -103,6 +119,6 @@ The application remembers the last folder, navigation history, window size/state
 
 The project uses Semantic Versioning-style release numbers:
 
-- PATCH: fixes and small non-breaking changes, e.g. `v0.9.0 → v0.10.0`
-- MINOR: new backward-compatible features, e.g. `v0.8.2 → v0.9.0`
+- PATCH: fixes and small non-breaking changes, e.g. `v0.10.0 → v0.10.1`
+- MINOR: new backward-compatible features, e.g. `v0.10.1 → v0.11.0`
 - MAJOR: major or breaking releases, e.g. `v0.x.x → v1.0.0`

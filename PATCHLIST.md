@@ -6,6 +6,28 @@ Every release of Visual Folder Explorer is recorded here. Each entry is provided
 
 ---
 
+## v0.11.0 — 2026-09-22
+
+**English**
+- Centralized reusable interface styling in the new `Styles.xaml` file so buttons, menus, fields, dialogs, popups, ComboBoxes, and scrollbars can share one visual system.
+- Added a **Move images** drop-down panel between **Choose folder** and the UA/EN language selector.
+- The move source defaults to the currently open folder; the destination restores the last successful move destination and is empty until one exists.
+- Added folder pickers for source and destination.
+- Moving supports all image extensions recognized by the application, scans only the selected source folder, preserves original filenames, and resolves conflicts using `_1`, `_2`, etc.
+- The last successful move destination is stored in `settings.json`.
+- Added Ukrainian and English localization for the new image-moving UI.
+- Updated both READMEs and corrected the Semantic Versioning examples.
+
+**Українська**
+- Повторно використовувані стилі інтерфейсу винесено в новий файл `Styles.xaml`, щоб кнопки, меню, поля, діалоги, popup-панелі, ComboBox і скролбари використовували єдину візуальну систему.
+- Між кнопкою **«Обрати папку»** та перемикачем UA/EN додано випадаючу панель **«Перенести»** для перенесення зображень.
+- Поле джерела за замовчуванням містить поточну відкриту папку; поле призначення відновлює останню успішну адресу і до першого перенесення залишається порожнім.
+- Додано вибір папок для джерела та призначення.
+- Переносяться всі формати зображень, які підтримує програма, лише з вибраної папки без підпапок; початкові назви зберігаються, а конфлікти вирішуються суфіксами `_1`, `_2` тощо.
+- Остання успішна папка призначення зберігається у `settings.json`.
+- Новий інтерфейс перенесення локалізовано українською та англійською.
+- Оновлено обидва README та виправлено приклади Semantic Versioning.
+
 ## v0.10.0 — 2026-09-22
 
 **English**
