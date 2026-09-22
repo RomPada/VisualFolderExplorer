@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.4.1'
+$script:AppVersion = '0.5.0'
 $script:PreviewZoomed = $false
 $script:PreviewImagePath = $null
 $script:PreviewDragging = $false
@@ -22,6 +22,10 @@ $script:PreviewDragOriginX = 0.0
 $script:PreviewDragOriginY = 0.0
 $script:PreviewScaleTransform = $null
 $script:PreviewTranslateTransform = $null
+$script:LastSelectedImagePath = $null
+$script:ImageTiles = @{}
+$script:IsCurrentMarkdown = $false
+$script:MarkdownRendered = $false
 $script:IsLoadingText = $false
 $script:TextDirty = $false
 $script:CurrentTextEncoding = [System.Text.UTF8Encoding]::new($false)
@@ -78,7 +82,7 @@ $script:SendFileToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.4.1" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.5.0" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -241,17 +245,23 @@ $script:SendFileToRecycleBinAction = {
                         </Grid.ColumnDefinitions>
                         <Button x:Name="ReturnToTextButton" Grid.Row="0" Grid.Column="0" Content="До тексту" Style="{StaticResource ToolbarButton}" Margin="0,0,8,0" Padding="9,5" FontSize="12" Visibility="Collapsed" ToolTip="Повернутися до текстового опису"/>
                         <TextBlock x:Name="SidePanelTitle" Grid.Row="0" Grid.Column="1" Text="Текст" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23" VerticalAlignment="Center"/>
-                        <Button x:Name="SaveTextButton" Grid.Row="0" Grid.Column="2" Content="Зберегти" Style="{StaticResource ToolbarButton}" Margin="0" Padding="10,5" FontSize="12" IsEnabled="False" ToolTip="Зберегти зміни (Ctrl+S)"/>
+                        <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal">
+                            <Button x:Name="MarkdownModeButton" Content="Редагувати" Style="{StaticResource ToolbarButton}" Margin="0,0,8,0" Padding="10,5" FontSize="12" Visibility="Collapsed" ToolTip="Перемкнути між переглядом Markdown і редагуванням"/>
+                            <Button x:Name="SaveTextButton" Content="Зберегти" Style="{StaticResource ToolbarButton}" Margin="0" Padding="10,5" FontSize="12" IsEnabled="False" ToolTip="Зберегти зміни (Ctrl+S)"/>
+                        </StackPanel>
                         <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,0,0" Padding="9,6" Background="#F5F7F9" CornerRadius="7">
                             <TextBlock x:Name="TextFileName" Foreground="#2F3740" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" TextAlignment="Left" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
                         </Border>
                     </Grid>
 
                     <Grid Grid.Row="2">
-                        <Border x:Name="TextContentBorder" BorderBrush="#E6EAED" BorderThickness="1" CornerRadius="8" Background="#FBFCFD">
-                            <TextBox x:Name="TextViewer" BorderThickness="0" Background="Transparent" Padding="12" TextWrapping="Wrap"
-                                     AcceptsReturn="True" AcceptsTab="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                                     IsReadOnly="True" FontSize="14" Foreground="#252A2E" SpellCheck.IsEnabled="False"/>
+                        <Border x:Name="TextContentBorder" BorderBrush="#E6EAED" BorderThickness="1" CornerRadius="8" Background="#FBFCFD" ClipToBounds="True">
+                            <Grid>
+                                <TextBox x:Name="TextViewer" BorderThickness="0" Background="Transparent" Padding="12" TextWrapping="Wrap"
+                                         AcceptsReturn="True" AcceptsTab="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                         IsReadOnly="True" FontSize="14" Foreground="#252A2E" SpellCheck.IsEnabled="False"/>
+                                <FlowDocumentScrollViewer x:Name="MarkdownViewer" Visibility="Collapsed" IsToolBarVisible="False" Background="Transparent"/>
+                            </Grid>
                         </Border>
 
                         <Border x:Name="PreviewContentBorder" BorderBrush="#E6EAED" BorderThickness="1" CornerRadius="8" Background="#101214" Visibility="Collapsed" ClipToBounds="True">
@@ -293,6 +303,8 @@ $FolderList      = $window.FindName('FolderList')
 $ImagePanel      = $window.FindName('ImagePanel')
 $ImageCountText  = $window.FindName('ImageCountText')
 $TextViewer      = $window.FindName('TextViewer')
+$MarkdownViewer  = $window.FindName('MarkdownViewer')
+$MarkdownModeButton = $window.FindName('MarkdownModeButton')
 $TextFileName    = $window.FindName('TextFileName')
 $SaveTextButton  = $window.FindName('SaveTextButton')
 $SidePanelTitle  = $window.FindName('SidePanelTitle')
@@ -329,6 +341,227 @@ function New-BitmapImage([string]$path, [int]$decodeWidth = 0) {
     }
 }
 
+function Update-ImageTileSelection {
+    foreach ($entry in @($script:ImageTiles.GetEnumerator())) {
+        $path = [string]$entry.Key
+        $tile = $entry.Value
+        if ($null -eq $tile) { continue }
+
+        $isActivePreview = ($PreviewContentBorder.Visibility -eq 'Visible' -and
+            $script:PreviewImagePath -and
+            $script:PreviewImagePath.Equals($path, [System.StringComparison]::OrdinalIgnoreCase))
+        $isLastSelected = ($script:LastSelectedImagePath -and
+            $script:LastSelectedImagePath.Equals($path, [System.StringComparison]::OrdinalIgnoreCase))
+
+        if ($isActivePreview) {
+            $tile.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#DCEEFF')
+            $tile.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#2B7CD3')
+            $tile.BorderThickness = [System.Windows.Thickness]::new(2)
+        } elseif ($isLastSelected) {
+            $tile.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#EEF5FA')
+            $tile.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#A8C8E3')
+            $tile.BorderThickness = [System.Windows.Thickness]::new(1)
+        } else {
+            $tile.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F7F8FA')
+            $tile.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#E2E6EA')
+            $tile.BorderThickness = [System.Windows.Thickness]::new(1)
+        }
+    }
+}
+
+function Add-MarkdownInlineContent {
+    param(
+        [System.Windows.Documents.Paragraph]$Paragraph,
+        [string]$Text
+    )
+
+    if ($null -eq $Text) { return }
+    $pattern = '(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*|\[[^\]]+\]\([^)]+\))'
+    $matches = [regex]::Matches($Text, $pattern)
+    $position = 0
+
+    foreach ($match in $matches) {
+        if ($match.Index -gt $position) {
+            [void]$Paragraph.Inlines.Add(([System.Windows.Documents.Run]::new($Text.Substring($position, $match.Index - $position))))
+        }
+
+        $token = $match.Value
+        if ($token.StartsWith('**') -and $token.EndsWith('**')) {
+            $run = [System.Windows.Documents.Run]::new($token.Substring(2, $token.Length - 4))
+            $run.FontWeight = [System.Windows.FontWeights]::SemiBold
+            [void]$Paragraph.Inlines.Add($run)
+        } elseif ($token.StartsWith('`') -and $token.EndsWith('`')) {
+            $run = [System.Windows.Documents.Run]::new($token.Substring(1, $token.Length - 2))
+            $run.FontFamily = [System.Windows.Media.FontFamily]::new('Consolas')
+            $run.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#EEF1F4')
+            [void]$Paragraph.Inlines.Add($run)
+        } elseif ($token.StartsWith('*') -and $token.EndsWith('*')) {
+            $run = [System.Windows.Documents.Run]::new($token.Substring(1, $token.Length - 2))
+            $run.FontStyle = [System.Windows.FontStyles]::Italic
+            [void]$Paragraph.Inlines.Add($run)
+        } elseif ($token.StartsWith('[')) {
+            $linkMatch = [regex]::Match($token, '^\[([^\]]+)\]\(([^)]+)\)$')
+            if ($linkMatch.Success) {
+                $run = [System.Windows.Documents.Run]::new($linkMatch.Groups[1].Value)
+                $run.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#2563A6')
+                $run.TextDecorations = [System.Windows.TextDecorations]::Underline
+                $run.ToolTip = $linkMatch.Groups[2].Value
+                [void]$Paragraph.Inlines.Add($run)
+            } else {
+                [void]$Paragraph.Inlines.Add(([System.Windows.Documents.Run]::new($token)))
+            }
+        } else {
+            [void]$Paragraph.Inlines.Add(([System.Windows.Documents.Run]::new($token)))
+        }
+        $position = $match.Index + $match.Length
+    }
+
+    if ($position -lt $Text.Length) {
+        [void]$Paragraph.Inlines.Add(([System.Windows.Documents.Run]::new($Text.Substring($position))))
+    }
+}
+
+function Render-Markdown([string]$markdown) {
+    $document = New-Object System.Windows.Documents.FlowDocument
+    $document.PagePadding = [System.Windows.Thickness]::new(14)
+    $document.FontFamily = [System.Windows.Media.FontFamily]::new('Segoe UI')
+    $document.FontSize = 14
+    $document.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#252A2E')
+
+    $lines = [regex]::Split([string]$markdown, "\r?\n")
+    $inCodeBlock = $false
+    $codeLines = New-Object System.Collections.Generic.List[string]
+
+    foreach ($line in $lines) {
+        if ($line -match '^\s*```') {
+            if ($inCodeBlock) {
+                $p = New-Object System.Windows.Documents.Paragraph
+                $p.Margin = [System.Windows.Thickness]::new(0,6,0,10)
+                $p.Padding = [System.Windows.Thickness]::new(10)
+                $p.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F0F2F4')
+                $p.FontFamily = [System.Windows.Media.FontFamily]::new('Consolas')
+                [void]$p.Inlines.Add(([System.Windows.Documents.Run]::new(($codeLines -join "`r`n"))))
+                [void]$document.Blocks.Add($p)
+                $codeLines.Clear()
+                $inCodeBlock = $false
+            } else {
+                $inCodeBlock = $true
+            }
+            continue
+        }
+
+        if ($inCodeBlock) {
+            $codeLines.Add($line)
+            continue
+        }
+
+        if ([string]::IsNullOrWhiteSpace($line)) {
+            $spacer = New-Object System.Windows.Documents.Paragraph
+            $spacer.Margin = [System.Windows.Thickness]::new(0,0,0,5)
+            [void]$document.Blocks.Add($spacer)
+            continue
+        }
+
+        $heading = [regex]::Match($line, '^(#{1,6})\s+(.+)$')
+        if ($heading.Success) {
+            $level = $heading.Groups[1].Value.Length
+            $sizes = @(28,24,21,18,16,14)
+            $p = New-Object System.Windows.Documents.Paragraph
+            $p.FontSize = $sizes[$level - 1]
+            $p.FontWeight = [System.Windows.FontWeights]::SemiBold
+            $p.Margin = [System.Windows.Thickness]::new(0,10,0,6)
+            Add-MarkdownInlineContent $p $heading.Groups[2].Value
+            [void]$document.Blocks.Add($p)
+            continue
+        }
+
+        if ($line -match '^\s*(---|\*\*\*|___)\s*$') {
+            $border = New-Object System.Windows.Controls.Border
+            $border.Height = 1
+            $border.Margin = [System.Windows.Thickness]::new(0,9,0,9)
+            $border.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#D9DEE3')
+            $block = [System.Windows.Documents.BlockUIContainer]::new($border)
+            [void]$document.Blocks.Add($block)
+            continue
+        }
+
+        $bullet = [regex]::Match($line, '^\s*[-+*]\s+(.+)$')
+        if ($bullet.Success) {
+            $p = New-Object System.Windows.Documents.Paragraph
+            $p.Margin = [System.Windows.Thickness]::new(14,2,0,2)
+            [void]$p.Inlines.Add(([System.Windows.Documents.Run]::new('•  ')))
+            Add-MarkdownInlineContent $p $bullet.Groups[1].Value
+            [void]$document.Blocks.Add($p)
+            continue
+        }
+
+        $ordered = [regex]::Match($line, '^\s*(\d+)\.\s+(.+)$')
+        if ($ordered.Success) {
+            $p = New-Object System.Windows.Documents.Paragraph
+            $p.Margin = [System.Windows.Thickness]::new(14,2,0,2)
+            [void]$p.Inlines.Add(([System.Windows.Documents.Run]::new(($ordered.Groups[1].Value + '.  '))))
+            Add-MarkdownInlineContent $p $ordered.Groups[2].Value
+            [void]$document.Blocks.Add($p)
+            continue
+        }
+
+        $quote = [regex]::Match($line, '^\s*>\s?(.*)$')
+        if ($quote.Success) {
+            $p = New-Object System.Windows.Documents.Paragraph
+            $p.Margin = [System.Windows.Thickness]::new(8,5,0,5)
+            $p.Padding = [System.Windows.Thickness]::new(10,6,8,6)
+            $p.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F3F6F8')
+            $p.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#4F5A63')
+            Add-MarkdownInlineContent $p $quote.Groups[1].Value
+            [void]$document.Blocks.Add($p)
+            continue
+        }
+
+        $p = New-Object System.Windows.Documents.Paragraph
+        $p.Margin = [System.Windows.Thickness]::new(0,2,0,6)
+        Add-MarkdownInlineContent $p $line
+        [void]$document.Blocks.Add($p)
+    }
+
+    if ($inCodeBlock -and $codeLines.Count -gt 0) {
+        $p = New-Object System.Windows.Documents.Paragraph
+        $p.Padding = [System.Windows.Thickness]::new(10)
+        $p.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F0F2F4')
+        $p.FontFamily = [System.Windows.Media.FontFamily]::new('Consolas')
+        [void]$p.Inlines.Add(([System.Windows.Documents.Run]::new(($codeLines -join "`r`n"))))
+        [void]$document.Blocks.Add($p)
+    }
+
+    $MarkdownViewer.Document = $document
+}
+
+function Set-MarkdownViewMode([bool]$rendered) {
+    if (-not $script:IsCurrentMarkdown) {
+        $script:MarkdownRendered = $false
+        $MarkdownModeButton.Visibility = 'Collapsed'
+        $MarkdownViewer.Visibility = 'Collapsed'
+        $TextViewer.Visibility = 'Visible'
+        return
+    }
+
+    $MarkdownModeButton.Visibility = 'Visible'
+    if ($rendered) {
+        Render-Markdown $TextViewer.Text
+        $TextViewer.Visibility = 'Collapsed'
+        $MarkdownViewer.Visibility = 'Visible'
+        $MarkdownModeButton.Content = 'Редагувати'
+        $MarkdownModeButton.ToolTip = 'Відкрити вихідний Markdown для редагування'
+        $script:MarkdownRendered = $true
+    } else {
+        $MarkdownViewer.Visibility = 'Collapsed'
+        $TextViewer.Visibility = 'Visible'
+        $MarkdownModeButton.Content = 'Перегляд'
+        $MarkdownModeButton.ToolTip = 'Показати відформатований Markdown'
+        $script:MarkdownRendered = $false
+        $TextViewer.Focus() | Out-Null
+    }
+}
+
 function Reset-PreviewTransform {
     $scale = New-Object System.Windows.Media.ScaleTransform
     $scale.ScaleX = 1
@@ -361,8 +594,8 @@ function Set-PreviewZoom([bool]$zoomed) {
     }
 
     if ($zoomed) {
-        $script:PreviewScaleTransform.ScaleX = 2
-        $script:PreviewScaleTransform.ScaleY = 2
+        $script:PreviewScaleTransform.ScaleX = 3
+        $script:PreviewScaleTransform.ScaleY = 3
         $script:PreviewTranslateTransform.X = 0
         $script:PreviewTranslateTransform.Y = 0
         $script:PreviewZoomed = $true
@@ -694,6 +927,9 @@ function Confirm-PendingTextChanges {
 }
 
 function Show-TextMode {
+    if ($script:PreviewImagePath) {
+        $script:LastSelectedImagePath = $script:PreviewImagePath
+    }
     $TextContentBorder.Visibility = 'Visible'
     $PreviewContentBorder.Visibility = 'Collapsed'
     $TextNavigationPanel.Visibility = 'Visible'
@@ -704,10 +940,18 @@ function Show-TextMode {
     Reset-PreviewTransform
     $script:PreviewImagePath = $null
     $PreviewError.Visibility = 'Collapsed'
+    Update-ImageTileSelection
     if ($script:TextFiles.Count -gt 0 -and $script:TextIndex -ge 0) {
         Set-TextDirty $script:TextDirty
+        if ($script:IsCurrentMarkdown) {
+            Set-MarkdownViewMode $script:MarkdownRendered
+        } else {
+            Set-MarkdownViewMode $false
+        }
     } else {
         $TextFileName.Text = ''
+        $script:IsCurrentMarkdown = $false
+        Set-MarkdownViewMode $false
     }
 }
 
@@ -718,6 +962,8 @@ function Update-TextNavigation {
         if ($count -eq 0) {
             $TextViewer.IsReadOnly = $true
             $TextViewer.Text = 'У цій папці немає файлів .txt або .md.'
+            $script:IsCurrentMarkdown = $false
+            Set-MarkdownViewMode $false
             $TextFileName.Text = ''
             $TextCounter.Text = '0 / 0'
 Reset-PreviewTransform
@@ -732,6 +978,7 @@ Reset-PreviewTransform
         if ($script:TextIndex -ge $count) { $script:TextIndex = $count - 1 }
 
         $file = $script:TextFiles[$script:TextIndex]
+        $script:IsCurrentMarkdown = ($file.Extension -ieq '.md')
         try {
             $data = Get-TextFileData $file.FullName
             $TextViewer.Text = $data.Text
@@ -746,6 +993,11 @@ Reset-PreviewTransform
         $TextCounter.Text = "{0} / {1}" -f ($script:TextIndex + 1), $count
         $PrevTextButton.IsEnabled = ($count -gt 1)
         $NextTextButton.IsEnabled = ($count -gt 1)
+        if ($script:IsCurrentMarkdown) {
+            Set-MarkdownViewMode $true
+        } else {
+            Set-MarkdownViewMode $false
+        }
         Set-TextDirty $false
     } finally {
         $script:IsLoadingText = $false
@@ -901,10 +1153,13 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
 
     $tile.ContextMenu = $menu
     $ImagePanel.Children.Add($tile) | Out-Null
+    $script:ImageTiles[$file.FullName] = $tile
+    Update-ImageTileSelection
 }
 
 function Load-Images([string]$folder) {
     $ImagePanel.Children.Clear()
+    $script:ImageTiles = @{}
     try {
         $images = @(Get-ChildItem -LiteralPath $folder -File -ErrorAction Stop | Where-Object {
             $script:ImageExtensions -contains $_.Extension.ToLowerInvariant()
@@ -1028,7 +1283,11 @@ function Navigate-To([string]$folder, [bool]$addHistory = $true, [bool]$skipUnsa
         $script:History.Add($script:CurrentFolder)
     }
 
-    $script:CurrentFolder = (Resolve-Path -LiteralPath $folder).Path
+    $resolvedTargetFolder = (Resolve-Path -LiteralPath $folder).Path
+    if ($script:CurrentFolder -and -not $script:CurrentFolder.Equals($resolvedTargetFolder, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $script:LastSelectedImagePath = $null
+    }
+    $script:CurrentFolder = $resolvedTargetFolder
     $PathText.Text = $script:CurrentFolder
     $PathText.ToolTip = $script:CurrentFolder
     $StatusText.Text = "Відкрито: $script:CurrentFolder"
@@ -1086,6 +1345,7 @@ $script:ImageTileClickHandler = {
     }
 
     $script:PreviewImagePath = $imagePath
+    $script:LastSelectedImagePath = $imagePath
     Reset-PreviewTransform
 
     $TextContentBorder.Visibility = 'Collapsed'
@@ -1093,9 +1353,11 @@ $script:ImageTileClickHandler = {
     $TextNavigationPanel.Visibility = 'Collapsed'
     $ReturnToTextButton.Visibility = 'Visible'
     $SaveTextButton.Visibility = 'Collapsed'
+    $MarkdownModeButton.Visibility = 'Collapsed'
     $SidePanelTitle.Text = "Прев'ю"
     $TextFileName.Text = [System.IO.Path]::GetFileName($imagePath)
-    $StatusText.Text = 'Лівий клік по превʼю: збільшити. Після збільшення затисніть і перетягуйте зображення.'
+    Update-ImageTileSelection
+    $StatusText.Text = 'Лівий клік по превʼю: збільшити до 300%. Після збільшення затисніть і перетягуйте зображення.'
     $e.Handled = $true
 }
 
@@ -1145,6 +1407,9 @@ $script:ImageRenameHandler = {
             $script:PreviewImagePath = $destination
             $TextFileName.Text = $newName
         }
+        if ($script:LastSelectedImagePath -and $script:LastSelectedImagePath.Equals($path, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $script:LastSelectedImagePath = $destination
+        }
         Load-Images $script:CurrentFolder
         $StatusText.Text = "Перейменовано: $newName"
     } catch {
@@ -1169,6 +1434,9 @@ $script:ImageDeleteHandler = {
     if (& $script:SendFileToRecycleBinAction $path) {
         if ($script:PreviewImagePath -and $script:PreviewImagePath.Equals($path, [System.StringComparison]::OrdinalIgnoreCase)) {
             Show-TextMode
+        }
+        if ($script:LastSelectedImagePath -and $script:LastSelectedImagePath.Equals($path, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $script:LastSelectedImagePath = $null
         }
         Load-Images $script:CurrentFolder
         $StatusText.Text = "Переміщено до кошика: $name"
@@ -1345,6 +1613,9 @@ $createMdMenuItem.Add_Click($script:CreateMdHandler)
 
 $ChooseRootButton.Add_Click({ Choose-RootFolder })
 $ReturnToTextButton.Add_Click({ Show-TextMode })
+$MarkdownModeButton.Add_Click({
+    if ($script:IsCurrentMarkdown) { Set-MarkdownViewMode (-not $script:MarkdownRendered) }
+})
 $SaveTextButton.Add_Click({ Save-CurrentTextFile | Out-Null })
 
 $TextViewer.Add_TextChanged({
@@ -1431,14 +1702,14 @@ $PreviewImage.Add_PreviewMouseLeftButtonUp({
 
         if ($script:PreviewDragMoved) {
             $script:PreviewDragMoved = $false
-            $StatusText.Text = 'Превʼю 200%: перетягування завершено. Клік без руху повертає стандартний масштаб.'
+            $StatusText.Text = 'Превʼю 300%: перетягування завершено. Клік без руху повертає стандартний масштаб.'
         } else {
             Set-PreviewZoom $false
             $StatusText.Text = 'Масштаб превʼю: стандартний'
         }
     } else {
         Set-PreviewZoom $true
-        $StatusText.Text = 'Масштаб превʼю: 200% — затисніть ліву кнопку та перетягуйте. Клік без руху повертає 100%.'
+        $StatusText.Text = 'Масштаб превʼю: 300% — затисніть ліву кнопку та перетягуйте. Клік без руху повертає 100%.'
     }
     $e.Handled = $true
 })
