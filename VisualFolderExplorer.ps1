@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.6.1'
+$script:AppVersion = '0.6.2'
 $script:ImageSortField = 'Name'
 $script:ImageSortDescending = $false
 $script:InitializingSortControls = $true
@@ -106,7 +106,7 @@ $script:SendFolderToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.6.1" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.6.2" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -146,6 +146,189 @@ $script:SendFolderToRecycleBinAction = {
             <Setter Property="MinWidth" Value="44"/>
             <Setter Property="FontSize" Value="18"/>
             <Setter Property="Padding" Value="10,5"/>
+        </Style>
+
+        <Style x:Key="ModernComboBoxItem" TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="#20262C"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="11,8"/>
+            <Setter Property="Margin" Value="0,1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="ItemBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="7"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#EEF4F8"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#E3EFF8"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernComboBox" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="#20262C"/>
+            <Setter Property="Background" Value="#F8FAFB"/>
+            <Setter Property="BorderBrush" Value="#D7DEE4"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="MaxDropDownHeight" Value="320"/>
+            <Setter Property="ItemContainerStyle" Value="{StaticResource ModernComboBoxItem}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Border x:Name="OuterBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8">
+                                <Grid>
+                                    <ToggleButton x:Name="DropDownToggle"
+                                                  Focusable="False"
+                                                  ClickMode="Press"
+                                                  IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                        <ToggleButton.Template>
+                                            <ControlTemplate TargetType="ToggleButton">
+                                                <Border Background="Transparent"/>
+                                            </ControlTemplate>
+                                        </ToggleButton.Template>
+                                    </ToggleButton>
+                                    <ContentPresenter IsHitTestVisible="False"
+                                                      Margin="11,0,34,0"
+                                                      VerticalAlignment="Center"
+                                                      HorizontalAlignment="Left"
+                                                      Content="{TemplateBinding SelectionBoxItem}"
+                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                      ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"/>
+                                    <Path IsHitTestVisible="False"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,12,0"
+                                          Fill="#59636C"
+                                          Data="M 0 0 L 4 4 L 8 0 Z"/>
+                                </Grid>
+                            </Border>
+                            <Popup x:Name="PART_Popup"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   Placement="Bottom"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Fade">
+                                <Grid MinWidth="{TemplateBinding ActualWidth}" Margin="0,6,0,0">
+                                    <Border Background="White"
+                                            BorderBrush="#DCE2E7"
+                                            BorderThickness="1"
+                                            CornerRadius="10"
+                                            Padding="5">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.16"/>
+                                        </Border.Effect>
+                                        <ScrollViewer CanContentScroll="True"
+                                                      VerticalScrollBarVisibility="Auto"
+                                                      MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                            <ItemsPresenter/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="OuterBorder" Property="BorderBrush" Value="#AEBCC8"/>
+                                <Setter TargetName="OuterBorder" Property="Background" Value="#FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="OuterBorder" Property="BorderBrush" Value="#6FA3CC"/>
+                                <Setter TargetName="OuterBorder" Property="Background" Value="#FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernContextMenu" TargetType="ContextMenu">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#DCE2E7"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="HasDropShadow" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.17"/>
+                            </Border.Effect>
+                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernMenuItem" TargetType="MenuItem">
+            <Setter Property="Foreground" Value="#20262C"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="0,1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="MinWidth" Value="185"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="MenuItemBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="7"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="MenuItemBorder" Property="Background" Value="#EEF4F8"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernSeparator" TargetType="Separator">
+            <Setter Property="Margin" Value="7,5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Separator">
+                        <Border Height="1" Background="#E8ECEF"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
@@ -244,13 +427,13 @@ $script:SendFolderToRecycleBinAction = {
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Зображення" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23" VerticalAlignment="Center"/>
-                        <ComboBox x:Name="ImageSortFieldCombo" Grid.Column="2" Width="170" Height="32" Margin="10,0,8,0" VerticalAlignment="Center" Padding="8,4" FontSize="13" ToolTip="Поле сортування">
+                        <ComboBox x:Name="ImageSortFieldCombo" Grid.Column="2" Width="170" Height="34" Margin="10,0,8,0" VerticalAlignment="Center" Style="{StaticResource ModernComboBox}" ToolTip="Поле сортування">
                             <ComboBoxItem Content="За назвою" Tag="Name"/>
                             <ComboBoxItem Content="За датою зміни" Tag="Modified"/>
                             <ComboBoxItem Content="За датою створення" Tag="Created"/>
                             <ComboBoxItem Content="За розміром" Tag="Size"/>
                         </ComboBox>
-                        <ComboBox x:Name="ImageSortDirectionCombo" Grid.Column="3" Width="138" Height="32" Margin="0,0,10,0" VerticalAlignment="Center" Padding="8,4" FontSize="13" ToolTip="Напрям сортування">
+                        <ComboBox x:Name="ImageSortDirectionCombo" Grid.Column="3" Width="148" Height="34" Margin="0,0,10,0" VerticalAlignment="Center" Style="{StaticResource ModernComboBox}" ToolTip="Напрям сортування">
                             <ComboBoxItem Content="Звичайне ↑" Tag="Ascending"/>
                             <ComboBoxItem Content="Зворотне ↓" Tag="Descending"/>
                         </ComboBox>
@@ -470,6 +653,24 @@ function Show-TextInputDialog {
         return $valueTextBox.Text
     }
     return $null
+}
+
+function New-ModernContextMenu {
+    $menu = New-Object System.Windows.Controls.ContextMenu
+    $menu.Style = $window.FindResource('ModernContextMenu')
+    return $menu
+}
+
+function New-ModernMenuItem {
+    $item = New-Object System.Windows.Controls.MenuItem
+    $item.Style = $window.FindResource('ModernMenuItem')
+    return $item
+}
+
+function New-ModernSeparator {
+    $separator = New-Object System.Windows.Controls.Separator
+    $separator.Style = $window.FindResource('ModernSeparator')
+    return $separator
 }
 
 function New-BitmapImage([string]$path, [int]$decodeWidth = 0) {
@@ -1278,29 +1479,29 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
     $tile.Child = $grid
     $tile.Add_MouseLeftButtonUp($script:ImageTileClickHandler)
 
-    $menu = New-Object System.Windows.Controls.ContextMenu
+    $menu = New-ModernContextMenu
 
-    $cut = New-Object System.Windows.Controls.MenuItem
+    $cut = New-ModernMenuItem
     $cut.Header = 'Вирізати'
     $cut.Tag = $file.FullName
     $cut.Add_Click($script:ImageCutHandler)
     [void]$menu.Items.Add($cut)
 
-    $copy = New-Object System.Windows.Controls.MenuItem
+    $copy = New-ModernMenuItem
     $copy.Header = 'Копіювати'
     $copy.Tag = $file.FullName
     $copy.Add_Click($script:ImageCopyHandler)
     [void]$menu.Items.Add($copy)
 
-    [void]$menu.Items.Add((New-Object System.Windows.Controls.Separator))
+    [void]$menu.Items.Add((New-ModernSeparator))
 
-    $rename = New-Object System.Windows.Controls.MenuItem
+    $rename = New-ModernMenuItem
     $rename.Header = 'Перейменувати'
     $rename.Tag = $file.FullName
     $rename.Add_Click($script:ImageRenameHandler)
     [void]$menu.Items.Add($rename)
 
-    $delete = New-Object System.Windows.Controls.MenuItem
+    $delete = New-ModernMenuItem
     $delete.Header = 'Видалити'
     $delete.Tag = $file.FullName
     $delete.Add_Click($script:ImageDeleteHandler)
@@ -1366,37 +1567,37 @@ function Load-Folders([string]$folder) {
             $item.Content = "📁  $($dir.Name)"
             $item.Tag = [pscustomobject]@{ Type = 'Folder'; Path = $dir.FullName }
 
-            $menu = New-Object System.Windows.Controls.ContextMenu
+            $menu = New-ModernContextMenu
 
-            $openFolder = New-Object System.Windows.Controls.MenuItem
+            $openFolder = New-ModernMenuItem
             $openFolder.Header = 'Відкрити'
             $openFolder.Tag = $dir.FullName
             $openFolder.Add_Click($script:FolderOpenHandler)
             [void]$menu.Items.Add($openFolder)
 
-            [void]$menu.Items.Add((New-Object System.Windows.Controls.Separator))
+            [void]$menu.Items.Add((New-ModernSeparator))
 
-            $cutFolder = New-Object System.Windows.Controls.MenuItem
+            $cutFolder = New-ModernMenuItem
             $cutFolder.Header = 'Вирізати'
             $cutFolder.Tag = $dir.FullName
             $cutFolder.Add_Click($script:FolderCutHandler)
             [void]$menu.Items.Add($cutFolder)
 
-            $copyFolder = New-Object System.Windows.Controls.MenuItem
+            $copyFolder = New-ModernMenuItem
             $copyFolder.Header = 'Копіювати'
             $copyFolder.Tag = $dir.FullName
             $copyFolder.Add_Click($script:FolderCopyHandler)
             [void]$menu.Items.Add($copyFolder)
 
-            [void]$menu.Items.Add((New-Object System.Windows.Controls.Separator))
+            [void]$menu.Items.Add((New-ModernSeparator))
 
-            $renameFolder = New-Object System.Windows.Controls.MenuItem
+            $renameFolder = New-ModernMenuItem
             $renameFolder.Header = 'Перейменувати'
             $renameFolder.Tag = $dir.FullName
             $renameFolder.Add_Click($script:FolderRenameHandler)
             [void]$menu.Items.Add($renameFolder)
 
-            $deleteFolder = New-Object System.Windows.Controls.MenuItem
+            $deleteFolder = New-ModernMenuItem
             $deleteFolder.Header = 'Видалити'
             $deleteFolder.Tag = $dir.FullName
             $deleteFolder.Add_Click($script:FolderDeleteHandler)
@@ -1416,37 +1617,37 @@ function Load-Folders([string]$folder) {
             $item.Content = "$icon  $($file.Name)"
             $item.Tag = [pscustomobject]@{ Type = 'Text'; Path = $file.FullName }
 
-            $menu = New-Object System.Windows.Controls.ContextMenu
+            $menu = New-ModernContextMenu
 
-            $open = New-Object System.Windows.Controls.MenuItem
+            $open = New-ModernMenuItem
             $open.Header = 'Відкрити'
             $open.Tag = $file.FullName
             $open.Add_Click($script:TextOpenHandler)
             [void]$menu.Items.Add($open)
 
-            [void]$menu.Items.Add((New-Object System.Windows.Controls.Separator))
+            [void]$menu.Items.Add((New-ModernSeparator))
 
-            $cut = New-Object System.Windows.Controls.MenuItem
+            $cut = New-ModernMenuItem
             $cut.Header = 'Вирізати'
             $cut.Tag = $file.FullName
             $cut.Add_Click($script:TextCutHandler)
             [void]$menu.Items.Add($cut)
 
-            $copy = New-Object System.Windows.Controls.MenuItem
+            $copy = New-ModernMenuItem
             $copy.Header = 'Копіювати'
             $copy.Tag = $file.FullName
             $copy.Add_Click($script:TextCopyHandler)
             [void]$menu.Items.Add($copy)
 
-            [void]$menu.Items.Add((New-Object System.Windows.Controls.Separator))
+            [void]$menu.Items.Add((New-ModernSeparator))
 
-            $rename = New-Object System.Windows.Controls.MenuItem
+            $rename = New-ModernMenuItem
             $rename.Header = 'Перейменувати'
             $rename.Tag = $file.FullName
             $rename.Add_Click($script:TextRenameHandler)
             [void]$menu.Items.Add($rename)
 
-            $delete = New-Object System.Windows.Controls.MenuItem
+            $delete = New-ModernMenuItem
             $delete.Header = 'Видалити'
             $delete.Tag = $file.FullName
             $delete.Add_Click($script:TextDeleteHandler)
@@ -1907,12 +2108,12 @@ $script:CreateMdHandler = {
 }
 
 # Context menu for the current location in the left "Провідник" panel.
-$script:CreateTextMenu = New-Object System.Windows.Controls.ContextMenu
-$pasteMenuItem = New-Object System.Windows.Controls.MenuItem
+$script:CreateTextMenu = New-ModernContextMenu
+$pasteMenuItem = New-ModernMenuItem
 $pasteMenuItem.Header = 'Вставити'
 $pasteMenuItem.Add_Click({ Paste-ClipboardItems })
 [void]$script:CreateTextMenu.Items.Add($pasteMenuItem)
-[void]$script:CreateTextMenu.Items.Add((New-Object System.Windows.Controls.Separator))
+[void]$script:CreateTextMenu.Items.Add((New-ModernSeparator))
 
 $script:CreateTextMenu.Add_Opened({
     $clip = Get-ClipboardFileDropInfo
@@ -1920,18 +2121,18 @@ $script:CreateTextMenu.Add_Opened({
     $pasteMenuItem.Visibility = if ($clip.HasFiles) { 'Visible' } else { 'Collapsed' }
 })
 
-$createFolderMenuItem = New-Object System.Windows.Controls.MenuItem
+$createFolderMenuItem = New-ModernMenuItem
 $createFolderMenuItem.Header = 'Створити папку'
 $createFolderMenuItem.Add_Click($script:CreateFolderHandler)
 [void]$script:CreateTextMenu.Items.Add($createFolderMenuItem)
-[void]$script:CreateTextMenu.Items.Add((New-Object System.Windows.Controls.Separator))
+[void]$script:CreateTextMenu.Items.Add((New-ModernSeparator))
 
-$createTxtMenuItem = New-Object System.Windows.Controls.MenuItem
+$createTxtMenuItem = New-ModernMenuItem
 $createTxtMenuItem.Header = 'Створити TXT-файл'
 $createTxtMenuItem.Add_Click($script:CreateTxtHandler)
 [void]$script:CreateTextMenu.Items.Add($createTxtMenuItem)
 
-$createMdMenuItem = New-Object System.Windows.Controls.MenuItem
+$createMdMenuItem = New-ModernMenuItem
 $createMdMenuItem.Header = 'Створити Markdown-файл (.md)'
 $createMdMenuItem.Add_Click($script:CreateMdHandler)
 [void]$script:CreateTextMenu.Items.Add($createMdMenuItem)
