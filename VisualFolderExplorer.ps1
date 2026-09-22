@@ -12,9 +12,16 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.3.1'
+$script:AppVersion = '0.4.0'
 $script:PreviewZoomed = $false
 $script:PreviewImagePath = $null
+$script:PreviewDragging = $false
+$script:PreviewDragMoved = $false
+$script:PreviewDragStart = [System.Windows.Point]::new(0, 0)
+$script:PreviewDragOriginX = 0.0
+$script:PreviewDragOriginY = 0.0
+$script:PreviewScaleTransform = $null
+$script:PreviewTranslateTransform = $null
 $script:IsLoadingText = $false
 $script:TextDirty = $false
 $script:CurrentTextEncoding = [System.Text.UTF8Encoding]::new($false)
@@ -71,7 +78,7 @@ $script:SendFileToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.3.1" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.4.0" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -223,16 +230,21 @@ $script:SendFileToRecycleBinAction = {
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Button x:Name="ReturnToTextButton" Grid.Column="0" Content="До тексту" Style="{StaticResource ToolbarButton}" Margin="0,0,8,0" Padding="9,5" FontSize="12" Visibility="Collapsed" ToolTip="Повернутися до текстового опису"/>
-                        <TextBlock x:Name="SidePanelTitle" Grid.Column="1" Text="Текст" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="TextFileName" Grid.Column="2" Margin="10,0,10,0" Foreground="#7A838B" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" TextAlignment="Right"/>
-                        <Button x:Name="SaveTextButton" Grid.Column="3" Content="Зберегти" Style="{StaticResource ToolbarButton}" Margin="0" Padding="10,5" FontSize="12" IsEnabled="False" ToolTip="Зберегти зміни (Ctrl+S)"/>
+                        <Button x:Name="ReturnToTextButton" Grid.Row="0" Grid.Column="0" Content="До тексту" Style="{StaticResource ToolbarButton}" Margin="0,0,8,0" Padding="9,5" FontSize="12" Visibility="Collapsed" ToolTip="Повернутися до текстового опису"/>
+                        <TextBlock x:Name="SidePanelTitle" Grid.Row="0" Grid.Column="1" Text="Текст" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23" VerticalAlignment="Center"/>
+                        <Button x:Name="SaveTextButton" Grid.Row="0" Grid.Column="2" Content="Зберегти" Style="{StaticResource ToolbarButton}" Margin="0" Padding="10,5" FontSize="12" IsEnabled="False" ToolTip="Зберегти зміни (Ctrl+S)"/>
+                        <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,0,0" Padding="9,6" Background="#F5F7F9" CornerRadius="7">
+                            <TextBlock x:Name="TextFileName" Foreground="#2F3740" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" TextAlignment="Left" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                        </Border>
                     </Grid>
 
                     <Grid Grid.Row="2">
@@ -314,6 +326,183 @@ function New-BitmapImage([string]$path, [int]$decodeWidth = 0) {
         return $bitmap
     } catch {
         return $null
+    }
+}
+
+function Reset-PreviewTransform {
+    $scale = New-Object System.Windows.Media.ScaleTransform
+    $scale.ScaleX = 1
+    $scale.ScaleY = 1
+
+    $translate = New-Object System.Windows.Media.TranslateTransform
+    $translate.X = 0
+    $translate.Y = 0
+
+    $group = New-Object System.Windows.Media.TransformGroup
+    [void]$group.Children.Add($scale)
+    [void]$group.Children.Add($translate)
+
+    $PreviewImage.RenderTransformOrigin = [System.Windows.Point]::new(0.5, 0.5)
+    $PreviewImage.RenderTransform = $group
+    $PreviewImage.Cursor = [System.Windows.Input.Cursors]::Hand
+
+    $script:PreviewScaleTransform = $scale
+    $script:PreviewTranslateTransform = $translate
+    $script:PreviewZoomed = $false
+    $script:PreviewDragging = $false
+    $script:PreviewDragMoved = $false
+    $script:PreviewDragOriginX = 0.0
+    $script:PreviewDragOriginY = 0.0
+}
+
+function Set-PreviewZoom([bool]$zoomed) {
+    if ($null -eq $script:PreviewScaleTransform -or $null -eq $script:PreviewTranslateTransform) {
+        Reset-PreviewTransform
+    }
+
+    if ($zoomed) {
+        $script:PreviewScaleTransform.ScaleX = 2
+        $script:PreviewScaleTransform.ScaleY = 2
+        $script:PreviewTranslateTransform.X = 0
+        $script:PreviewTranslateTransform.Y = 0
+        $script:PreviewZoomed = $true
+        $PreviewImage.Cursor = [System.Windows.Input.Cursors]::SizeAll
+    } else {
+        Reset-PreviewTransform
+    }
+}
+
+function Get-ClipboardFileDropInfo {
+    try {
+        $data = [System.Windows.Clipboard]::GetDataObject()
+        if ($null -eq $data -or -not $data.GetDataPresent([System.Windows.DataFormats]::FileDrop)) {
+            return [pscustomobject]@{ HasFiles = $false; Paths = @(); IsCut = $false }
+        }
+
+        $paths = @()
+        foreach ($clipboardPath in [System.Windows.Clipboard]::GetFileDropList()) {
+            $candidate = [string]$clipboardPath
+            if (-not [string]::IsNullOrWhiteSpace($candidate) -and (Test-Path -LiteralPath $candidate)) {
+                $paths += $candidate
+            }
+        }
+
+        $isCut = $false
+        if ($paths.Count -gt 0 -and $data.GetDataPresent('Preferred DropEffect')) {
+            try {
+                $effectData = $data.GetData('Preferred DropEffect')
+                [byte[]]$effectBytes = @()
+                if ($effectData -is [System.IO.MemoryStream]) {
+                    $effectBytes = $effectData.ToArray()
+                } elseif ($effectData -is [byte[]]) {
+                    $effectBytes = $effectData
+                } elseif ($effectData -is [System.IO.Stream]) {
+                    $oldPosition = $effectData.Position
+                    $effectData.Position = 0
+                    $buffer = New-Object byte[] 4
+                    $read = $effectData.Read($buffer, 0, 4)
+                    $effectData.Position = $oldPosition
+                    if ($read -gt 0) { $effectBytes = $buffer }
+                }
+                if ($effectBytes.Length -gt 0) {
+                    $isCut = (($effectBytes[0] -band 2) -eq 2)
+                }
+            } catch {
+                $isCut = $false
+            }
+        }
+
+        return [pscustomobject]@{ HasFiles = ($paths.Count -gt 0); Paths = @($paths); IsCut = $isCut }
+    } catch {
+        return [pscustomobject]@{ HasFiles = $false; Paths = @(); IsCut = $false }
+    }
+}
+
+function Paste-ClipboardItems {
+    if (-not $script:CurrentFolder -or -not (Test-Path -LiteralPath $script:CurrentFolder -PathType Container)) { return }
+
+    $clip = Get-ClipboardFileDropInfo
+    if (-not $clip.HasFiles) {
+        $StatusText.Text = 'У буфері обміну немає файлів або папок для вставлення.'
+        return
+    }
+
+    if (-not (Confirm-PendingTextChanges)) { return }
+
+    $previousTextPath = $null
+    if ($script:TextFiles.Count -gt 0 -and $script:TextIndex -ge 0 -and $script:TextIndex -lt $script:TextFiles.Count) {
+        $previousTextPath = $script:TextFiles[$script:TextIndex].FullName
+    }
+
+    $successCount = 0
+    $skipCount = 0
+    $errors = New-Object System.Collections.Generic.List[string]
+
+    foreach ($source in @($clip.Paths)) {
+        try {
+            if (-not (Test-Path -LiteralPath $source)) { $skipCount++; continue }
+            $name = Split-Path -Leaf $source
+            $destination = Join-Path $script:CurrentFolder $name
+
+            $resolvedSource = (Resolve-Path -LiteralPath $source).Path
+            if ($resolvedSource.Equals($destination, [System.StringComparison]::OrdinalIgnoreCase)) {
+                $skipCount++
+                continue
+            }
+
+            if (Test-Path -LiteralPath $destination) {
+                $errors.Add("'$name' вже існує у поточній папці.")
+                $skipCount++
+                continue
+            }
+
+            if (Test-Path -LiteralPath $source -PathType Container) {
+                $sourcePrefix = $resolvedSource.TrimEnd('\') + '\'
+                $targetResolved = [System.IO.Path]::GetFullPath($script:CurrentFolder).TrimEnd('\') + '\'
+                if ($targetResolved.StartsWith($sourcePrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+                    $errors.Add("Не можна вставити папку '$name' всередину неї самої.")
+                    $skipCount++
+                    continue
+                }
+            }
+
+            if ($clip.IsCut) {
+                Move-Item -LiteralPath $source -Destination $destination -ErrorAction Stop
+            } else {
+                if (Test-Path -LiteralPath $source -PathType Container) {
+                    Copy-Item -LiteralPath $source -Destination $destination -Recurse -ErrorAction Stop
+                } else {
+                    Copy-Item -LiteralPath $source -Destination $destination -ErrorAction Stop
+                }
+            }
+            $successCount++
+        } catch {
+            $errors.Add("$([System.IO.Path]::GetFileName([string]$source)): $($_.Exception.Message)")
+        }
+    }
+
+    if ($successCount -gt 0) {
+        Load-Folders $script:CurrentFolder
+        Load-Images $script:CurrentFolder
+        Load-TextFiles $script:CurrentFolder
+        if ($previousTextPath -and (Test-Path -LiteralPath $previousTextPath -PathType Leaf)) {
+            Open-TextFileByPath $previousTextPath | Out-Null
+        }
+        if ($clip.IsCut -and $errors.Count -eq 0 -and $skipCount -eq 0) {
+            try { [System.Windows.Clipboard]::Clear() } catch { }
+        }
+    }
+
+    $actionWord = if ($clip.IsCut) { 'Переміщено' } else { 'Скопійовано' }
+    $StatusText.Text = "${actionWord}: $successCount. Пропущено: $skipCount."
+
+    if ($errors.Count -gt 0) {
+        [System.Windows.MessageBox]::Show(
+            "Не всі елементи вдалося вставити:`r`n`r`n$($errors -join "`r`n")",
+            'Вставлення',
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Warning
+        ) | Out-Null
     }
 }
 
@@ -481,9 +670,7 @@ function Show-TextMode {
     $SaveTextButton.Visibility = 'Visible'
     $SidePanelTitle.Text = 'Текст'
     $PreviewImage.Source = $null
-    $PreviewImage.RenderTransform = [System.Windows.Media.ScaleTransform]::new(1, 1)
-    $PreviewImage.Cursor = [System.Windows.Input.Cursors]::Hand
-    $script:PreviewZoomed = $false
+    Reset-PreviewTransform
     $script:PreviewImagePath = $null
     $PreviewError.Visibility = 'Collapsed'
     if ($script:TextFiles.Count -gt 0 -and $script:TextIndex -ge 0) {
@@ -502,6 +689,7 @@ function Update-TextNavigation {
             $TextViewer.Text = 'У цій папці немає файлів .txt або .md.'
             $TextFileName.Text = ''
             $TextCounter.Text = '0 / 0'
+Reset-PreviewTransform
             $PrevTextButton.IsEnabled = $false
             $NextTextButton.IsEnabled = $false
             $script:CurrentTextEncoding = [System.Text.UTF8Encoding]::new($false)
@@ -867,10 +1055,7 @@ $script:ImageTileClickHandler = {
     }
 
     $script:PreviewImagePath = $imagePath
-    $script:PreviewZoomed = $false
-    $PreviewImage.RenderTransformOrigin = [System.Windows.Point]::new(0.5, 0.5)
-    $PreviewImage.RenderTransform = [System.Windows.Media.ScaleTransform]::new(1, 1)
-    $PreviewImage.Cursor = [System.Windows.Input.Cursors]::Hand
+    Reset-PreviewTransform
 
     $TextContentBorder.Visibility = 'Collapsed'
     $PreviewContentBorder.Visibility = 'Visible'
@@ -879,7 +1064,7 @@ $script:ImageTileClickHandler = {
     $SaveTextButton.Visibility = 'Collapsed'
     $SidePanelTitle.Text = "Прев'ю"
     $TextFileName.Text = [System.IO.Path]::GetFileName($imagePath)
-    $StatusText.Text = 'Лівий клік по превʼю: збільшити / повернути розмір'
+    $StatusText.Text = 'Лівий клік по превʼю: збільшити. Після збільшення затисніть і перетягуйте зображення.'
     $e.Handled = $true
 }
 
@@ -1103,8 +1288,20 @@ $script:CreateMdHandler = {
     }
 }
 
-# Context menu shown only when the user right-clicks an empty area in "Папки".
+# Context menu for the current location in the left "Папки" panel.
 $script:CreateTextMenu = New-Object System.Windows.Controls.ContextMenu
+$pasteMenuItem = New-Object System.Windows.Controls.MenuItem
+$pasteMenuItem.Header = 'Вставити'
+$pasteMenuItem.Add_Click({ Paste-ClipboardItems })
+[void]$script:CreateTextMenu.Items.Add($pasteMenuItem)
+[void]$script:CreateTextMenu.Items.Add((New-Object System.Windows.Controls.Separator))
+
+$script:CreateTextMenu.Add_Opened({
+    $clip = Get-ClipboardFileDropInfo
+    $pasteMenuItem.IsEnabled = $clip.HasFiles
+    $pasteMenuItem.Visibility = if ($clip.HasFiles) { 'Visible' } else { 'Collapsed' }
+})
+
 $createTxtMenuItem = New-Object System.Windows.Controls.MenuItem
 $createTxtMenuItem.Header = 'Створити TXT-файл'
 $createTxtMenuItem.Add_Click($script:CreateTxtHandler)
@@ -1126,13 +1323,19 @@ $TextViewer.Add_TextChanged({
     }
 })
 
+$FolderList.Add_SelectionChanged({
+    if (-not $FolderList.SelectedItem -or -not $FolderList.SelectedItem.Tag) { return }
+    $tag = $FolderList.SelectedItem.Tag
+    if ($tag.Type -eq 'Text') {
+        Open-TextFileByPath ([string]$tag.Path) | Out-Null
+    }
+})
+
 $FolderList.Add_MouseDoubleClick({
     if (-not $FolderList.SelectedItem -or -not $FolderList.SelectedItem.Tag) { return }
     $tag = $FolderList.SelectedItem.Tag
     if ($tag.Type -eq 'Folder') {
         Navigate-To ([string]$tag.Path)
-    } elseif ($tag.Type -eq 'Text') {
-        Open-TextFileByPath ([string]$tag.Path) | Out-Null
     }
 })
 
@@ -1154,18 +1357,57 @@ $FolderList.Add_PreviewMouseRightButtonUp({
     }
 })
 
-$PreviewImage.Add_MouseLeftButtonUp({
+$PreviewImage.Add_PreviewMouseLeftButtonDown({
+    param($sender, $e)
+    if ($PreviewContentBorder.Visibility -ne 'Visible' -or $null -eq $PreviewImage.Source) { return }
+    if (-not $script:PreviewZoomed) { return }
+
+    $script:PreviewDragging = $true
+    $script:PreviewDragMoved = $false
+    $script:PreviewDragStart = $e.GetPosition($PreviewContentBorder)
+    $script:PreviewDragOriginX = $script:PreviewTranslateTransform.X
+    $script:PreviewDragOriginY = $script:PreviewTranslateTransform.Y
+    [void]$PreviewImage.CaptureMouse()
+    $e.Handled = $true
+})
+
+$PreviewImage.Add_PreviewMouseMove({
+    param($sender, $e)
+    if (-not $script:PreviewDragging -or -not $script:PreviewZoomed) { return }
+    if ($e.LeftButton -ne [System.Windows.Input.MouseButtonState]::Pressed) { return }
+
+    $position = $e.GetPosition($PreviewContentBorder)
+    $dx = $position.X - $script:PreviewDragStart.X
+    $dy = $position.Y - $script:PreviewDragStart.Y
+    if ([Math]::Abs($dx) -gt 2 -or [Math]::Abs($dy) -gt 2) {
+        $script:PreviewDragMoved = $true
+    }
+
+    $script:PreviewTranslateTransform.X = $script:PreviewDragOriginX + $dx
+    $script:PreviewTranslateTransform.Y = $script:PreviewDragOriginY + $dy
+    $e.Handled = $true
+})
+
+$PreviewImage.Add_PreviewMouseLeftButtonUp({
     param($sender, $e)
     if ($PreviewContentBorder.Visibility -ne 'Visible' -or $null -eq $PreviewImage.Source) { return }
 
     if ($script:PreviewZoomed) {
-        $PreviewImage.RenderTransform = [System.Windows.Media.ScaleTransform]::new(1, 1)
-        $script:PreviewZoomed = $false
-        $StatusText.Text = 'Масштаб превʼю: стандартний'
+        if ($script:PreviewDragging) {
+            $PreviewImage.ReleaseMouseCapture()
+            $script:PreviewDragging = $false
+        }
+
+        if ($script:PreviewDragMoved) {
+            $script:PreviewDragMoved = $false
+            $StatusText.Text = 'Превʼю 200%: перетягування завершено. Клік без руху повертає стандартний масштаб.'
+        } else {
+            Set-PreviewZoom $false
+            $StatusText.Text = 'Масштаб превʼю: стандартний'
+        }
     } else {
-        $PreviewImage.RenderTransform = [System.Windows.Media.ScaleTransform]::new(2, 2)
-        $script:PreviewZoomed = $true
-        $StatusText.Text = 'Масштаб превʼю: 200% — натисніть ще раз, щоб повернути'
+        Set-PreviewZoom $true
+        $StatusText.Text = 'Масштаб превʼю: 200% — затисніть ліву кнопку та перетягуйте. Клік без руху повертає 100%.'
     }
     $e.Handled = $true
 })
@@ -1214,6 +1456,9 @@ $window.Add_KeyDown({
     param($sender, $e)
     if (($e.KeyboardDevice.Modifiers -band [System.Windows.Input.ModifierKeys]::Control) -and $e.Key -eq [System.Windows.Input.Key]::S) {
         if ($script:TextDirty) { Save-CurrentTextFile | Out-Null }
+        $e.Handled = $true
+    } elseif (($e.KeyboardDevice.Modifiers -band [System.Windows.Input.ModifierKeys]::Control) -and $e.Key -eq [System.Windows.Input.Key]::V -and $script:CurrentFolder) {
+        Paste-ClipboardItems
         $e.Handled = $true
     } elseif ($e.Key -eq [System.Windows.Input.Key]::F5 -and $script:CurrentFolder) {
         Navigate-To $script:CurrentFolder $false
