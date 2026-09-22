@@ -12,7 +12,10 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.5.0'
+$script:AppVersion = '0.6.0'
+$script:ImageSortField = 'Name'
+$script:ImageSortDescending = $false
+$script:InitializingSortControls = $true
 $script:PreviewZoomed = $false
 $script:PreviewImagePath = $null
 $script:PreviewDragging = $false
@@ -79,10 +82,31 @@ $script:SendFileToRecycleBinAction = {
     }
 }
 
+$script:SendFolderToRecycleBinAction = {
+    param([string]$Path)
+    try {
+        [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory(
+            $Path,
+            [Microsoft.VisualBasic.FileIO.UIOption]::OnlyErrorDialogs,
+            [Microsoft.VisualBasic.FileIO.RecycleOption]::SendToRecycleBin,
+            [Microsoft.VisualBasic.FileIO.UICancelOption]::ThrowException
+        )
+        return $true
+    } catch {
+        [System.Windows.MessageBox]::Show(
+            "Не вдалося перемістити папку до кошика.`r`n`r`n$($_.Exception.Message)",
+            'Помилка видалення',
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Error
+        ) | Out-Null
+        return $false
+    }
+}
+
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.5.0" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.6.0" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -171,7 +195,7 @@ $script:SendFileToRecycleBinAction = {
                         <RowDefinition Height="8"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Папки" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23"/>
+                    <TextBlock Text="Провідник" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23"/>
                     <ListBox x:Name="FolderList" Grid.Row="2" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
@@ -211,10 +235,27 @@ $script:SendFileToRecycleBinAction = {
                         <RowDefinition Height="8"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <DockPanel>
-                        <TextBlock Text="Зображення" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23" DockPanel.Dock="Left"/>
-                        <TextBlock x:Name="ImageCountText" Foreground="#7A838B" FontSize="13" HorizontalAlignment="Right"/>
-                    </DockPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Зображення" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="ImageSortFieldCombo" Grid.Column="2" Width="125" Height="28" Margin="8,0,6,0" VerticalAlignment="Center" ToolTip="Поле сортування">
+                            <ComboBoxItem Content="За назвою" Tag="Name"/>
+                            <ComboBoxItem Content="За датою зміни" Tag="Modified"/>
+                            <ComboBoxItem Content="За датою створення" Tag="Created"/>
+                            <ComboBoxItem Content="За розміром" Tag="Size"/>
+                        </ComboBox>
+                        <ComboBox x:Name="ImageSortDirectionCombo" Grid.Column="3" Width="112" Height="28" Margin="0,0,10,0" VerticalAlignment="Center" ToolTip="Напрям сортування">
+                            <ComboBoxItem Content="Звичайне ↑" Tag="Ascending"/>
+                            <ComboBoxItem Content="Зворотне ↓" Tag="Descending"/>
+                        </ComboBox>
+                        <TextBlock x:Name="ImageCountText" Grid.Column="4" Foreground="#7A838B" FontSize="13" VerticalAlignment="Center"/>
+                    </Grid>
                     <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <WrapPanel x:Name="ImagePanel" Orientation="Horizontal"/>
                     </ScrollViewer>
@@ -302,6 +343,8 @@ $PathText        = $window.FindName('PathText')
 $FolderList      = $window.FindName('FolderList')
 $ImagePanel      = $window.FindName('ImagePanel')
 $ImageCountText  = $window.FindName('ImageCountText')
+$ImageSortFieldCombo = $window.FindName('ImageSortFieldCombo')
+$ImageSortDirectionCombo = $window.FindName('ImageSortDirectionCombo')
 $TextViewer      = $window.FindName('TextViewer')
 $MarkdownViewer  = $window.FindName('MarkdownViewer')
 $MarkdownModeButton = $window.FindName('MarkdownModeButton')
@@ -765,6 +808,8 @@ function Save-Settings {
             WindowWidth = [math]::Round($savedWindowWidth, 2)
             WindowHeight = [math]::Round($savedWindowHeight, 2)
             WindowState = $savedWindowState
+            ImageSortField = $script:ImageSortField
+            ImageSortDescending = $script:ImageSortDescending
         }
         $settings | ConvertTo-Json | Set-Content -LiteralPath $script:SettingsPath -Encoding UTF8 -Force
     } catch {
@@ -797,6 +842,12 @@ function Load-Settings {
         } else {
             $window.WindowState = [System.Windows.WindowState]::Normal
         }
+
+        $savedSortField = [string]$saved.ImageSortField
+        if ($savedSortField -in @('Name', 'Modified', 'Created', 'Size')) {
+            $script:ImageSortField = $savedSortField
+        }
+        try { $script:ImageSortDescending = [System.Convert]::ToBoolean($saved.ImageSortDescending) } catch { }
 
         if ([string]::IsNullOrWhiteSpace($savedRoot) -or -not (Test-Path -LiteralPath $savedRoot -PathType Container)) {
             return $false
@@ -1157,13 +1208,33 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
     Update-ImageTileSelection
 }
 
+function Get-SortedImages([string]$folder) {
+    $images = @(Get-ChildItem -LiteralPath $folder -File -ErrorAction Stop | Where-Object {
+        $script:ImageExtensions -contains $_.Extension.ToLowerInvariant()
+    })
+
+    $descending = [bool]$script:ImageSortDescending
+    switch ($script:ImageSortField) {
+        'Modified' {
+            return @($images | Sort-Object @{ Expression = { $_.LastWriteTime }; Descending = $descending }, @{ Expression = { Get-NaturalSortKey $_.Name }; Descending = $false })
+        }
+        'Created' {
+            return @($images | Sort-Object @{ Expression = { $_.CreationTime }; Descending = $descending }, @{ Expression = { Get-NaturalSortKey $_.Name }; Descending = $false })
+        }
+        'Size' {
+            return @($images | Sort-Object @{ Expression = { $_.Length }; Descending = $descending }, @{ Expression = { Get-NaturalSortKey $_.Name }; Descending = $false })
+        }
+        default {
+            return @($images | Sort-Object @{ Expression = { Get-NaturalSortKey $_.Name }; Descending = $descending })
+        }
+    }
+}
+
 function Load-Images([string]$folder) {
     $ImagePanel.Children.Clear()
     $script:ImageTiles = @{}
     try {
-        $images = @(Get-ChildItem -LiteralPath $folder -File -ErrorAction Stop | Where-Object {
-            $script:ImageExtensions -contains $_.Extension.ToLowerInvariant()
-        } | Sort-Object { Get-NaturalSortKey $_.Name })
+        $images = @(Get-SortedImages $folder)
 
         foreach ($imgFile in $images) { Add-ImageTile $imgFile }
         $ImageCountText.Text = if ($images.Count -eq 1) { '1 файл' } else { "$($images.Count) файлів" }
@@ -1190,6 +1261,44 @@ function Load-Folders([string]$folder) {
             $item = New-Object System.Windows.Controls.ListBoxItem
             $item.Content = "📁  $($dir.Name)"
             $item.Tag = [pscustomobject]@{ Type = 'Folder'; Path = $dir.FullName }
+
+            $menu = New-Object System.Windows.Controls.ContextMenu
+
+            $openFolder = New-Object System.Windows.Controls.MenuItem
+            $openFolder.Header = 'Відкрити'
+            $openFolder.Tag = $dir.FullName
+            $openFolder.Add_Click($script:FolderOpenHandler)
+            [void]$menu.Items.Add($openFolder)
+
+            [void]$menu.Items.Add((New-Object System.Windows.Controls.Separator))
+
+            $cutFolder = New-Object System.Windows.Controls.MenuItem
+            $cutFolder.Header = 'Вирізати'
+            $cutFolder.Tag = $dir.FullName
+            $cutFolder.Add_Click($script:FolderCutHandler)
+            [void]$menu.Items.Add($cutFolder)
+
+            $copyFolder = New-Object System.Windows.Controls.MenuItem
+            $copyFolder.Header = 'Копіювати'
+            $copyFolder.Tag = $dir.FullName
+            $copyFolder.Add_Click($script:FolderCopyHandler)
+            [void]$menu.Items.Add($copyFolder)
+
+            [void]$menu.Items.Add((New-Object System.Windows.Controls.Separator))
+
+            $renameFolder = New-Object System.Windows.Controls.MenuItem
+            $renameFolder.Header = 'Перейменувати'
+            $renameFolder.Tag = $dir.FullName
+            $renameFolder.Add_Click($script:FolderRenameHandler)
+            [void]$menu.Items.Add($renameFolder)
+
+            $deleteFolder = New-Object System.Windows.Controls.MenuItem
+            $deleteFolder.Header = 'Видалити'
+            $deleteFolder.Tag = $dir.FullName
+            $deleteFolder.Add_Click($script:FolderDeleteHandler)
+            [void]$menu.Items.Add($deleteFolder)
+
+            $item.ContextMenu = $menu
             $FolderList.Items.Add($item) | Out-Null
         }
 
@@ -1321,6 +1430,97 @@ function Choose-RootFolder {
 # ---- Shared UI handlers -----------------------------------------------------
 # These handlers live in the main script scope (rather than per-tile closures),
 # which keeps them reliable when the app is launched through the BAT wrapper.
+
+$script:FolderOpenHandler = {
+    param($sender, $e)
+    Navigate-To ([string]$sender.Tag) | Out-Null
+}
+
+$script:FolderCutHandler = {
+    param($sender, $e)
+    $path = [string]$sender.Tag
+    if (& $script:SetFileClipboardAction $path $true) {
+        $StatusText.Text = "Вирізано папку до буфера обміну: $([System.IO.Path]::GetFileName($path))"
+    }
+}
+
+$script:FolderCopyHandler = {
+    param($sender, $e)
+    $path = [string]$sender.Tag
+    if (& $script:SetFileClipboardAction $path $false) {
+        $StatusText.Text = "Скопійовано папку до буфера обміну: $([System.IO.Path]::GetFileName($path))"
+    }
+}
+
+$script:FolderRenameHandler = {
+    param($sender, $e)
+    $path = [string]$sender.Tag
+    if (-not (Test-Path -LiteralPath $path -PathType Container)) { return }
+
+    $oldName = [System.IO.Path]::GetFileName($path.TrimEnd([System.IO.Path]::DirectorySeparatorChar))
+    $newName = [Microsoft.VisualBasic.Interaction]::InputBox(
+        'Введіть нову назву папки:',
+        'Перейменувати папку',
+        $oldName
+    )
+    if ([string]::IsNullOrWhiteSpace($newName) -or $newName -eq $oldName) { return }
+
+    if ([System.IO.Path]::GetFileName($newName) -ne $newName -or $newName.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
+        [System.Windows.MessageBox]::Show('Назва папки містить недопустимі символи.', 'Некоректна назва') | Out-Null
+        return
+    }
+
+    $parent = Split-Path -Parent $path
+    $destination = Join-Path $parent $newName
+    if (Test-Path -LiteralPath $destination) {
+        [System.Windows.MessageBox]::Show('Папка з такою назвою вже існує.', 'Перейменування') | Out-Null
+        return
+    }
+
+    try {
+        Move-Item -LiteralPath $path -Destination $destination -ErrorAction Stop
+        for ($i = $script:History.Count - 1; $i -ge 0; $i--) {
+            if ($script:History[$i].Equals($path, [System.StringComparison]::OrdinalIgnoreCase) -or
+                $script:History[$i].StartsWith($path + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
+                $script:History.RemoveAt($i)
+            }
+        }
+        Load-Folders $script:CurrentFolder
+        Update-NavigationButtons
+        Save-Settings
+        $StatusText.Text = "Перейменовано папку: $newName"
+    } catch {
+        [System.Windows.MessageBox]::Show("Не вдалося перейменувати папку.`r`n`r`n$($_.Exception.Message)", 'Помилка') | Out-Null
+    }
+}
+
+$script:FolderDeleteHandler = {
+    param($sender, $e)
+    $path = [string]$sender.Tag
+    if (-not (Test-Path -LiteralPath $path -PathType Container)) { return }
+    $name = [System.IO.Path]::GetFileName($path.TrimEnd([System.IO.Path]::DirectorySeparatorChar))
+
+    $answer = [System.Windows.MessageBox]::Show(
+        "Перемістити папку '$name' разом з усім вмістом до кошика?",
+        'Видалити папку',
+        [System.Windows.MessageBoxButton]::YesNo,
+        [System.Windows.MessageBoxImage]::Question
+    )
+    if ($answer -ne [System.Windows.MessageBoxResult]::Yes) { return }
+
+    if (& $script:SendFolderToRecycleBinAction $path) {
+        for ($i = $script:History.Count - 1; $i -ge 0; $i--) {
+            if ($script:History[$i].Equals($path, [System.StringComparison]::OrdinalIgnoreCase) -or
+                $script:History[$i].StartsWith($path + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
+                $script:History.RemoveAt($i)
+            }
+        }
+        Load-Folders $script:CurrentFolder
+        Update-NavigationButtons
+        Save-Settings
+        $StatusText.Text = "Папку переміщено до кошика: $name"
+    }
+}
 
 $script:ImageTileClickHandler = {
     param($sender, $e)
@@ -1525,6 +1725,33 @@ $script:TextDeleteHandler = {
     }
 }
 
+$script:CreateFolderHandler = {
+    param($sender, $e)
+    if (-not $script:CurrentFolder) { return }
+    if (-not (Confirm-PendingTextChanges)) { return }
+
+    $name = [Microsoft.VisualBasic.Interaction]::InputBox('Назва нової папки:', 'Створити папку', 'Нова папка')
+    if ([string]::IsNullOrWhiteSpace($name)) { return }
+    if ([System.IO.Path]::GetFileName($name) -ne $name -or $name.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
+        [System.Windows.MessageBox]::Show('Назва папки містить недопустимі символи.', 'Некоректна назва') | Out-Null
+        return
+    }
+
+    $path = Join-Path $script:CurrentFolder $name
+    if (Test-Path -LiteralPath $path) {
+        [System.Windows.MessageBox]::Show('Папка з такою назвою вже існує.', 'Створення папки') | Out-Null
+        return
+    }
+
+    try {
+        New-Item -ItemType Directory -Path $path -ErrorAction Stop | Out-Null
+        Load-Folders $script:CurrentFolder
+        $StatusText.Text = "Створено папку: $name"
+    } catch {
+        [System.Windows.MessageBox]::Show("Не вдалося створити папку.`r`n`r`n$($_.Exception.Message)", 'Помилка') | Out-Null
+    }
+}
+
 $script:CreateTxtHandler = {
     param($sender, $e)
     if (-not $script:CurrentFolder) { return }
@@ -1587,7 +1814,7 @@ $script:CreateMdHandler = {
     }
 }
 
-# Context menu for the current location in the left "Папки" panel.
+# Context menu for the current location in the left "Провідник" panel.
 $script:CreateTextMenu = New-Object System.Windows.Controls.ContextMenu
 $pasteMenuItem = New-Object System.Windows.Controls.MenuItem
 $pasteMenuItem.Header = 'Вставити'
@@ -1601,6 +1828,12 @@ $script:CreateTextMenu.Add_Opened({
     $pasteMenuItem.Visibility = if ($clip.HasFiles) { 'Visible' } else { 'Collapsed' }
 })
 
+$createFolderMenuItem = New-Object System.Windows.Controls.MenuItem
+$createFolderMenuItem.Header = 'Створити папку'
+$createFolderMenuItem.Add_Click($script:CreateFolderHandler)
+[void]$script:CreateTextMenu.Items.Add($createFolderMenuItem)
+[void]$script:CreateTextMenu.Items.Add((New-Object System.Windows.Controls.Separator))
+
 $createTxtMenuItem = New-Object System.Windows.Controls.MenuItem
 $createTxtMenuItem.Header = 'Створити TXT-файл'
 $createTxtMenuItem.Add_Click($script:CreateTxtHandler)
@@ -1610,6 +1843,25 @@ $createMdMenuItem = New-Object System.Windows.Controls.MenuItem
 $createMdMenuItem.Header = 'Створити Markdown-файл (.md)'
 $createMdMenuItem.Add_Click($script:CreateMdHandler)
 [void]$script:CreateTextMenu.Items.Add($createMdMenuItem)
+
+$ImageSortFieldCombo.Add_SelectionChanged({
+    if ($script:InitializingSortControls) { return }
+    if ($null -eq $ImageSortFieldCombo.SelectedItem) { return }
+    $tag = [string]$ImageSortFieldCombo.SelectedItem.Tag
+    if ($tag -in @('Name', 'Modified', 'Created', 'Size')) {
+        $script:ImageSortField = $tag
+        if ($script:CurrentFolder) { Load-Images $script:CurrentFolder }
+        Save-Settings
+    }
+})
+
+$ImageSortDirectionCombo.Add_SelectionChanged({
+    if ($script:InitializingSortControls) { return }
+    if ($null -eq $ImageSortDirectionCombo.SelectedItem) { return }
+    $script:ImageSortDescending = ([string]$ImageSortDirectionCombo.SelectedItem.Tag -eq 'Descending')
+    if ($script:CurrentFolder) { Load-Images $script:CurrentFolder }
+    Save-Settings
+})
 
 $ChooseRootButton.Add_Click({ Choose-RootFolder })
 $ReturnToTextButton.Add_Click({ Show-TextMode })
@@ -1782,6 +2034,16 @@ $TextCounter.Text = '0 / 0'
 # Load settings before ShowDialog so the saved size is applied before the
 # window becomes visible, without a visible resize after startup.
 $script:StartupSettingsLoaded = Load-Settings
+
+# Reflect the saved image-sort options in the toolbar.
+switch ($script:ImageSortField) {
+    'Modified' { $ImageSortFieldCombo.SelectedIndex = 1 }
+    'Created'  { $ImageSortFieldCombo.SelectedIndex = 2 }
+    'Size'     { $ImageSortFieldCombo.SelectedIndex = 3 }
+    default    { $ImageSortFieldCombo.SelectedIndex = 0 }
+}
+$ImageSortDirectionCombo.SelectedIndex = if ($script:ImageSortDescending) { 1 } else { 0 }
+$script:InitializingSortControls = $false
 
 $window.Add_ContentRendered({
     if ($script:StartupSettingsLoaded) {
