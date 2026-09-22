@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.8.0'
+$script:AppVersion = '0.8.1'
 $script:ImageSortField = 'Name'
 $script:ImageSortDescending = $false
 $script:InitializingSortControls = $true
@@ -107,7 +107,7 @@ $script:SendFolderToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.8.0" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.8.1" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -591,12 +591,11 @@ $script:SendFolderToRecycleBinAction = {
                                 IsHitTestVisible="False"
                                 Panel.ZIndex="50">
                             <Border x:Name="ImageScrollMarker"
-                                    Width="10"
+                                    Width="8"
                                     Height="4"
-                                    Canvas.Left="1"
+                                    Canvas.Left="2"
                                     Background="#2B7CD3"
-                                    BorderBrush="White"
-                                    BorderThickness="1"
+                                    BorderThickness="0"
                                     CornerRadius="2"
                                     Visibility="Collapsed"/>
                         </Canvas>
