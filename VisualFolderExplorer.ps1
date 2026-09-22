@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.7.0'
+$script:AppVersion = '0.7.1'
 $script:ImageSortField = 'Name'
 $script:ImageSortDescending = $false
 $script:InitializingSortControls = $true
@@ -106,7 +106,7 @@ $script:SendFolderToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.7.0" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.7.1" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -241,7 +241,11 @@ $script:SendFolderToRecycleBinAction = {
                                         </Border.Effect>
                                         <ScrollViewer CanContentScroll="True"
                                                       VerticalScrollBarVisibility="Auto"
+                                                      HorizontalScrollBarVisibility="Disabled"
                                                       MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                            <ScrollViewer.Resources>
+                                                <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernVerticalScrollBar}"/>
+                                            </ScrollViewer.Resources>
                                             <ItemsPresenter/>
                                         </ScrollViewer>
                                     </Border>
@@ -423,41 +427,33 @@ $script:SendFolderToRecycleBinAction = {
     </Setter>
 </Style>
 
-<Style TargetType="ScrollBar">
+<Style x:Key="ModernVerticalScrollBar" TargetType="ScrollBar">
     <Setter Property="Background" Value="Transparent"/>
     <Setter Property="Width" Value="12"/>
+    <Setter Property="MinWidth" Value="12"/>
+    <Setter Property="Opacity" Value="0.9"/>
     <Setter Property="Template">
         <Setter.Value>
             <ControlTemplate TargetType="ScrollBar">
-                <Grid Background="Transparent" SnapsToDevicePixels="True">
-                    <Track x:Name="PART_Track" IsDirectionReversed="True">
+                <Grid Width="12" Background="Transparent" Margin="2,0,0,0">
+                    <Track x:Name="PART_Track"
+                           Orientation="Vertical"
+                           IsDirectionReversed="True"
+                           Focusable="False">
                         <Track.DecreaseRepeatButton>
-                            <RepeatButton Style="{StaticResource MinimalScrollBarButton}" Command="ScrollBar.PageUpCommand"/>
+                            <RepeatButton Style="{StaticResource MinimalScrollBarButton}"
+                                          Command="{x:Static ScrollBar.PageUpCommand}"/>
                         </Track.DecreaseRepeatButton>
                         <Track.Thumb>
-                            <Thumb Style="{StaticResource MinimalScrollBarThumb}"/>
+                            <Thumb Style="{StaticResource MinimalScrollBarThumb}" MinHeight="28" Margin="2,2"/>
                         </Track.Thumb>
                         <Track.IncreaseRepeatButton>
-                            <RepeatButton Style="{StaticResource MinimalScrollBarButton}" Command="ScrollBar.PageDownCommand"/>
+                            <RepeatButton Style="{StaticResource MinimalScrollBarButton}"
+                                          Command="{x:Static ScrollBar.PageDownCommand}"/>
                         </Track.IncreaseRepeatButton>
                     </Track>
                 </Grid>
                 <ControlTemplate.Triggers>
-                    <Trigger Property="Orientation" Value="Horizontal">
-                        <Setter Property="Height" Value="12"/>
-                        <Setter Property="Width" Value="Auto"/>
-                        <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
-                        <Setter TargetName="PART_Track" Property="DecreaseRepeatButton">
-                            <Setter.Value>
-                                <RepeatButton Style="{StaticResource MinimalScrollBarButton}" Command="ScrollBar.PageLeftCommand"/>
-                            </Setter.Value>
-                        </Setter>
-                        <Setter TargetName="PART_Track" Property="IncreaseRepeatButton">
-                            <Setter.Value>
-                                <RepeatButton Style="{StaticResource MinimalScrollBarButton}" Command="ScrollBar.PageRightCommand"/>
-                            </Setter.Value>
-                        </Setter>
-                    </Trigger>
                     <Trigger Property="IsMouseOver" Value="True">
                         <Setter Property="Opacity" Value="1"/>
                     </Trigger>
@@ -468,7 +464,6 @@ $script:SendFolderToRecycleBinAction = {
             </ControlTemplate>
         </Setter.Value>
     </Setter>
-    <Setter Property="Opacity" Value="0.88"/>
 </Style>
 
     </Window.Resources>
@@ -521,6 +516,9 @@ $script:SendFolderToRecycleBinAction = {
                     </Grid.RowDefinitions>
                     <TextBlock Text="Провідник" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23"/>
                     <ListBox x:Name="FolderList" Grid.Row="2" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.Resources>
+                            <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernVerticalScrollBar}"/>
+                        </ListBox.Resources>
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Padding" Value="8,9"/>
@@ -581,6 +579,9 @@ $script:SendFolderToRecycleBinAction = {
                         <TextBlock x:Name="ImageCountText" Grid.Column="4" Foreground="#7A838B" FontSize="13" VerticalAlignment="Center"/>
                     </Grid>
                     <ScrollViewer x:Name="ImageScrollViewer" Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="Transparent">
+                        <ScrollViewer.Resources>
+                            <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernVerticalScrollBar}"/>
+                        </ScrollViewer.Resources>
                         <WrapPanel x:Name="ImagePanel" Orientation="Horizontal" Background="Transparent"/>
                     </ScrollViewer>
                 </Grid>
@@ -623,9 +624,17 @@ $script:SendFolderToRecycleBinAction = {
                         <Border x:Name="TextContentBorder" BorderBrush="#E6EAED" BorderThickness="1" CornerRadius="8" Background="#FBFCFD" ClipToBounds="True">
                             <Grid>
                                 <TextBox x:Name="TextViewer" BorderThickness="0" Background="Transparent" Padding="12" TextWrapping="Wrap"
-                                         AcceptsReturn="True" AcceptsTab="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                                         IsReadOnly="True" FontSize="14" Foreground="#252A2E" SpellCheck.IsEnabled="False"/>
-                                <FlowDocumentScrollViewer x:Name="MarkdownViewer" Visibility="Collapsed" IsToolBarVisible="False" Background="Transparent"/>
+                                         AcceptsReturn="True" AcceptsTab="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                         IsReadOnly="True" FontSize="14" Foreground="#252A2E" SpellCheck.IsEnabled="False">
+                                    <TextBox.Resources>
+                                        <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernVerticalScrollBar}"/>
+                                    </TextBox.Resources>
+                                </TextBox>
+                                <FlowDocumentScrollViewer x:Name="MarkdownViewer" Visibility="Collapsed" IsToolBarVisible="False" Background="Transparent">
+                                    <FlowDocumentScrollViewer.Resources>
+                                        <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernVerticalScrollBar}"/>
+                                    </FlowDocumentScrollViewer.Resources>
+                                </FlowDocumentScrollViewer>
                             </Grid>
                         </Border>
 
