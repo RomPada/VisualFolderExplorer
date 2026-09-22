@@ -11,14 +11,14 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.1.0'
+$script:AppVersion = '0.1.1'
 $script:SettingsFolder = Join-Path $env:LOCALAPPDATA 'VisualFolderExplorer'
 $script:SettingsPath = Join-Path $script:SettingsFolder 'settings.json'
 
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.1.0" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.1.1" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -172,12 +172,12 @@ $script:SettingsPath = Join-Path $script:SettingsFolder 'settings.json'
                     <Grid Grid.Row="0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock x:Name="SidePanelTitle" Text="Текст" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="TextFileName" Grid.Column="1" Margin="10,0,8,0" Foreground="#7A838B" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" TextAlignment="Right"/>
-                        <Button x:Name="ReturnToTextButton" Grid.Column="2" Content="До тексту" Style="{StaticResource ToolbarButton}" Margin="0" Padding="9,5" FontSize="12" Visibility="Collapsed" ToolTip="Повернутися до текстового опису"/>
+                        <Button x:Name="ReturnToTextButton" Grid.Column="0" Content="До тексту" Style="{StaticResource ToolbarButton}" Margin="0,0,8,0" Padding="9,5" FontSize="12" Visibility="Collapsed" ToolTip="Повернутися до текстового опису"/>
+                        <TextBlock x:Name="SidePanelTitle" Grid.Column="1" Text="Текст" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TextFileName" Grid.Column="2" Margin="10,0,0,0" Foreground="#7A838B" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" TextAlignment="Right"/>
                     </Grid>
 
                     <Grid Grid.Row="2">
@@ -271,6 +271,7 @@ function Save-Settings {
             Version = $script:AppVersion
             RootFolder = $script:RootFolder
             CurrentFolder = $script:CurrentFolder
+            History = @($script:History)
         }
         $settings | ConvertTo-Json | Set-Content -LiteralPath $script:SettingsPath -Encoding UTF8 -Force
     } catch {
@@ -294,16 +295,28 @@ function Load-Settings {
 
         $script:RootFolder = (Resolve-Path -LiteralPath $savedRoot).Path
 
+        # The last opened folder is restored even if the user navigated above the
+        # original home/root folder. This makes the app behave more like Explorer.
         if (-not [string]::IsNullOrWhiteSpace($savedCurrent) -and (Test-Path -LiteralPath $savedCurrent -PathType Container)) {
-            $rootNormalized = [System.IO.Path]::GetFullPath($script:RootFolder).TrimEnd('\')
-            $currentNormalized = [System.IO.Path]::GetFullPath($savedCurrent).TrimEnd('\')
-            if ($currentNormalized.Equals($rootNormalized, [System.StringComparison]::OrdinalIgnoreCase) -or
-                $currentNormalized.StartsWith($rootNormalized + '\', [System.StringComparison]::OrdinalIgnoreCase)) {
-                $script:CurrentFolder = (Resolve-Path -LiteralPath $savedCurrent).Path
-            }
+            $script:CurrentFolder = (Resolve-Path -LiteralPath $savedCurrent).Path
         }
 
         if (-not $script:CurrentFolder) { $script:CurrentFolder = $script:RootFolder }
+
+        # Restore navigation history so the Back button is usable immediately.
+        $script:History.Clear()
+        if ($null -ne $saved.History) {
+            foreach ($historyPath in @($saved.History)) {
+                $candidate = [string]$historyPath
+                if (-not [string]::IsNullOrWhiteSpace($candidate) -and
+                    (Test-Path -LiteralPath $candidate -PathType Container)) {
+                    $resolvedCandidate = (Resolve-Path -LiteralPath $candidate).Path
+                    if (-not $resolvedCandidate.Equals($script:CurrentFolder, [System.StringComparison]::OrdinalIgnoreCase)) {
+                        $script:History.Add($resolvedCandidate)
+                    }
+                }
+            }
+        }
         return $true
     } catch {
         return $false
@@ -516,6 +529,34 @@ function Load-Folders([string]$folder) {
     }
 }
 
+function Update-NavigationButtons {
+    $BackButton.IsEnabled = ($script:History.Count -gt 0)
+    $HomeButton.IsEnabled = [bool]$script:RootFolder
+
+    if ($script:CurrentFolder) {
+        $parent = Split-Path -Parent $script:CurrentFolder
+        $UpButton.IsEnabled = (-not [string]::IsNullOrWhiteSpace($parent) -and
+                               (Test-Path -LiteralPath $parent -PathType Container) -and
+                               -not $parent.Equals($script:CurrentFolder, [System.StringComparison]::OrdinalIgnoreCase))
+    } else {
+        $UpButton.IsEnabled = $false
+    }
+}
+
+function Ensure-StartupNavigationHistory {
+    # A fresh app session has no in-memory navigation history. Seed Back with the
+    # current folder's parent so the toolbar is useful immediately after restore.
+    if ($script:History.Count -eq 0 -and $script:CurrentFolder) {
+        $parent = Split-Path -Parent $script:CurrentFolder
+        if (-not [string]::IsNullOrWhiteSpace($parent) -and
+            (Test-Path -LiteralPath $parent -PathType Container) -and
+            -not $parent.Equals($script:CurrentFolder, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $script:History.Add((Resolve-Path -LiteralPath $parent).Path)
+        }
+    }
+    Update-NavigationButtons
+}
+
 function Navigate-To([string]$folder, [bool]$addHistory = $true) {
     if ([string]::IsNullOrWhiteSpace($folder) -or -not (Test-Path -LiteralPath $folder -PathType Container)) { return }
 
@@ -533,17 +574,7 @@ function Navigate-To([string]$folder, [bool]$addHistory = $true) {
     Load-Images $script:CurrentFolder
     Load-TextFiles $script:CurrentFolder
 
-    $BackButton.IsEnabled = ($script:History.Count -gt 0)
-    $HomeButton.IsEnabled = ($script:RootFolder -and ($script:CurrentFolder -ne $script:RootFolder))
-
-    if ($script:RootFolder) {
-        $currentNormalized = [System.IO.Path]::GetFullPath($script:CurrentFolder).TrimEnd('\')
-        $rootNormalized = [System.IO.Path]::GetFullPath($script:RootFolder).TrimEnd('\')
-        $UpButton.IsEnabled = ($currentNormalized -ne $rootNormalized -and $currentNormalized.StartsWith($rootNormalized, [System.StringComparison]::OrdinalIgnoreCase))
-    } else {
-        $UpButton.IsEnabled = $false
-    }
-
+    Update-NavigationButtons
     Save-Settings
 }
 
@@ -577,7 +608,7 @@ $BackButton.Add_Click({
         $target = $script:History[$lastIndex]
         $script:History.RemoveAt($lastIndex)
         Navigate-To $target $false
-        $BackButton.IsEnabled = ($script:History.Count -gt 0)
+        Update-NavigationButtons
     }
 })
 
@@ -586,13 +617,9 @@ $HomeButton.Add_Click({
 })
 
 $UpButton.Add_Click({
-    if (-not $script:CurrentFolder -or -not $script:RootFolder) { return }
+    if (-not $script:CurrentFolder) { return }
     $parent = Split-Path -Parent $script:CurrentFolder
-    if (-not $parent) { return }
-
-    $rootNormalized = [System.IO.Path]::GetFullPath($script:RootFolder).TrimEnd('\')
-    $parentNormalized = [System.IO.Path]::GetFullPath($parent).TrimEnd('\')
-    if ($parentNormalized.StartsWith($rootNormalized, [System.StringComparison]::OrdinalIgnoreCase)) {
+    if (-not [string]::IsNullOrWhiteSpace($parent) -and (Test-Path -LiteralPath $parent -PathType Container)) {
         Navigate-To $parent
     }
 })
@@ -635,6 +662,8 @@ $window.Add_ContentRendered({
         $savedFolder = $script:CurrentFolder
         $script:CurrentFolder = $null
         Navigate-To $savedFolder $false
+        Ensure-StartupNavigationHistory
+        Save-Settings
     } else {
         Choose-RootFolder
     }
