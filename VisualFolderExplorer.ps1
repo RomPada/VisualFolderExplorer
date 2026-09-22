@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.8.1'
+$script:AppVersion = '0.8.2'
 $script:ImageSortField = 'Name'
 $script:ImageSortDescending = $false
 $script:InitializingSortControls = $true
@@ -107,7 +107,7 @@ $script:SendFolderToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.8.1" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.8.2" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -584,16 +584,14 @@ $script:SendFolderToRecycleBinAction = {
                             <WrapPanel x:Name="ImagePanel" Orientation="Horizontal" Background="Transparent"/>
                         </ScrollViewer>
                         <Canvas x:Name="ImageScrollMarkerLayer"
-                                Width="12"
                                 Margin="0,3,0,3"
-                                HorizontalAlignment="Right"
+                                HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch"
                                 IsHitTestVisible="False"
                                 Panel.ZIndex="50">
                             <Border x:Name="ImageScrollMarker"
                                     Width="8"
                                     Height="4"
-                                    Canvas.Left="2"
                                     Background="#2B7CD3"
                                     BorderThickness="0"
                                     CornerRadius="2"
@@ -1064,6 +1062,49 @@ function Sync-ExplorerSelectionToCurrentText {
     }
 }
 
+function Find-VisualDescendantByType {
+    param(
+        [System.Windows.DependencyObject]$Root,
+        [Type]$Type,
+        [scriptblock]$Predicate = $null
+    )
+
+    if ($null -eq $Root) { return $null }
+    $count = [System.Windows.Media.VisualTreeHelper]::GetChildrenCount($Root)
+    for ($i = 0; $i -lt $count; $i++) {
+        $child = [System.Windows.Media.VisualTreeHelper]::GetChild($Root, $i)
+        if ($Type.IsInstanceOfType($child)) {
+            if ($null -eq $Predicate -or (& $Predicate $child)) { return $child }
+        }
+        $found = Find-VisualDescendantByType -Root $child -Type $Type -Predicate $Predicate
+        if ($null -ne $found) { return $found }
+    }
+    return $null
+}
+
+function Position-ImageScrollMarkerHorizontally {
+    if ($null -eq $ImageScrollMarker -or $null -eq $ImageScrollMarkerLayer -or $null -eq $ImageScrollViewer) { return }
+
+    try {
+        $verticalBar = Find-VisualDescendantByType -Root $ImageScrollViewer -Type ([System.Windows.Controls.Primitives.ScrollBar]) -Predicate {
+            param($control)
+            return ($control.Orientation -eq [System.Windows.Controls.Orientation]::Vertical -and $control.Visibility -eq 'Visible')
+        }
+        if ($null -eq $verticalBar) { return }
+
+        $thumb = Find-VisualDescendantByType -Root $verticalBar -Type ([System.Windows.Controls.Primitives.Thumb])
+        if ($null -eq $thumb -or $thumb.ActualWidth -le 0) { return }
+
+        $thumbPoint = $thumb.TranslatePoint([System.Windows.Point]::new(0, 0), $ImageScrollMarkerLayer)
+        $markerWidth = [double]$ImageScrollMarker.ActualWidth
+        if ($markerWidth -le 0) { $markerWidth = 8.0 }
+        $thumbCenterX = [double]$thumbPoint.X + ([double]$thumb.ActualWidth / 2.0)
+        [System.Windows.Controls.Canvas]::SetLeft($ImageScrollMarker, ($thumbCenterX - ($markerWidth / 2.0)))
+    } catch {
+        # Keep UI alive if the scrollbar visual tree changes.
+    }
+}
+
 function Update-ImageScrollMarker {
     if ($null -eq $ImageScrollMarker -or $null -eq $ImageScrollMarkerLayer) { return }
 
@@ -1100,6 +1141,7 @@ function Update-ImageScrollMarker {
         $available = [Math]::Max(0.0, $trackHeight - $markerHeight)
         $top = [Math]::Max(0.0, [Math]::Min($available, $ratio * $available))
         [System.Windows.Controls.Canvas]::SetTop($ImageScrollMarker, $top)
+        Position-ImageScrollMarkerHorizontally
         $ImageScrollMarker.Visibility = 'Visible'
     } catch {
         $ImageScrollMarker.Visibility = 'Collapsed'
