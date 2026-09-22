@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.4.0'
+$script:AppVersion = '0.4.1'
 $script:PreviewZoomed = $false
 $script:PreviewImagePath = $null
 $script:PreviewDragging = $false
@@ -78,7 +78,7 @@ $script:SendFileToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.4.0" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.4.1" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -512,11 +512,26 @@ function Save-Settings {
             New-Item -ItemType Directory -Path $script:SettingsFolder -Force | Out-Null
         }
 
+        # Save the user-selected window size. If the window is maximized,
+        # RestoreBounds contains the size it had before maximizing.
+        if ($window.WindowState -eq [System.Windows.WindowState]::Maximized) {
+            $savedWindowWidth = $window.RestoreBounds.Width
+            $savedWindowHeight = $window.RestoreBounds.Height
+            $savedWindowState = 'Maximized'
+        } else {
+            $savedWindowWidth = $window.ActualWidth
+            $savedWindowHeight = $window.ActualHeight
+            $savedWindowState = 'Normal'
+        }
+
         $settings = [ordered]@{
             Version = $script:AppVersion
             RootFolder = $script:RootFolder
             CurrentFolder = $script:CurrentFolder
             History = @($script:History)
+            WindowWidth = [math]::Round($savedWindowWidth, 2)
+            WindowHeight = [math]::Round($savedWindowHeight, 2)
+            WindowState = $savedWindowState
         }
         $settings | ConvertTo-Json | Set-Content -LiteralPath $script:SettingsPath -Encoding UTF8 -Force
     } catch {
@@ -533,6 +548,22 @@ function Load-Settings {
 
         $savedRoot = [string]$saved.RootFolder
         $savedCurrent = [string]$saved.CurrentFolder
+
+        # Restore the last window size before the window is shown. Old settings
+        # files without these fields remain fully compatible.
+        try {
+            $savedWidth = [double]$saved.WindowWidth
+            if ($savedWidth -ge $window.MinWidth) { $window.Width = $savedWidth }
+        } catch { }
+        try {
+            $savedHeight = [double]$saved.WindowHeight
+            if ($savedHeight -ge $window.MinHeight) { $window.Height = $savedHeight }
+        } catch { }
+        if ([string]$saved.WindowState -eq 'Maximized') {
+            $window.WindowState = [System.Windows.WindowState]::Maximized
+        } else {
+            $window.WindowState = [System.Windows.WindowState]::Normal
+        }
 
         if ([string]::IsNullOrWhiteSpace($savedRoot) -or -not (Test-Path -LiteralPath $savedRoot -PathType Container)) {
             return $false
@@ -1477,8 +1508,12 @@ $NextTextButton.IsEnabled = $false
 $TextViewer.Text = 'Оберіть кореневу папку, щоб почати.'
 $TextCounter.Text = '0 / 0'
 
+# Load settings before ShowDialog so the saved size is applied before the
+# window becomes visible, without a visible resize after startup.
+$script:StartupSettingsLoaded = Load-Settings
+
 $window.Add_ContentRendered({
-    if (Load-Settings) {
+    if ($script:StartupSettingsLoaded) {
         $savedFolder = $script:CurrentFolder
         $script:CurrentFolder = $null
         Navigate-To $savedFolder $false
