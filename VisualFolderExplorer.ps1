@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.6.0'
+$script:AppVersion = '0.6.1'
 $script:ImageSortField = 'Name'
 $script:ImageSortDescending = $false
 $script:InitializingSortControls = $true
@@ -106,7 +106,7 @@ $script:SendFolderToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.6.0" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.6.1" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -244,13 +244,13 @@ $script:SendFolderToRecycleBinAction = {
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Зображення" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23" VerticalAlignment="Center"/>
-                        <ComboBox x:Name="ImageSortFieldCombo" Grid.Column="2" Width="125" Height="28" Margin="8,0,6,0" VerticalAlignment="Center" ToolTip="Поле сортування">
+                        <ComboBox x:Name="ImageSortFieldCombo" Grid.Column="2" Width="170" Height="32" Margin="10,0,8,0" VerticalAlignment="Center" Padding="8,4" FontSize="13" ToolTip="Поле сортування">
                             <ComboBoxItem Content="За назвою" Tag="Name"/>
                             <ComboBoxItem Content="За датою зміни" Tag="Modified"/>
                             <ComboBoxItem Content="За датою створення" Tag="Created"/>
                             <ComboBoxItem Content="За розміром" Tag="Size"/>
                         </ComboBox>
-                        <ComboBox x:Name="ImageSortDirectionCombo" Grid.Column="3" Width="112" Height="28" Margin="0,0,10,0" VerticalAlignment="Center" ToolTip="Напрям сортування">
+                        <ComboBox x:Name="ImageSortDirectionCombo" Grid.Column="3" Width="138" Height="32" Margin="0,0,10,0" VerticalAlignment="Center" Padding="8,4" FontSize="13" ToolTip="Напрям сортування">
                             <ComboBoxItem Content="Звичайне ↑" Tag="Ascending"/>
                             <ComboBoxItem Content="Зворотне ↓" Tag="Descending"/>
                         </ComboBox>
@@ -366,6 +366,110 @@ $script:History = New-Object System.Collections.Generic.List[string]
 
 function Get-NaturalSortKey([string]$name) {
     return [regex]::Replace($name, '\d+', { param($m) $m.Value.PadLeft(12, '0') })
+}
+
+
+function Show-TextInputDialog {
+    param(
+        [string]$Title,
+        [string]$Prompt,
+        [string]$DefaultText = ''
+    )
+
+    [xml]$dialogXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Dialog"
+        SizeToContent="WidthAndHeight"
+        MinWidth="460"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="#F4F6F8"
+        FontFamily="Segoe UI">
+    <Border Background="White" BorderBrush="#E3E7EA" BorderThickness="1" CornerRadius="12" Padding="18">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="14"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="18"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <TextBlock x:Name="PromptText"
+                       Grid.Row="0"
+                       TextWrapping="Wrap"
+                       Foreground="#2F3740"
+                       FontSize="14"/>
+            <TextBox x:Name="ValueTextBox"
+                     Grid.Row="2"
+                     MinWidth="400"
+                     Height="36"
+                     Padding="10,6"
+                     FontSize="14"
+                     VerticalContentAlignment="Center"
+                     BorderBrush="#CBD5DF"
+                     BorderThickness="1"
+                     Background="#FBFCFD"/>
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="CancelButton"
+                        Content="Cancel"
+                        MinWidth="86"
+                        Margin="0,0,8,0"
+                        Padding="12,6"
+                        Cursor="Hand"/>
+                <Button x:Name="OkButton"
+                        Content="OK"
+                        MinWidth="86"
+                        Padding="12,6"
+                        Cursor="Hand"
+                        IsDefault="True"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
+"@
+
+    $dialogReader = New-Object System.Xml.XmlNodeReader $dialogXaml
+    $dialog = [Windows.Markup.XamlReader]::Load($dialogReader)
+    if ($window) { $dialog.Owner = $window }
+    $dialog.Title = $Title
+
+    $promptText = $dialog.FindName('PromptText')
+    $valueTextBox = $dialog.FindName('ValueTextBox')
+    $okButton = $dialog.FindName('OkButton')
+    $cancelButton = $dialog.FindName('CancelButton')
+
+    $promptText.Text = $Prompt
+    $valueTextBox.Text = $DefaultText
+    $valueTextBox.SelectAll()
+    $valueTextBox.Focus() | Out-Null
+
+    $okButton.Add_Click({
+        $dialog.DialogResult = $true
+        $dialog.Close()
+    })
+    $cancelButton.Add_Click({
+        $dialog.DialogResult = $false
+        $dialog.Close()
+    })
+    $dialog.Add_ContentRendered({
+        $valueTextBox.Focus() | Out-Null
+        $valueTextBox.SelectAll()
+    })
+    $valueTextBox.Add_KeyDown({
+        if ($_.Key -eq [System.Windows.Input.Key]::Escape) {
+            $dialog.DialogResult = $false
+            $dialog.Close()
+            $_.Handled = $true
+        }
+    })
+
+    $result = $dialog.ShowDialog()
+    if ($result -eq $true) {
+        return $valueTextBox.Text
+    }
+    return $null
 }
 
 function New-BitmapImage([string]$path, [int]$decodeWidth = 0) {
@@ -1458,11 +1562,7 @@ $script:FolderRenameHandler = {
     if (-not (Test-Path -LiteralPath $path -PathType Container)) { return }
 
     $oldName = [System.IO.Path]::GetFileName($path.TrimEnd([System.IO.Path]::DirectorySeparatorChar))
-    $newName = [Microsoft.VisualBasic.Interaction]::InputBox(
-        'Введіть нову назву папки:',
-        'Перейменувати папку',
-        $oldName
-    )
+    $newName = Show-TextInputDialog -Title 'Перейменувати папку' -Prompt 'Введіть нову назву папки:' -DefaultText $oldName
     if ([string]::IsNullOrWhiteSpace($newName) -or $newName -eq $oldName) { return }
 
     if ([System.IO.Path]::GetFileName($newName) -ne $newName -or $newName.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
@@ -1583,11 +1683,7 @@ $script:ImageRenameHandler = {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
 
     $oldName = [System.IO.Path]::GetFileName($path)
-    $newName = [Microsoft.VisualBasic.Interaction]::InputBox(
-        'Введіть нову назву файлу:',
-        'Перейменувати зображення',
-        $oldName
-    )
+    $newName = Show-TextInputDialog -Title 'Перейменувати зображення' -Prompt 'Введіть нову назву файлу:' -DefaultText $oldName
     if ([string]::IsNullOrWhiteSpace($newName) -or $newName -eq $oldName) { return }
 
     if ([System.IO.Path]::GetFileName($newName) -ne $newName -or $newName.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
@@ -1671,11 +1767,7 @@ $script:TextRenameHandler = {
     if (-not (Confirm-PendingTextChanges)) { return }
 
     $oldName = [System.IO.Path]::GetFileName($path)
-    $newName = [Microsoft.VisualBasic.Interaction]::InputBox(
-        'Введіть нову назву файлу:',
-        'Перейменувати текстовий файл',
-        $oldName
-    )
+    $newName = Show-TextInputDialog -Title 'Перейменувати текстовий файл' -Prompt 'Введіть нову назву файлу:' -DefaultText $oldName
     if ([string]::IsNullOrWhiteSpace($newName) -or $newName -eq $oldName) { return }
 
     if ([System.IO.Path]::GetFileName($newName) -ne $newName -or $newName.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
@@ -1730,7 +1822,7 @@ $script:CreateFolderHandler = {
     if (-not $script:CurrentFolder) { return }
     if (-not (Confirm-PendingTextChanges)) { return }
 
-    $name = [Microsoft.VisualBasic.Interaction]::InputBox('Назва нової папки:', 'Створити папку', 'Нова папка')
+    $name = Show-TextInputDialog -Title 'Створити папку' -Prompt 'Назва нової папки:' -DefaultText 'Нова папка'
     if ([string]::IsNullOrWhiteSpace($name)) { return }
     if ([System.IO.Path]::GetFileName($name) -ne $name -or $name.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
         [System.Windows.MessageBox]::Show('Назва папки містить недопустимі символи.', 'Некоректна назва') | Out-Null
@@ -1757,7 +1849,7 @@ $script:CreateTxtHandler = {
     if (-not $script:CurrentFolder) { return }
     if (-not (Confirm-PendingTextChanges)) { return }
 
-    $name = [Microsoft.VisualBasic.Interaction]::InputBox('Назва нового TXT-файлу:', 'Створити TXT', 'Новий файл.txt')
+    $name = Show-TextInputDialog -Title 'Створити TXT' -Prompt 'Назва нового TXT-файлу:' -DefaultText 'Новий файл.txt'
     if ([string]::IsNullOrWhiteSpace($name)) { return }
     if (-not $name.EndsWith('.txt', [System.StringComparison]::OrdinalIgnoreCase)) { $name += '.txt' }
 
@@ -1788,7 +1880,7 @@ $script:CreateMdHandler = {
     if (-not $script:CurrentFolder) { return }
     if (-not (Confirm-PendingTextChanges)) { return }
 
-    $name = [Microsoft.VisualBasic.Interaction]::InputBox('Назва нового Markdown-файлу:', 'Створити Markdown', 'Новий файл.md')
+    $name = Show-TextInputDialog -Title 'Створити Markdown' -Prompt 'Назва нового Markdown-файлу:' -DefaultText 'Новий файл.md'
     if ([string]::IsNullOrWhiteSpace($name)) { return }
     if (-not $name.EndsWith('.md', [System.StringComparison]::OrdinalIgnoreCase)) { $name += '.md' }
 
