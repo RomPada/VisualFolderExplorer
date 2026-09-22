@@ -11,14 +11,17 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.1.1'
+$script:AppVersion = '0.2.0'
+$script:IsLoadingText = $false
+$script:TextDirty = $false
+$script:CurrentTextEncoding = [System.Text.UTF8Encoding]::new($false)
 $script:SettingsFolder = Join-Path $env:LOCALAPPDATA 'VisualFolderExplorer'
 $script:SettingsPath = Join-Path $script:SettingsFolder 'settings.json'
 
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.1.1" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.2.0" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -174,17 +177,19 @@ $script:SettingsPath = Join-Path $script:SettingsFolder 'settings.json'
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <Button x:Name="ReturnToTextButton" Grid.Column="0" Content="До тексту" Style="{StaticResource ToolbarButton}" Margin="0,0,8,0" Padding="9,5" FontSize="12" Visibility="Collapsed" ToolTip="Повернутися до текстового опису"/>
                         <TextBlock x:Name="SidePanelTitle" Grid.Column="1" Text="Текст" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="TextFileName" Grid.Column="2" Margin="10,0,0,0" Foreground="#7A838B" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" TextAlignment="Right"/>
+                        <TextBlock x:Name="TextFileName" Grid.Column="2" Margin="10,0,10,0" Foreground="#7A838B" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" TextAlignment="Right"/>
+                        <Button x:Name="SaveTextButton" Grid.Column="3" Content="Зберегти" Style="{StaticResource ToolbarButton}" Margin="0" Padding="10,5" FontSize="12" IsEnabled="False" ToolTip="Зберегти зміни (Ctrl+S)"/>
                     </Grid>
 
                     <Grid Grid.Row="2">
                         <Border x:Name="TextContentBorder" BorderBrush="#E6EAED" BorderThickness="1" CornerRadius="8" Background="#FBFCFD">
                             <TextBox x:Name="TextViewer" BorderThickness="0" Background="Transparent" Padding="12" TextWrapping="Wrap"
-                                     AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                                     IsReadOnly="True" FontSize="14" Foreground="#252A2E"/>
+                                     AcceptsReturn="True" AcceptsTab="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                     IsReadOnly="True" FontSize="14" Foreground="#252A2E" SpellCheck.IsEnabled="False"/>
                         </Border>
 
                         <Border x:Name="PreviewContentBorder" BorderBrush="#E6EAED" BorderThickness="1" CornerRadius="8" Background="#101214" Visibility="Collapsed" ClipToBounds="True">
@@ -227,6 +232,7 @@ $ImagePanel      = $window.FindName('ImagePanel')
 $ImageCountText  = $window.FindName('ImageCountText')
 $TextViewer      = $window.FindName('TextViewer')
 $TextFileName    = $window.FindName('TextFileName')
+$SaveTextButton  = $window.FindName('SaveTextButton')
 $SidePanelTitle  = $window.FindName('SidePanelTitle')
 $ReturnToTextButton = $window.FindName('ReturnToTextButton')
 $TextContentBorder = $window.FindName('TextContentBorder')
@@ -323,16 +329,111 @@ function Load-Settings {
     }
 }
 
+function Get-TextFileData([string]$path) {
+    $bytes = [System.IO.File]::ReadAllBytes($path)
+    $encoding = $null
+    $offset = 0
+
+    if ($bytes.Length -ge 4 -and $bytes[0] -eq 0x00 -and $bytes[1] -eq 0x00 -and $bytes[2] -eq 0xFE -and $bytes[3] -eq 0xFF) {
+        $encoding = [System.Text.UTF32Encoding]::new($true, $true)
+        $offset = 4
+    } elseif ($bytes.Length -ge 4 -and $bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE -and $bytes[2] -eq 0x00 -and $bytes[3] -eq 0x00) {
+        $encoding = [System.Text.UTF32Encoding]::new($false, $true)
+        $offset = 4
+    } elseif ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+        $encoding = [System.Text.UTF8Encoding]::new($true)
+        $offset = 3
+    } elseif ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFE -and $bytes[1] -eq 0xFF) {
+        $encoding = [System.Text.Encoding]::BigEndianUnicode
+        $offset = 2
+    } elseif ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) {
+        $encoding = [System.Text.Encoding]::Unicode
+        $offset = 2
+    } else {
+        try {
+            $strictUtf8 = [System.Text.UTF8Encoding]::new($false, $true)
+            [void]$strictUtf8.GetString($bytes)
+            $encoding = [System.Text.UTF8Encoding]::new($false)
+        } catch {
+            $encoding = [System.Text.Encoding]::Default
+        }
+    }
+
+    $length = $bytes.Length - $offset
+    if ($length -lt 0) { $length = 0 }
+    $text = $encoding.GetString($bytes, $offset, $length)
+    return [pscustomobject]@{ Text = $text; Encoding = $encoding }
+}
+
+function Set-TextDirty([bool]$dirty) {
+    $script:TextDirty = $dirty
+    $hasFile = ($script:TextFiles.Count -gt 0 -and $script:TextIndex -ge 0 -and $script:TextIndex -lt $script:TextFiles.Count)
+    $SaveTextButton.IsEnabled = ($dirty -and $hasFile)
+
+    if ($hasFile) {
+        $name = $script:TextFiles[$script:TextIndex].Name
+        $TextFileName.Text = if ($dirty) { "$name  • незбережено" } else { $name }
+    } elseif ($PreviewContentBorder.Visibility -ne 'Visible') {
+        $TextFileName.Text = ''
+    }
+}
+
+function Save-CurrentTextFile {
+    if ($script:TextFiles.Count -eq 0 -or $script:TextIndex -lt 0 -or $script:TextIndex -ge $script:TextFiles.Count) {
+        return $false
+    }
+
+    $file = $script:TextFiles[$script:TextIndex]
+    try {
+        $encoding = $script:CurrentTextEncoding
+        if ($null -eq $encoding) { $encoding = [System.Text.UTF8Encoding]::new($false) }
+        [System.IO.File]::WriteAllText($file.FullName, $TextViewer.Text, $encoding)
+        Set-TextDirty $false
+        $StatusText.Text = "Збережено: $($file.Name)"
+        return $true
+    } catch {
+        [System.Windows.MessageBox]::Show(
+            "Не вдалося зберегти файл:`r`n$($file.FullName)`r`n`r`n$($_.Exception.Message)",
+            'Помилка збереження',
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Error
+        ) | Out-Null
+        return $false
+    }
+}
+
+function Confirm-PendingTextChanges {
+    if (-not $script:TextDirty) { return $true }
+    if ($script:TextFiles.Count -eq 0 -or $script:TextIndex -lt 0) { return $true }
+
+    $file = $script:TextFiles[$script:TextIndex]
+    $result = [System.Windows.MessageBox]::Show(
+        "У файлі '$($file.Name)' є незбережені зміни.`r`n`r`nЗберегти їх?",
+        'Незбережені зміни',
+        [System.Windows.MessageBoxButton]::YesNoCancel,
+        [System.Windows.MessageBoxImage]::Question
+    )
+
+    if ($result -eq [System.Windows.MessageBoxResult]::Yes) {
+        return (Save-CurrentTextFile)
+    }
+    if ($result -eq [System.Windows.MessageBoxResult]::No) {
+        return $true
+    }
+    return $false
+}
+
 function Show-TextMode {
     $TextContentBorder.Visibility = 'Visible'
     $PreviewContentBorder.Visibility = 'Collapsed'
     $TextNavigationPanel.Visibility = 'Visible'
     $ReturnToTextButton.Visibility = 'Collapsed'
+    $SaveTextButton.Visibility = 'Visible'
     $SidePanelTitle.Text = 'Текст'
     $PreviewImage.Source = $null
     $PreviewError.Visibility = 'Collapsed'
     if ($script:TextFiles.Count -gt 0 -and $script:TextIndex -ge 0) {
-        $TextFileName.Text = $script:TextFiles[$script:TextIndex].Name
+        Set-TextDirty $script:TextDirty
     } else {
         $TextFileName.Text = ''
     }
@@ -340,33 +441,42 @@ function Show-TextMode {
 
 function Update-TextNavigation {
     $count = $script:TextFiles.Count
-    if ($count -eq 0) {
-        $TextViewer.Text = 'У цій папці немає текстових файлів.'
-        $TextFileName.Text = ''
-        $TextCounter.Text = '0 / 0'
-        $PrevTextButton.IsEnabled = $false
-        $NextTextButton.IsEnabled = $false
-        return
-    }
-
-    if ($script:TextIndex -lt 0) { $script:TextIndex = 0 }
-    if ($script:TextIndex -ge $count) { $script:TextIndex = $count - 1 }
-
-    $file = $script:TextFiles[$script:TextIndex]
+    $script:IsLoadingText = $true
     try {
-        $TextViewer.Text = [System.IO.File]::ReadAllText($file.FullName, [System.Text.Encoding]::UTF8)
-    } catch {
+        if ($count -eq 0) {
+            $TextViewer.IsReadOnly = $true
+            $TextViewer.Text = 'У цій папці немає файлів .txt або .md.'
+            $TextFileName.Text = ''
+            $TextCounter.Text = '0 / 0'
+            $PrevTextButton.IsEnabled = $false
+            $NextTextButton.IsEnabled = $false
+            $script:CurrentTextEncoding = [System.Text.UTF8Encoding]::new($false)
+            Set-TextDirty $false
+            return
+        }
+
+        if ($script:TextIndex -lt 0) { $script:TextIndex = 0 }
+        if ($script:TextIndex -ge $count) { $script:TextIndex = $count - 1 }
+
+        $file = $script:TextFiles[$script:TextIndex]
         try {
-            $TextViewer.Text = Get-Content -LiteralPath $file.FullName -Raw -ErrorAction Stop
+            $data = Get-TextFileData $file.FullName
+            $TextViewer.Text = $data.Text
+            $script:CurrentTextEncoding = $data.Encoding
+            $TextViewer.IsReadOnly = $false
         } catch {
             $TextViewer.Text = "Не вдалося прочитати файл.`r`n`r`n$($_.Exception.Message)"
+            $TextViewer.IsReadOnly = $true
+            $script:CurrentTextEncoding = [System.Text.UTF8Encoding]::new($false)
         }
-    }
 
-    $TextFileName.Text = $file.Name
-    $TextCounter.Text = "{0} / {1}" -f ($script:TextIndex + 1), $count
-    $PrevTextButton.IsEnabled = ($count -gt 1)
-    $NextTextButton.IsEnabled = ($count -gt 1)
+        $TextCounter.Text = "{0} / {1}" -f ($script:TextIndex + 1), $count
+        $PrevTextButton.IsEnabled = ($count -gt 1)
+        $NextTextButton.IsEnabled = ($count -gt 1)
+        Set-TextDirty $false
+    } finally {
+        $script:IsLoadingText = $false
+    }
 }
 
 function Load-TextFiles([string]$folder) {
@@ -374,11 +484,18 @@ function Load-TextFiles([string]$folder) {
     $script:TextIndex = -1
 
     try {
-        $files = @(Get-ChildItem -LiteralPath $folder -File -Filter '*.txt' -ErrorAction Stop)
+        $files = @(Get-ChildItem -LiteralPath $folder -File -ErrorAction Stop | Where-Object {
+            $_.Extension -ieq '.txt' -or $_.Extension -ieq '.md'
+        })
         if ($files.Count -gt 0) {
             $folderName = Split-Path -Leaf $folder
-            $preferred = "$folderName`_текст.txt"
-            $script:TextFiles = @($files | Sort-Object @{ Expression = { if ($_.Name -ieq $preferred) { 0 } else { 1 } } }, @{ Expression = { Get-NaturalSortKey $_.Name } })
+            $preferredTxt = "$folderName`_текст.txt"
+            $preferredMd = "$folderName`_текст.md"
+            $script:TextFiles = @($files | Sort-Object @{ Expression = {
+                if ($_.Name -ieq $preferredTxt) { 0 }
+                elseif ($_.Name -ieq $preferredMd) { 1 }
+                else { 2 }
+            } }, @{ Expression = { Get-NaturalSortKey $_.Name } })
             $script:TextIndex = 0
         }
     } catch {
@@ -457,6 +574,7 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
     $previewContentRef = $PreviewContentBorder
     $textNavRef = $TextNavigationPanel
     $returnButtonRef = $ReturnToTextButton
+    $saveButtonRef = $SaveTextButton
     $sideTitleRef = $SidePanelTitle
     $fileNameRef = $TextFileName
 
@@ -482,6 +600,7 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
         $previewContentRef.Visibility = 'Visible'
         $textNavRef.Visibility = 'Collapsed'
         $returnButtonRef.Visibility = 'Visible'
+        $saveButtonRef.Visibility = 'Collapsed'
         $sideTitleRef.Text = "Прев'ю"
         $fileNameRef.Text = [System.IO.Path]::GetFileName($imagePath)
     }.GetNewClosure()
@@ -557,8 +676,9 @@ function Ensure-StartupNavigationHistory {
     Update-NavigationButtons
 }
 
-function Navigate-To([string]$folder, [bool]$addHistory = $true) {
-    if ([string]::IsNullOrWhiteSpace($folder) -or -not (Test-Path -LiteralPath $folder -PathType Container)) { return }
+function Navigate-To([string]$folder, [bool]$addHistory = $true, [bool]$skipUnsavedCheck = $false) {
+    if ([string]::IsNullOrWhiteSpace($folder) -or -not (Test-Path -LiteralPath $folder -PathType Container)) { return $false }
+    if (-not $skipUnsavedCheck -and -not (Confirm-PendingTextChanges)) { return $false }
 
     if ($addHistory -and $script:CurrentFolder -and $script:CurrentFolder -ne $folder) {
         $script:History.Add($script:CurrentFolder)
@@ -576,6 +696,7 @@ function Navigate-To([string]$folder, [bool]$addHistory = $true) {
 
     Update-NavigationButtons
     Save-Settings
+    return $true
 }
 
 function Choose-RootFolder {
@@ -587,14 +708,23 @@ function Choose-RootFolder {
     }
 
     if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+        if (-not (Confirm-PendingTextChanges)) { return }
         $script:RootFolder = $dialog.SelectedPath
         $script:History.Clear()
-        Navigate-To $script:RootFolder $false
+        Navigate-To $script:RootFolder $false $true | Out-Null
     }
 }
 
 $ChooseRootButton.Add_Click({ Choose-RootFolder })
 $ReturnToTextButton.Add_Click({ Show-TextMode })
+$SaveTextButton.Add_Click({ Save-CurrentTextFile | Out-Null })
+
+$TextViewer.Add_TextChanged({
+    if (-not $script:IsLoadingText -and -not $TextViewer.IsReadOnly -and $script:TextFiles.Count -gt 0) {
+        Set-TextDirty $true
+        $StatusText.Text = 'Є незбережені зміни'
+    }
+})
 
 $FolderList.Add_MouseDoubleClick({
     if ($FolderList.SelectedItem -and $FolderList.SelectedItem.Tag) {
@@ -606,9 +736,11 @@ $BackButton.Add_Click({
     if ($script:History.Count -gt 0) {
         $lastIndex = $script:History.Count - 1
         $target = $script:History[$lastIndex]
-        $script:History.RemoveAt($lastIndex)
-        Navigate-To $target $false
-        Update-NavigationButtons
+        if (Navigate-To $target $false) {
+            $script:History.RemoveAt($script:History.Count - 1)
+            Update-NavigationButtons
+            Save-Settings
+        }
     }
 })
 
@@ -626,6 +758,7 @@ $UpButton.Add_Click({
 
 $PrevTextButton.Add_Click({
     if ($script:TextFiles.Count -le 1) { return }
+    if (-not (Confirm-PendingTextChanges)) { return }
     $script:TextIndex--
     if ($script:TextIndex -lt 0) { $script:TextIndex = $script:TextFiles.Count - 1 }
     Update-TextNavigation
@@ -633,6 +766,7 @@ $PrevTextButton.Add_Click({
 
 $NextTextButton.Add_Click({
     if ($script:TextFiles.Count -le 1) { return }
+    if (-not (Confirm-PendingTextChanges)) { return }
     $script:TextIndex++
     if ($script:TextIndex -ge $script:TextFiles.Count) { $script:TextIndex = 0 }
     Update-TextNavigation
@@ -640,7 +774,10 @@ $NextTextButton.Add_Click({
 
 $window.Add_KeyDown({
     param($sender, $e)
-    if ($e.Key -eq [System.Windows.Input.Key]::F5 -and $script:CurrentFolder) {
+    if (($e.KeyboardDevice.Modifiers -band [System.Windows.Input.ModifierKeys]::Control) -and $e.Key -eq [System.Windows.Input.Key]::S) {
+        if ($script:TextDirty) { Save-CurrentTextFile | Out-Null }
+        $e.Handled = $true
+    } elseif ($e.Key -eq [System.Windows.Input.Key]::F5 -and $script:CurrentFolder) {
         Navigate-To $script:CurrentFolder $false
         $e.Handled = $true
     } elseif ($e.Key -eq [System.Windows.Input.Key]::Escape -and $PreviewContentBorder.Visibility -eq 'Visible') {
@@ -669,5 +806,13 @@ $window.Add_ContentRendered({
     }
 })
 
+$window.Add_Closing({
+    param($sender, $e)
+    if (-not (Confirm-PendingTextChanges)) {
+        $e.Cancel = $true
+        return
+    }
+    Save-Settings
+})
 $window.Add_Closed({ Save-Settings })
 $window.ShowDialog() | Out-Null
