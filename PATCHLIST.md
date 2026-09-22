@@ -6,6 +6,24 @@ Every release of Visual Folder Explorer is recorded here. Each entry is provided
 
 ---
 
+## v0.10.0 — 2026-09-22
+
+**English**
+- Added a persistent UA / EN language switcher in the top-right toolbar and made the application bilingual.
+- Added localized main UI labels, image sorting controls, context menus, create/rename/delete dialogs, and common status text.
+- Replaced the default Windows text-edit context menu with the application's modern styled menu and localized Cut / Copy / Paste / Select all actions.
+- Replaced the old system unsaved-changes MessageBox with a modern three-button Save / Don't save / Cancel dialog.
+- The selected interface language is now stored in `settings.json`.
+- Kept only `README.md` (English) and `README_UA.md` (Ukrainian); the legacy `README.txt` is not included.
+
+**Українська**
+- Додано перемикач UA / EN у правому верхньому куті та двомовний інтерфейс програми.
+- Локалізовано основні написи, сортування зображень, контекстні меню, вікна створення/перейменування/видалення та основні статусні повідомлення.
+- Стандартне системне меню редагування тексту замінено на сучасне меню програми з локалізованими діями «Вирізати / Копіювати / Вставити / Виділити все».
+- Системне попередження про незбережений текст замінено на сучасне трикнопкове вікно «Зберегти / Не зберігати / Скасувати».
+- Обрана мова інтерфейсу тепер зберігається у `settings.json`.
+- У комплекті залишаються лише `README.md` (англійською) та `README_UA.md` (українською); старий `README.txt` не додається.
+
 ## v0.9.1 — 2026-09-22
 
 **English**

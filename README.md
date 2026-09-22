@@ -1,4 +1,4 @@
-# Visual Folder Explorer v0.9.1
+# Visual Folder Explorer v0.10.0
 
 Visual Folder Explorer is a lightweight Windows desktop application for browsing folders that contain many images together with TXT or Markdown notes. It is designed for a workflow where images are shown as thumbnails while the related text remains available in the same window.
 
@@ -14,7 +14,7 @@ Visual Folder Explorer is a lightweight Windows desktop application for browsing
 
 ## Start
 
-1. Extract the entire `VisualFolderExplorer_v0.9.1` folder.
+1. Extract the entire `VisualFolderExplorer_v0.10.0` folder.
 2. Double-click `Start Visual Folder Explorer.bat`.
 3. On first launch, choose the root folder with your materials.
 4. On later launches, the application restores the last opened folder and saved window state.
@@ -65,6 +65,11 @@ Supported formats: JPG, JPEG, PNG, BMP, GIF, TIFF/TIF, and WEBP when the require
 - Use the left/right arrows below the text panel to switch between text files.
 - The corresponding file is also selected in Explorer when switching with the arrows.
 
+
+## Interface languages
+
+Use the **UA / EN** drop-down in the top-right corner to switch the entire interface between Ukrainian and English. The selected language is remembered between launches. Context menus, file-operation dialogs, unsaved-change prompts, sorting controls, and main navigation labels follow the selected language.
+
 ## Performance
 
 Version 0.9.x is optimized for folders containing hundreds or even 1000+ images:
@@ -84,7 +89,7 @@ Application state is stored in:
 %LOCALAPPDATA%\VisualFolderExplorer\settings.json
 ```
 
-The application remembers the last folder, navigation history, window size/state, and image sorting preferences.
+The application remembers the last folder, navigation history, window size/state, image sorting preferences, and selected interface language.
 
 ## Project files
 
@@ -98,6 +103,6 @@ The application remembers the last folder, navigation history, window size/state
 
 The project uses Semantic Versioning-style release numbers:
 
-- PATCH: fixes and small non-breaking changes, e.g. `v0.9.0 → v0.9.1`
+- PATCH: fixes and small non-breaking changes, e.g. `v0.9.0 → v0.10.0`
 - MINOR: new backward-compatible features, e.g. `v0.8.2 → v0.9.0`
 - MAJOR: major or breaking releases, e.g. `v0.x.x → v1.0.0`

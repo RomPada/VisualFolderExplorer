@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.9.1'
+$script:AppVersion = '0.10.0'
 $script:ImageSortField = 'Name'
 $script:ImageSortDescending = $false
 $script:InitializingSortControls = $true
@@ -46,6 +46,77 @@ $script:TextDirty = $false
 $script:CurrentTextEncoding = [System.Text.UTF8Encoding]::new($false)
 $script:SettingsFolder = Join-Path $env:LOCALAPPDATA 'VisualFolderExplorer'
 $script:SettingsPath = Join-Path $script:SettingsFolder 'settings.json'
+
+$script:Language = 'UA'
+$script:InitializingLanguageControl = $true
+$script:Strings = @{
+    UA = @{
+        ChooseFolder='Обрати папку'; Explorer='Провідник'; Images='Зображення'; Text='Текст'; Preview="Прев'ю"; BackToText='До тексту';
+        Save='Зберегти'; Edit='Редагувати'; PreviewMode='Перегляд'; Ready='Готово'; PathPlaceholder='Оберіть кореневу папку';
+        BackTip='Назад'; UpTip='На рівень вище'; HomeTip='До кореневої папки'; SortFieldTip='Поле сортування'; SortDirectionTip='Напрям сортування';
+        SortName='За назвою'; SortModified='За датою зміни'; SortCreated='За датою створення'; SortSize='За розміром'; Ascending='Звичайне ↑'; Descending='Зворотне ↓';
+        ReturnTip='Повернутися до текстового опису'; MarkdownTip='Перемкнути між переглядом Markdown і редагуванням'; SaveTip='Зберегти зміни (Ctrl+S)';
+        PreviousTextTip='Попередній текстовий файл'; NextTextTip='Наступний текстовий файл'; PreviewError="Не вдалося відкрити прев'ю.";
+        Open='Відкрити'; Cut='Вирізати'; Copy='Копіювати'; Paste='Вставити'; Rename='Перейменувати'; Delete='Видалити'; SelectAll='Виділити все';
+        CreateFolder='Створити папку'; CreateTxt='Створити TXT-файл'; CreateMd='Створити Markdown-файл (.md)';
+        OK='OK'; Cancel='Скасувати'; Yes='Так'; No='Ні'; SaveChanges='Зберегти'; DiscardChanges='Не зберігати';
+        UnsavedTitle='Незбережені зміни'; UnsavedMessage="У файлі '{0}' є незбережені зміни. Зберегти їх перед продовженням?"; UnsavedMark='незбережено';
+        NoTextFiles='У цій папці немає файлів .txt або .md.'; NoImages='У цій папці немає зображень.'; SelectRoot='Оберіть кореневу папку, щоб почати.';
+        FilesOne='1 файл'; FilesMany='{0} файлів'; NoFiles='0 файлів';
+        RenameFolderTitle='Перейменувати папку'; RenameImageTitle='Перейменувати зображення'; RenameTextTitle='Перейменувати текстовий файл'; RenamePrompt='Введіть нову назву файлу:'; RenameFolderPrompt='Введіть нову назву папки:';
+        DeleteFolderTitle='Видалити папку'; DeleteImageTitle='Видалити зображення'; DeleteTextTitle='Видалити текстовий файл'; DeleteFolderMessage="Перемістити папку '{0}' разом з усім вмістом до кошика?"; DeleteFileMessage="Перемістити '{0}' до кошика?";
+        CreateFolderTitle='Створити папку'; CreateFolderPrompt='Назва нової папки:'; NewFolder='Нова папка'; CreateTxtTitle='Створити TXT'; CreateTxtPrompt='Назва нового TXT-файлу:'; NewTxt='Новий файл.txt'; CreateMdTitle='Створити Markdown'; CreateMdPrompt='Назва нового Markdown-файлу:'; NewMd='Новий файл.md';
+        FolderDialog='Оберіть кореневу папку з вашими матеріалами'; Saved='Збережено: {0}'; OpenedText='Відкрито текстовий файл: {0}'; UnsavedStatus='Є незбережені зміни';
+        PreviewZoomHint="Лівий клік по прев'ю: збільшити до 300%. Після збільшення затисніть і перетягуйте зображення.";
+        ClipboardEmpty='У буфері обміну немає файлів або папок для вставлення.'; PasteTitle='Вставлення';
+        ClipboardErrorTitle='Помилка буфера обміну'; ClipboardError='Не вдалося помістити файл у буфер обміну.'; DeleteErrorTitle='Помилка видалення'; FileRecycleError='Не вдалося перемістити файл до кошика.'; FolderRecycleError='Не вдалося перемістити папку до кошика.';
+        CannotPasteInside="Не можна вставити папку '{0}' всередину неї самої."; Moved='Переміщено'; Copied='Скопійовано'; AutoRenamed='Автоперейменовано через збіг назв: {0}.'; PasteSummary='{0}: {1}. Пропущено: {2}. {3}'; PasteIncomplete='Не всі елементи вдалося вставити:';
+        SaveErrorTitle='Помилка збереження'; SaveError='Не вдалося зберегти файл:'; ReadFileError='Не вдалося прочитати файл.'; TextReadError='Помилка читання текстових файлів';
+        PreviewLoaded="Прев'ю зображень завантажено: {0}{1}"; Seconds=' за {0:N1} с'; PreviewLoading="Завантаження прев'ю: {0} / {1}"; ImageReadError='Помилка читання зображень'; ExplorerReadError='Помилка читання папок і текстових файлів'; FolderReadError='Помилка читання папки'; OpenedFolder='Відкрито: {0}';
+        CutFolder='Вирізано папку до буфера обміну: {0}'; CopyFolder='Скопійовано папку до буфера обміну: {0}'; CutClipboard='Вирізано до буфера обміну: {0}'; CopyClipboard='Скопійовано до буфера обміну: {0}';
+        InvalidNameTitle='Некоректна назва'; InvalidFolderName='Назва папки містить недопустимі символи.'; InvalidFileName='Назва файлу містить недопустимі символи.'; FolderExists='Папка з такою назвою вже існує.'; FileExists='Файл з такою назвою вже існує.'; RenameTitle='Перейменування';
+        ErrorTitle='Помилка'; RenameFolderError='Не вдалося перейменувати папку.'; RenameFileError='Не вдалося перейменувати файл.'; FolderRenamed='Перейменовано папку: {0}'; Renamed='Перейменовано: {0}'; FolderRecycled='Папку переміщено до кошика: {0}'; Recycled='Переміщено до кошика: {0}';
+        FolderCreated='Створено папку: {0}'; FileCreated='Створено: {0}'; CreateFolderError='Не вдалося створити папку.'; CreateFileError='Не вдалося створити файл.'; CreateFolderExistsTitle='Створення папки'; CreateFileExistsTitle='Створення файлу';
+        ZoomDragDone="Прев'ю 300%: перетягування завершено. Клік без руху повертає стандартний масштаб."; ZoomNormal="Масштаб прев'ю: стандартний"; Zoom300="Масштаб прев'ю: 300% — затисніть ліву кнопку та перетягуйте. Клік без руху повертає 100%.";
+    }
+    EN = @{
+        ChooseFolder='Choose folder'; Explorer='Explorer'; Images='Images'; Text='Text'; Preview='Preview'; BackToText='Back to text';
+        Save='Save'; Edit='Edit'; PreviewMode='Preview'; Ready='Ready'; PathPlaceholder='Choose a root folder';
+        BackTip='Back'; UpTip='Up one level'; HomeTip='Go to root folder'; SortFieldTip='Sort field'; SortDirectionTip='Sort direction';
+        SortName='By name'; SortModified='By modified date'; SortCreated='By creation date'; SortSize='By size'; Ascending='Ascending ↑'; Descending='Descending ↓';
+        ReturnTip='Return to text'; MarkdownTip='Switch between Markdown preview and editing'; SaveTip='Save changes (Ctrl+S)';
+        PreviousTextTip='Previous text file'; NextTextTip='Next text file'; PreviewError='Could not open preview.';
+        Open='Open'; Cut='Cut'; Copy='Copy'; Paste='Paste'; Rename='Rename'; Delete='Delete'; SelectAll='Select all';
+        CreateFolder='Create folder'; CreateTxt='Create TXT file'; CreateMd='Create Markdown file (.md)';
+        OK='OK'; Cancel='Cancel'; Yes='Yes'; No='No'; SaveChanges='Save'; DiscardChanges="Don't save";
+        UnsavedTitle='Unsaved changes'; UnsavedMessage="File '{0}' has unsaved changes. Save them before continuing?"; UnsavedMark='unsaved';
+        NoTextFiles='There are no .txt or .md files in this folder.'; NoImages='There are no images in this folder.'; SelectRoot='Choose a root folder to begin.';
+        FilesOne='1 file'; FilesMany='{0} files'; NoFiles='0 files';
+        RenameFolderTitle='Rename folder'; RenameImageTitle='Rename image'; RenameTextTitle='Rename text file'; RenamePrompt='Enter a new file name:'; RenameFolderPrompt='Enter a new folder name:';
+        DeleteFolderTitle='Delete folder'; DeleteImageTitle='Delete image'; DeleteTextTitle='Delete text file'; DeleteFolderMessage="Move folder '{0}' and all of its contents to the Recycle Bin?"; DeleteFileMessage="Move '{0}' to the Recycle Bin?";
+        CreateFolderTitle='Create folder'; CreateFolderPrompt='New folder name:'; NewFolder='New folder'; CreateTxtTitle='Create TXT'; CreateTxtPrompt='New TXT file name:'; NewTxt='New file.txt'; CreateMdTitle='Create Markdown'; CreateMdPrompt='New Markdown file name:'; NewMd='New file.md';
+        FolderDialog='Choose the root folder containing your materials'; Saved='Saved: {0}'; OpenedText='Opened text file: {0}'; UnsavedStatus='There are unsaved changes';
+        PreviewZoomHint='Left-click the preview to zoom to 300%. When zoomed, hold the left mouse button and drag to pan.';
+        ClipboardEmpty='The clipboard does not contain files or folders to paste.'; PasteTitle='Paste';
+        ClipboardErrorTitle='Clipboard error'; ClipboardError='Could not place the item on the clipboard.'; DeleteErrorTitle='Delete error'; FileRecycleError='Could not move the file to the Recycle Bin.'; FolderRecycleError='Could not move the folder to the Recycle Bin.';
+        CannotPasteInside="Cannot paste folder '{0}' inside itself."; Moved='Moved'; Copied='Copied'; AutoRenamed='Auto-renamed because of name conflicts: {0}.'; PasteSummary='{0}: {1}. Skipped: {2}. {3}'; PasteIncomplete='Some items could not be pasted:';
+        SaveErrorTitle='Save error'; SaveError='Could not save file:'; ReadFileError='Could not read file.'; TextReadError='Error reading text files';
+        PreviewLoaded='Image previews loaded: {0}{1}'; Seconds=' in {0:N1} s'; PreviewLoading='Loading previews: {0} / {1}'; ImageReadError='Error reading images'; ExplorerReadError='Error reading folders and text files'; FolderReadError='Error reading folder'; OpenedFolder='Opened: {0}';
+        CutFolder='Cut folder to clipboard: {0}'; CopyFolder='Copied folder to clipboard: {0}'; CutClipboard='Cut to clipboard: {0}'; CopyClipboard='Copied to clipboard: {0}';
+        InvalidNameTitle='Invalid name'; InvalidFolderName='The folder name contains invalid characters.'; InvalidFileName='The file name contains invalid characters.'; FolderExists='A folder with this name already exists.'; FileExists='A file with this name already exists.'; RenameTitle='Rename';
+        ErrorTitle='Error'; RenameFolderError='Could not rename the folder.'; RenameFileError='Could not rename the file.'; FolderRenamed='Folder renamed: {0}'; Renamed='Renamed: {0}'; FolderRecycled='Folder moved to Recycle Bin: {0}'; Recycled='Moved to Recycle Bin: {0}';
+        FolderCreated='Folder created: {0}'; FileCreated='Created: {0}'; CreateFolderError='Could not create folder.'; CreateFileError='Could not create file.'; CreateFolderExistsTitle='Create folder'; CreateFileExistsTitle='Create file';
+        ZoomDragDone='Preview 300%: panning finished. Click without dragging to return to the standard scale.'; ZoomNormal='Preview scale: standard'; Zoom300='Preview scale: 300% — hold the left mouse button and drag. Click without moving to return to 100%.';
+    }
+}
+
+function T {
+    param([string]$Key, [object[]]$Values = @())
+    $langTable = $script:Strings[$script:Language]
+    $value = if ($langTable -and $langTable.ContainsKey($Key)) { [string]$langTable[$Key] } else { $Key }
+    if ($Values.Count -gt 0) { return [string]::Format($value, $Values) }
+    return $value
+}
 
 # Reuse frozen brushes instead of converting the same color strings thousands
 # of times while creating/updating image tiles.
@@ -82,8 +153,8 @@ $script:SetFileClipboardAction = {
         return $true
     } catch {
         [System.Windows.MessageBox]::Show(
-            "Не вдалося помістити файл у буфер обміну.`r`n`r`n$($_.Exception.Message)",
-            'Помилка буфера обміну',
+            "$(T 'ClipboardError')`r`n`r`n$($_.Exception.Message)",
+            (T 'ClipboardErrorTitle'),
             [System.Windows.MessageBoxButton]::OK,
             [System.Windows.MessageBoxImage]::Error
         ) | Out-Null
@@ -103,8 +174,8 @@ $script:SendFileToRecycleBinAction = {
         return $true
     } catch {
         [System.Windows.MessageBox]::Show(
-            "Не вдалося перемістити файл до кошика.`r`n`r`n$($_.Exception.Message)",
-            'Помилка видалення',
+            "$(T 'FileRecycleError')`r`n`r`n$($_.Exception.Message)",
+            (T 'DeleteErrorTitle'),
             [System.Windows.MessageBoxButton]::OK,
             [System.Windows.MessageBoxImage]::Error
         ) | Out-Null
@@ -124,8 +195,8 @@ $script:SendFolderToRecycleBinAction = {
         return $true
     } catch {
         [System.Windows.MessageBox]::Show(
-            "Не вдалося перемістити папку до кошика.`r`n`r`n$($_.Exception.Message)",
-            'Помилка видалення',
+            "$(T 'FolderRecycleError')`r`n`r`n$($_.Exception.Message)",
+            (T 'DeleteErrorTitle'),
             [System.Windows.MessageBoxButton]::OK,
             [System.Windows.MessageBoxImage]::Error
         ) | Out-Null
@@ -136,7 +207,7 @@ $script:SendFolderToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.9.1" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.10.0" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -511,6 +582,7 @@ $script:SendFolderToRecycleBinAction = {
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <Button x:Name="BackButton" Grid.Column="0" Content="←" Style="{StaticResource NavButton}" ToolTip="Назад"/>
@@ -521,7 +593,11 @@ $script:SendFolderToRecycleBinAction = {
                     <TextBlock x:Name="PathText" Text="Оберіть кореневу папку" Foreground="#4A525A" FontSize="14" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                 </Border>
 
-                <Button x:Name="ChooseRootButton" Grid.Column="4" Content="Обрати папку" Style="{StaticResource ToolbarButton}" Margin="0"/>
+                <Button x:Name="ChooseRootButton" Grid.Column="4" Content="Обрати папку" Style="{StaticResource ToolbarButton}" Margin="0,0,8,0"/>
+                <ComboBox x:Name="LanguageCombo" Grid.Column="5" Width="82" Height="34" Style="{StaticResource ModernComboBox}" ToolTip="Language / Мова">
+                    <ComboBoxItem Content="UA" Tag="UA"/>
+                    <ComboBoxItem Content="EN" Tag="EN"/>
+                </ComboBox>
             </Grid>
         </Border>
 
@@ -541,7 +617,7 @@ $script:SendFolderToRecycleBinAction = {
                         <RowDefinition Height="8"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Провідник" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23"/>
+                    <TextBlock x:Name="ExplorerTitleText" Text="Провідник" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23"/>
                     <ListBox x:Name="FolderList" Grid.Row="2" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.Resources>
                             <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernVerticalScrollBar}"/>
@@ -592,7 +668,7 @@ $script:SendFolderToRecycleBinAction = {
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Зображення" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="ImagesTitleText" Grid.Column="0" Text="Зображення" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23" VerticalAlignment="Center"/>
                         <ComboBox x:Name="ImageSortFieldCombo" Grid.Column="2" Width="170" Height="34" Margin="10,0,8,0" VerticalAlignment="Center" Style="{StaticResource ModernComboBox}" ToolTip="Поле сортування">
                             <ComboBoxItem Content="За назвою" Tag="Name"/>
                             <ComboBoxItem Content="За датою зміни" Tag="Modified"/>
@@ -715,6 +791,9 @@ $BackButton      = $window.FindName('BackButton')
 $UpButton        = $window.FindName('UpButton')
 $HomeButton      = $window.FindName('HomeButton')
 $ChooseRootButton= $window.FindName('ChooseRootButton')
+$LanguageCombo   = $window.FindName('LanguageCombo')
+$ExplorerTitleText = $window.FindName('ExplorerTitleText')
+$ImagesTitleText = $window.FindName('ImagesTitleText')
 $PathText        = $window.FindName('PathText')
 $FolderList      = $window.FindName('FolderList')
 $ImagePanel      = $window.FindName('ImagePanel')
@@ -850,6 +929,8 @@ function Show-TextInputDialog {
     $valueTextBox = $dialog.FindName('ValueTextBox')
     $okButton = $dialog.FindName('OkButton')
     $cancelButton = $dialog.FindName('CancelButton')
+    $okButton.Content = T 'OK'
+    $cancelButton.Content = T 'Cancel'
 
     $promptText.Text = $Prompt
     $valueTextBox.Text = $DefaultText
@@ -1008,6 +1089,55 @@ function Show-ConfirmDialog {
     return ($result -eq $true)
 }
 
+
+function Show-UnsavedChangesDialog {
+    param([string]$FileName)
+    [xml]$dialogXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Dialog" SizeToContent="WidthAndHeight" MinWidth="500" WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize" ShowInTaskbar="False" Background="#F4F6F8" FontFamily="Segoe UI">
+    <Window.Resources>
+        <Style x:Key="Secondary" TargetType="Button">
+            <Setter Property="Background" Value="#F3F6F8"/><Setter Property="Foreground" Value="#20262C"/><Setter Property="BorderBrush" Value="#D6DDE3"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="14,8"/><Setter Property="MinWidth" Value="104"/><Setter Property="Cursor" Value="Hand"/><Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="B" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Background" Value="#EAF0F4"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter TargetName="B" Property="Background" Value="#E0E9EF"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+        </Style>
+        <Style x:Key="Primary" TargetType="Button" BasedOn="{StaticResource Secondary}"><Setter Property="Background" Value="#E8F2FB"/><Setter Property="BorderBrush" Value="#7FB0D9"/><Setter Property="Foreground" Value="#1C4F7D"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
+    </Window.Resources>
+    <Border Background="White" BorderBrush="#E3E7EA" BorderThickness="1" CornerRadius="12" Padding="20">
+        <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="18"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Border Width="40" Height="40" CornerRadius="20" Background="#FFF3D9"><TextBlock Text="!" FontSize="22" FontWeight="Bold" Foreground="#9A6A14" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                <TextBlock x:Name="MessageText" Grid.Column="2" MaxWidth="520" TextWrapping="Wrap" Foreground="#1F262C" FontSize="14" VerticalAlignment="Center"/>
+            </Grid>
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="CancelButton" Style="{StaticResource Secondary}" Margin="0,0,8,0" IsCancel="True"/>
+                <Button x:Name="DiscardButton" Style="{StaticResource Secondary}" Margin="0,0,8,0"/>
+                <Button x:Name="SaveButton" Style="{StaticResource Primary}" IsDefault="True"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
+"@
+    $reader = New-Object System.Xml.XmlNodeReader $dialogXaml
+    $dialog = [Windows.Markup.XamlReader]::Load($reader)
+    if ($window) { $dialog.Owner = $window }
+    $dialog.Title = T 'UnsavedTitle'
+    $message = $dialog.FindName('MessageText')
+    $save = $dialog.FindName('SaveButton')
+    $discard = $dialog.FindName('DiscardButton')
+    $cancel = $dialog.FindName('CancelButton')
+    $message.Text = T 'UnsavedMessage' @($FileName)
+    $save.Content = T 'SaveChanges'
+    $discard.Content = T 'DiscardChanges'
+    $cancel.Content = T 'Cancel'
+    $script:UnsavedDialogResult = 'Cancel'
+    $save.Add_Click({ $script:UnsavedDialogResult='Save'; $dialog.DialogResult=$true; $dialog.Close() })
+    $discard.Add_Click({ $script:UnsavedDialogResult='Discard'; $dialog.DialogResult=$true; $dialog.Close() })
+    $cancel.Add_Click({ $script:UnsavedDialogResult='Cancel'; $dialog.DialogResult=$false; $dialog.Close() })
+    [void]$dialog.ShowDialog()
+    return $script:UnsavedDialogResult
+}
+
 function New-ModernContextMenu {
     $menu = New-Object System.Windows.Controls.ContextMenu
     $menu.Style = $window.FindResource('ModernContextMenu')
@@ -1024,6 +1154,62 @@ function New-ModernSeparator {
     $separator = New-Object System.Windows.Controls.Separator
     $separator.Style = $window.FindResource('ModernSeparator')
     return $separator
+}
+
+
+function Update-TextContextMenuState {
+    if ($null -eq $script:TextCutMenuItem) { return }
+    $hasSelection = ($TextViewer.SelectionLength -gt 0)
+    $script:TextCutMenuItem.IsEnabled = (-not $TextViewer.IsReadOnly -and $hasSelection)
+    $script:TextCopyMenuItem.IsEnabled = $hasSelection
+    $script:TextPasteMenuItem.IsEnabled = (-not $TextViewer.IsReadOnly -and [System.Windows.Clipboard]::ContainsText())
+    $script:TextSelectAllMenuItem.IsEnabled = ($TextViewer.Text.Length -gt 0)
+}
+
+function Apply-Language {
+    $window.Title = "Visual Folder Explorer v$($script:AppVersion)"
+    $ChooseRootButton.Content = T 'ChooseFolder'
+    $ExplorerTitleText.Text = T 'Explorer'
+    $ImagesTitleText.Text = T 'Images'
+    $BackButton.ToolTip = T 'BackTip'
+    $UpButton.ToolTip = T 'UpTip'
+    $HomeButton.ToolTip = T 'HomeTip'
+    if (-not $script:CurrentFolder) { $PathText.Text = T 'PathPlaceholder' }
+    $ImageSortFieldCombo.ToolTip = T 'SortFieldTip'
+    $ImageSortDirectionCombo.ToolTip = T 'SortDirectionTip'
+    $ImageSortFieldCombo.Items[0].Content = T 'SortName'
+    $ImageSortFieldCombo.Items[1].Content = T 'SortModified'
+    $ImageSortFieldCombo.Items[2].Content = T 'SortCreated'
+    $ImageSortFieldCombo.Items[3].Content = T 'SortSize'
+    $ImageSortDirectionCombo.Items[0].Content = T 'Ascending'
+    $ImageSortDirectionCombo.Items[1].Content = T 'Descending'
+    $ReturnToTextButton.Content = T 'BackToText'
+    $ReturnToTextButton.ToolTip = T 'ReturnTip'
+    $SaveTextButton.Content = T 'Save'
+    $SaveTextButton.ToolTip = T 'SaveTip'
+    $MarkdownModeButton.Content = if ($script:MarkdownRendered) { T 'Edit' } else { T 'PreviewMode' }
+    $MarkdownModeButton.ToolTip = T 'MarkdownTip'
+    $PrevTextButton.ToolTip = T 'PreviousTextTip'
+    $NextTextButton.ToolTip = T 'NextTextTip'
+    $PreviewError.Text = T 'PreviewError'
+    $SidePanelTitle.Text = if ($PreviewContentBorder.Visibility -eq 'Visible') { T 'Preview' } else { T 'Text' }
+    if ($script:TextDirty) { Set-TextDirty $true }
+    if ($script:TextFiles.Count -eq 0 -and $PreviewContentBorder.Visibility -ne 'Visible') { $TextViewer.Text = T 'NoTextFiles' }
+    $imageTotal = if ($script:PendingImages.Count -gt 0) { $script:PendingImages.Count } else { $script:ImageTiles.Count }
+    $ImageCountText.Text = if ($imageTotal -eq 0) { T 'NoFiles' } elseif ($imageTotal -eq 1) { T 'FilesOne' } else { T 'FilesMany' @($imageTotal) }
+
+    if ($null -ne $pasteMenuItem) { $pasteMenuItem.Header = T 'Paste' }
+    if ($null -ne $createFolderMenuItem) { $createFolderMenuItem.Header = T 'CreateFolder' }
+    if ($null -ne $createTxtMenuItem) { $createTxtMenuItem.Header = T 'CreateTxt' }
+    if ($null -ne $createMdMenuItem) { $createMdMenuItem.Header = T 'CreateMd' }
+    if ($null -ne $imagePasteMenuItem) { $imagePasteMenuItem.Header = T 'Paste' }
+    if ($null -ne $script:TextCutMenuItem) { $script:TextCutMenuItem.Header = T 'Cut' }
+    if ($null -ne $script:TextCopyMenuItem) { $script:TextCopyMenuItem.Header = T 'Copy' }
+    if ($null -ne $script:TextPasteMenuItem) { $script:TextPasteMenuItem.Header = T 'Paste' }
+    if ($null -ne $script:TextSelectAllMenuItem) { $script:TextSelectAllMenuItem.Header = T 'SelectAll' }
+
+    foreach ($entry in @($script:ImageTiles.GetEnumerator())) { if ($entry.Value) { $entry.Value.ContextMenu = $null } }
+    if ($script:CurrentFolder) { Load-Folders $script:CurrentFolder }
 }
 
 function New-BitmapImage([string]$path, [int]$decodeWidth = 0) {
@@ -1407,14 +1593,14 @@ function Set-MarkdownViewMode([bool]$rendered) {
         Render-Markdown $TextViewer.Text
         $TextViewer.Visibility = 'Collapsed'
         $MarkdownViewer.Visibility = 'Visible'
-        $MarkdownModeButton.Content = 'Редагувати'
-        $MarkdownModeButton.ToolTip = 'Відкрити вихідний Markdown для редагування'
+        $MarkdownModeButton.Content = T 'Edit'
+        $MarkdownModeButton.ToolTip = T 'MarkdownTip'
         $script:MarkdownRendered = $true
     } else {
         $MarkdownViewer.Visibility = 'Collapsed'
         $TextViewer.Visibility = 'Visible'
-        $MarkdownModeButton.Content = 'Перегляд'
-        $MarkdownModeButton.ToolTip = 'Показати відформатований Markdown'
+        $MarkdownModeButton.Content = T 'PreviewMode'
+        $MarkdownModeButton.ToolTip = T 'MarkdownTip'
         $script:MarkdownRendered = $false
         $TextViewer.Focus() | Out-Null
     }
@@ -1514,7 +1700,7 @@ function Paste-ClipboardItems {
 
     $clip = Get-ClipboardFileDropInfo
     if (-not $clip.HasFiles) {
-        $StatusText.Text = 'У буфері обміну немає файлів або папок для вставлення.'
+        $StatusText.Text = T 'ClipboardEmpty'
         return
     }
 
@@ -1553,7 +1739,7 @@ function Paste-ClipboardItems {
                 $sourcePrefix = $resolvedSource.TrimEnd('\') + '\'
                 $targetResolved = [System.IO.Path]::GetFullPath($script:CurrentFolder).TrimEnd('\') + '\'
                 if ($targetResolved.StartsWith($sourcePrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-                    $errors.Add("Не можна вставити папку '$name' всередину неї самої.")
+                    $errors.Add((T 'CannotPasteInside' @($name)))
                     $skipCount++
                     continue
                 }
@@ -1586,14 +1772,14 @@ function Paste-ClipboardItems {
         }
     }
 
-    $actionWord = if ($clip.IsCut) { 'Переміщено' } else { 'Скопійовано' }
-    $renameInfo = if ($renamedCount -gt 0) { " Автоперейменовано через збіг назв: $renamedCount." } else { '' }
-    $StatusText.Text = "${actionWord}: $successCount. Пропущено: $skipCount.$renameInfo"
+    $actionWord = if ($clip.IsCut) { T 'Moved' } else { T 'Copied' }
+    $renameInfo = if ($renamedCount -gt 0) { T 'AutoRenamed' @($renamedCount) } else { '' }
+    $StatusText.Text = T 'PasteSummary' @($actionWord, $successCount, $skipCount, $renameInfo)
 
     if ($errors.Count -gt 0) {
         [System.Windows.MessageBox]::Show(
-            "Не всі елементи вдалося вставити:`r`n`r`n$($errors -join "`r`n")",
-            'Вставлення',
+            "$(T 'PasteIncomplete')`r`n`r`n$($errors -join "`r`n")",
+            (T 'PasteTitle'),
             [System.Windows.MessageBoxButton]::OK,
             [System.Windows.MessageBoxImage]::Warning
         ) | Out-Null
@@ -1628,6 +1814,7 @@ function Save-Settings {
             WindowState = $savedWindowState
             ImageSortField = $script:ImageSortField
             ImageSortDescending = $script:ImageSortDescending
+            Language = $script:Language
         }
         $settings | ConvertTo-Json | Set-Content -LiteralPath $script:SettingsPath -Encoding UTF8 -Force
     } catch {
@@ -1666,6 +1853,8 @@ function Load-Settings {
             $script:ImageSortField = $savedSortField
         }
         try { $script:ImageSortDescending = [System.Convert]::ToBoolean($saved.ImageSortDescending) } catch { }
+        $savedLanguage = [string]$saved.Language
+        if ($savedLanguage -in @('UA','EN')) { $script:Language = $savedLanguage }
 
         if ([string]::IsNullOrWhiteSpace($savedRoot) -or -not (Test-Path -LiteralPath $savedRoot -PathType Container)) {
             return $false
@@ -1744,7 +1933,7 @@ function Set-TextDirty([bool]$dirty) {
 
     if ($hasFile) {
         $name = $script:TextFiles[$script:TextIndex].Name
-        $TextFileName.Text = if ($dirty) { "$name  • незбережено" } else { $name }
+        $TextFileName.Text = if ($dirty) { "$name  • $(T 'UnsavedMark')" } else { $name }
     } elseif ($PreviewContentBorder.Visibility -ne 'Visible') {
         $TextFileName.Text = ''
     }
@@ -1761,12 +1950,12 @@ function Save-CurrentTextFile {
         if ($null -eq $encoding) { $encoding = [System.Text.UTF8Encoding]::new($false) }
         [System.IO.File]::WriteAllText($file.FullName, $TextViewer.Text, $encoding)
         Set-TextDirty $false
-        $StatusText.Text = "Збережено: $($file.Name)"
+        $StatusText.Text = T 'Saved' @($file.Name)
         return $true
     } catch {
         [System.Windows.MessageBox]::Show(
-            "Не вдалося зберегти файл:`r`n$($file.FullName)`r`n`r`n$($_.Exception.Message)",
-            'Помилка збереження',
+            "$(T 'SaveError')`r`n$($file.FullName)`r`n`r`n$($_.Exception.Message)",
+            (T 'SaveErrorTitle'),
             [System.Windows.MessageBoxButton]::OK,
             [System.Windows.MessageBoxImage]::Error
         ) | Out-Null
@@ -1777,21 +1966,10 @@ function Save-CurrentTextFile {
 function Confirm-PendingTextChanges {
     if (-not $script:TextDirty) { return $true }
     if ($script:TextFiles.Count -eq 0 -or $script:TextIndex -lt 0) { return $true }
-
     $file = $script:TextFiles[$script:TextIndex]
-    $result = [System.Windows.MessageBox]::Show(
-        "У файлі '$($file.Name)' є незбережені зміни.`r`n`r`nЗберегти їх?",
-        'Незбережені зміни',
-        [System.Windows.MessageBoxButton]::YesNoCancel,
-        [System.Windows.MessageBoxImage]::Question
-    )
-
-    if ($result -eq [System.Windows.MessageBoxResult]::Yes) {
-        return (Save-CurrentTextFile)
-    }
-    if ($result -eq [System.Windows.MessageBoxResult]::No) {
-        return $true
-    }
+    $choice = Show-UnsavedChangesDialog -FileName $file.Name
+    if ($choice -eq 'Save') { return (Save-CurrentTextFile) }
+    if ($choice -eq 'Discard') { return $true }
     return $false
 }
 
@@ -1804,7 +1982,7 @@ function Show-TextMode {
     $TextNavigationPanel.Visibility = 'Visible'
     $ReturnToTextButton.Visibility = 'Collapsed'
     $SaveTextButton.Visibility = 'Visible'
-    $SidePanelTitle.Text = 'Текст'
+    $SidePanelTitle.Text = T 'Text'
     $PreviewImage.Source = $null
     Reset-PreviewTransform
     $script:PreviewImagePath = $null
@@ -1830,7 +2008,7 @@ function Update-TextNavigation {
     try {
         if ($count -eq 0) {
             $TextViewer.IsReadOnly = $true
-            $TextViewer.Text = 'У цій папці немає файлів .txt або .md.'
+            $TextViewer.Text = T 'NoTextFiles'
             $script:IsCurrentMarkdown = $false
             Set-MarkdownViewMode $false
             $TextFileName.Text = ''
@@ -1854,7 +2032,7 @@ Reset-PreviewTransform
             $script:CurrentTextEncoding = $data.Encoding
             $TextViewer.IsReadOnly = $false
         } catch {
-            $TextViewer.Text = "Не вдалося прочитати файл.`r`n`r`n$($_.Exception.Message)"
+            $TextViewer.Text = "$(T 'ReadFileError')`r`n`r`n$($_.Exception.Message)"
             $TextViewer.IsReadOnly = $true
             $script:CurrentTextEncoding = [System.Text.UTF8Encoding]::new($false)
         }
@@ -1895,7 +2073,7 @@ function Load-TextFiles([string]$folder, [object[]]$entries = $null) {
             $script:TextIndex = 0
         }
     } catch {
-        $StatusText.Text = "Помилка читання текстових файлів: $($_.Exception.Message)"
+        $StatusText.Text = "$(T 'TextReadError'): $($_.Exception.Message)"
     }
 
     Update-TextNavigation
@@ -1928,7 +2106,7 @@ function Open-TextFileByPath([string]$path) {
     $script:TextIndex = $targetIndex
     Update-TextNavigation
     Show-TextMode
-    $StatusText.Text = "Відкрито текстовий файл: $([System.IO.Path]::GetFileName($path))"
+    $StatusText.Text = T 'OpenedText' @([System.IO.Path]::GetFileName($path))
     return $true
 }
 
@@ -1936,13 +2114,13 @@ function New-ImageTileContextMenu([string]$path) {
     $menu = New-ModernContextMenu
 
     $cut = New-ModernMenuItem
-    $cut.Header = 'Вирізати'
+    $cut.Header = T 'Cut'
     $cut.Tag = $path
     $cut.Add_Click($script:ImageCutHandler)
     [void]$menu.Items.Add($cut)
 
     $copy = New-ModernMenuItem
-    $copy.Header = 'Копіювати'
+    $copy.Header = T 'Copy'
     $copy.Tag = $path
     $copy.Add_Click($script:ImageCopyHandler)
     [void]$menu.Items.Add($copy)
@@ -1950,13 +2128,13 @@ function New-ImageTileContextMenu([string]$path) {
     [void]$menu.Items.Add((New-ModernSeparator))
 
     $rename = New-ModernMenuItem
-    $rename.Header = 'Перейменувати'
+    $rename.Header = T 'Rename'
     $rename.Tag = $path
     $rename.Add_Click($script:ImageRenameHandler)
     [void]$menu.Items.Add($rename)
 
     $delete = New-ModernMenuItem
-    $delete.Header = 'Видалити'
+    $delete.Header = T 'Delete'
     $delete.Tag = $path
     $delete.Add_Click($script:ImageDeleteHandler)
     [void]$menu.Items.Add($delete)
@@ -2003,7 +2181,7 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
         $img.Source = $bitmap
     } else {
         $fallback = New-Object System.Windows.Controls.TextBlock
-        $fallback.Text = "Немає`nпрев'ю"
+        $fallback.Text = if ($script:Language -eq 'EN') { "No`npreview" } else { "Немає`nпрев'ю" }
         $fallback.TextAlignment = 'Center'
         $fallback.HorizontalAlignment = 'Center'
         $fallback.VerticalAlignment = 'Center'
@@ -2095,18 +2273,18 @@ $script:ImageLoadTickHandler = {
         $script:ImageLoadTimer = $null
         $script:PendingImages = @()
         $script:PendingImageIndex = 0
-        $ImageCountText.Text = if ($total -eq 1) { '1 файл' } else { "$total файлів" }
+        $ImageCountText.Text = if ($total -eq 1) { T 'FilesOne' } else { T 'FilesMany' @($total) }
         $elapsedText = ''
         if ($null -ne $script:ImageLoadStartedAt) {
             $seconds = ((Get-Date) - $script:ImageLoadStartedAt).TotalSeconds
-            $elapsedText = (' за {0:N1} с' -f $seconds)
+            $elapsedText = T 'Seconds' @($seconds)
         }
-        $StatusText.Text = "Прев'ю зображень завантажено: $total$elapsedText"
+        $StatusText.Text = T 'PreviewLoaded' @($total, $elapsedText)
         Update-ImageTileSelection
         Request-ImageScrollMarkerUpdate
     } else {
         # Keep the window interactive and report background-style progressive load.
-        $StatusText.Text = "Завантаження прев'ю: $($script:PendingImageIndex) / $total"
+        $StatusText.Text = T 'PreviewLoading' @($script:PendingImageIndex, $total)
         Request-ImageScrollMarkerUpdate
     }
 }
@@ -2120,11 +2298,11 @@ function Load-Images([string]$folder, [object[]]$entries = $null) {
     try {
         $images = @(Get-SortedImages $folder $entries)
         $count = $images.Count
-        $ImageCountText.Text = if ($count -eq 1) { '1 файл' } else { "$count файлів" }
+        $ImageCountText.Text = if ($count -eq 1) { T 'FilesOne' } else { T 'FilesMany' @($count) }
 
         if ($count -eq 0) {
             $empty = New-Object System.Windows.Controls.TextBlock
-            $empty.Text = 'У цій папці немає зображень.'
+            $empty.Text = T 'NoImages'
             $empty.Margin = 8
             $empty.Foreground = $script:BrushMutedText
             $empty.FontSize = 14
@@ -2147,10 +2325,10 @@ function Load-Images([string]$folder, [object[]]$entries = $null) {
         $script:ImageLoadTimer.Interval = [TimeSpan]::FromMilliseconds(1)
         $script:ImageLoadTimer.Add_Tick($script:ImageLoadTickHandler)
         $script:ImageLoadTimer.Start()
-        $StatusText.Text = "Завантаження прев'ю: 0 / $count"
+        $StatusText.Text = T 'PreviewLoading' @(0, $count)
     } catch {
-        $ImageCountText.Text = '0 файлів'
-        $StatusText.Text = "Помилка читання зображень: $($_.Exception.Message)"
+        $ImageCountText.Text = T 'NoFiles'
+        $StatusText.Text = "$(T 'ImageReadError'): $($_.Exception.Message)"
     }
 }
 
@@ -2167,7 +2345,7 @@ function Load-Folders([string]$folder, [object[]]$entries = $null) {
             $menu = New-ModernContextMenu
 
             $openFolder = New-ModernMenuItem
-            $openFolder.Header = 'Відкрити'
+            $openFolder.Header = T 'Open'
             $openFolder.Tag = $dir.FullName
             $openFolder.Add_Click($script:FolderOpenHandler)
             [void]$menu.Items.Add($openFolder)
@@ -2175,13 +2353,13 @@ function Load-Folders([string]$folder, [object[]]$entries = $null) {
             [void]$menu.Items.Add((New-ModernSeparator))
 
             $cutFolder = New-ModernMenuItem
-            $cutFolder.Header = 'Вирізати'
+            $cutFolder.Header = T 'Cut'
             $cutFolder.Tag = $dir.FullName
             $cutFolder.Add_Click($script:FolderCutHandler)
             [void]$menu.Items.Add($cutFolder)
 
             $copyFolder = New-ModernMenuItem
-            $copyFolder.Header = 'Копіювати'
+            $copyFolder.Header = T 'Copy'
             $copyFolder.Tag = $dir.FullName
             $copyFolder.Add_Click($script:FolderCopyHandler)
             [void]$menu.Items.Add($copyFolder)
@@ -2189,13 +2367,13 @@ function Load-Folders([string]$folder, [object[]]$entries = $null) {
             [void]$menu.Items.Add((New-ModernSeparator))
 
             $renameFolder = New-ModernMenuItem
-            $renameFolder.Header = 'Перейменувати'
+            $renameFolder.Header = T 'Rename'
             $renameFolder.Tag = $dir.FullName
             $renameFolder.Add_Click($script:FolderRenameHandler)
             [void]$menu.Items.Add($renameFolder)
 
             $deleteFolder = New-ModernMenuItem
-            $deleteFolder.Header = 'Видалити'
+            $deleteFolder.Header = T 'Delete'
             $deleteFolder.Tag = $dir.FullName
             $deleteFolder.Add_Click($script:FolderDeleteHandler)
             [void]$menu.Items.Add($deleteFolder)
@@ -2217,7 +2395,7 @@ function Load-Folders([string]$folder, [object[]]$entries = $null) {
             $menu = New-ModernContextMenu
 
             $open = New-ModernMenuItem
-            $open.Header = 'Відкрити'
+            $open.Header = T 'Open'
             $open.Tag = $file.FullName
             $open.Add_Click($script:TextOpenHandler)
             [void]$menu.Items.Add($open)
@@ -2225,13 +2403,13 @@ function Load-Folders([string]$folder, [object[]]$entries = $null) {
             [void]$menu.Items.Add((New-ModernSeparator))
 
             $cut = New-ModernMenuItem
-            $cut.Header = 'Вирізати'
+            $cut.Header = T 'Cut'
             $cut.Tag = $file.FullName
             $cut.Add_Click($script:TextCutHandler)
             [void]$menu.Items.Add($cut)
 
             $copy = New-ModernMenuItem
-            $copy.Header = 'Копіювати'
+            $copy.Header = T 'Copy'
             $copy.Tag = $file.FullName
             $copy.Add_Click($script:TextCopyHandler)
             [void]$menu.Items.Add($copy)
@@ -2239,13 +2417,13 @@ function Load-Folders([string]$folder, [object[]]$entries = $null) {
             [void]$menu.Items.Add((New-ModernSeparator))
 
             $rename = New-ModernMenuItem
-            $rename.Header = 'Перейменувати'
+            $rename.Header = T 'Rename'
             $rename.Tag = $file.FullName
             $rename.Add_Click($script:TextRenameHandler)
             [void]$menu.Items.Add($rename)
 
             $delete = New-ModernMenuItem
-            $delete.Header = 'Видалити'
+            $delete.Header = T 'Delete'
             $delete.Tag = $file.FullName
             $delete.Add_Click($script:TextDeleteHandler)
             [void]$menu.Items.Add($delete)
@@ -2254,7 +2432,7 @@ function Load-Folders([string]$folder, [object[]]$entries = $null) {
             $FolderList.Items.Add($item) | Out-Null
         }
     } catch {
-        $StatusText.Text = "Помилка читання папок і текстових файлів: $($_.Exception.Message)"
+        $StatusText.Text = "$(T 'ExplorerReadError'): $($_.Exception.Message)"
     }
 }
 
@@ -2301,7 +2479,7 @@ function Navigate-To([string]$folder, [bool]$addHistory = $true, [bool]$skipUnsa
     $script:CurrentFolder = $resolvedTargetFolder
     $PathText.Text = $script:CurrentFolder
     $PathText.ToolTip = $script:CurrentFolder
-    $StatusText.Text = "Відкрито: $script:CurrentFolder"
+    $StatusText.Text = T 'OpenedFolder' @($script:CurrentFolder)
     Show-TextMode
 
     Stop-ImageLoading
@@ -2311,7 +2489,7 @@ function Navigate-To([string]$folder, [bool]$addHistory = $true, [bool]$skipUnsa
         # the same 1,000-file folder was scanned several times during navigation.
         $folderEntries = @(Get-ChildItem -LiteralPath $script:CurrentFolder -ErrorAction Stop)
     } catch {
-        $StatusText.Text = "Помилка читання папки: $($_.Exception.Message)"
+        $StatusText.Text = "$(T 'FolderReadError'): $($_.Exception.Message)"
     }
 
     Load-Folders $script:CurrentFolder $folderEntries
@@ -2325,7 +2503,7 @@ function Navigate-To([string]$folder, [bool]$addHistory = $true, [bool]$skipUnsa
 
 function Choose-RootFolder {
     $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
-    $dialog.Description = 'Оберіть кореневу папку з вашими матеріалами'
+    $dialog.Description = T 'FolderDialog'
     $dialog.ShowNewFolderButton = $true
     if ($script:RootFolder -and (Test-Path -LiteralPath $script:RootFolder)) {
         $dialog.SelectedPath = $script:RootFolder
@@ -2352,7 +2530,7 @@ $script:FolderCutHandler = {
     param($sender, $e)
     $path = [string]$sender.Tag
     if (& $script:SetFileClipboardAction $path $true) {
-        $StatusText.Text = "Вирізано папку до буфера обміну: $([System.IO.Path]::GetFileName($path))"
+        $StatusText.Text = T 'CutFolder' @([System.IO.Path]::GetFileName($path))
     }
 }
 
@@ -2360,7 +2538,7 @@ $script:FolderCopyHandler = {
     param($sender, $e)
     $path = [string]$sender.Tag
     if (& $script:SetFileClipboardAction $path $false) {
-        $StatusText.Text = "Скопійовано папку до буфера обміну: $([System.IO.Path]::GetFileName($path))"
+        $StatusText.Text = T 'CopyFolder' @([System.IO.Path]::GetFileName($path))
     }
 }
 
@@ -2370,18 +2548,18 @@ $script:FolderRenameHandler = {
     if (-not (Test-Path -LiteralPath $path -PathType Container)) { return }
 
     $oldName = [System.IO.Path]::GetFileName($path.TrimEnd([System.IO.Path]::DirectorySeparatorChar))
-    $newName = Show-TextInputDialog -Title 'Перейменувати папку' -Prompt 'Введіть нову назву папки:' -DefaultText $oldName
+    $newName = Show-TextInputDialog -Title (T 'RenameFolderTitle') -Prompt (T 'RenameFolderPrompt') -DefaultText $oldName
     if ([string]::IsNullOrWhiteSpace($newName) -or $newName -eq $oldName) { return }
 
     if ([System.IO.Path]::GetFileName($newName) -ne $newName -or $newName.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
-        [System.Windows.MessageBox]::Show('Назва папки містить недопустимі символи.', 'Некоректна назва') | Out-Null
+        [System.Windows.MessageBox]::Show((T 'InvalidFolderName'), (T 'InvalidNameTitle')) | Out-Null
         return
     }
 
     $parent = Split-Path -Parent $path
     $destination = Join-Path $parent $newName
     if (Test-Path -LiteralPath $destination) {
-        [System.Windows.MessageBox]::Show('Папка з такою назвою вже існує.', 'Перейменування') | Out-Null
+        [System.Windows.MessageBox]::Show((T 'FolderExists'), (T 'RenameTitle')) | Out-Null
         return
     }
 
@@ -2396,9 +2574,9 @@ $script:FolderRenameHandler = {
         Load-Folders $script:CurrentFolder
         Update-NavigationButtons
         Save-Settings
-        $StatusText.Text = "Перейменовано папку: $newName"
+        $StatusText.Text = T 'FolderRenamed' @($newName)
     } catch {
-        [System.Windows.MessageBox]::Show("Не вдалося перейменувати папку.`r`n`r`n$($_.Exception.Message)", 'Помилка') | Out-Null
+        [System.Windows.MessageBox]::Show("$(T 'RenameFolderError')`r`n`r`n$($_.Exception.Message)", (T 'ErrorTitle')) | Out-Null
     }
 }
 
@@ -2408,7 +2586,7 @@ $script:FolderDeleteHandler = {
     if (-not (Test-Path -LiteralPath $path -PathType Container)) { return }
     $name = [System.IO.Path]::GetFileName($path.TrimEnd([System.IO.Path]::DirectorySeparatorChar))
 
-    if (-not (Show-ConfirmDialog -Title 'Видалити папку' -Message "Перемістити папку '$name' разом з усім вмістом до кошика?" -ConfirmText 'Так' -CancelText 'Ні')) { return }
+    if (-not (Show-ConfirmDialog -Title (T 'DeleteFolderTitle') -Message (T 'DeleteFolderMessage' @($name)) -ConfirmText (T 'Yes') -CancelText (T 'No'))) { return }
 
     if (& $script:SendFolderToRecycleBinAction $path) {
         for ($i = $script:History.Count - 1; $i -ge 0; $i--) {
@@ -2420,7 +2598,7 @@ $script:FolderDeleteHandler = {
         Load-Folders $script:CurrentFolder
         Update-NavigationButtons
         Save-Settings
-        $StatusText.Text = "Папку переміщено до кошика: $name"
+        $StatusText.Text = T 'FolderRecycled' @($name)
     }
 }
 
@@ -2463,10 +2641,10 @@ $script:ImageTileClickHandler = {
     $ReturnToTextButton.Visibility = 'Visible'
     $SaveTextButton.Visibility = 'Collapsed'
     $MarkdownModeButton.Visibility = 'Collapsed'
-    $SidePanelTitle.Text = "Прев'ю"
+    $SidePanelTitle.Text = T 'Preview'
     $TextFileName.Text = [System.IO.Path]::GetFileName($imagePath)
     Update-ImageTileSelection
-    $StatusText.Text = 'Лівий клік по превʼю: збільшити до 300%. Після збільшення затисніть і перетягуйте зображення.'
+    $StatusText.Text = T 'PreviewZoomHint'
     $e.Handled = $true
 }
 
@@ -2474,7 +2652,7 @@ $script:ImageCutHandler = {
     param($sender, $e)
     $path = [string]$sender.Tag
     if (& $script:SetFileClipboardAction $path $true) {
-        $StatusText.Text = "Вирізано до буфера обміну: $([System.IO.Path]::GetFileName($path))"
+        $StatusText.Text = T 'CutClipboard' @([System.IO.Path]::GetFileName($path))
     }
 }
 
@@ -2482,7 +2660,7 @@ $script:ImageCopyHandler = {
     param($sender, $e)
     $path = [string]$sender.Tag
     if (& $script:SetFileClipboardAction $path $false) {
-        $StatusText.Text = "Скопійовано до буфера обміну: $([System.IO.Path]::GetFileName($path))"
+        $StatusText.Text = T 'CopyClipboard' @([System.IO.Path]::GetFileName($path))
     }
 }
 
@@ -2492,17 +2670,17 @@ $script:ImageRenameHandler = {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
 
     $oldName = [System.IO.Path]::GetFileName($path)
-    $newName = Show-TextInputDialog -Title 'Перейменувати зображення' -Prompt 'Введіть нову назву файлу:' -DefaultText $oldName
+    $newName = Show-TextInputDialog -Title (T 'RenameImageTitle') -Prompt (T 'RenamePrompt') -DefaultText $oldName
     if ([string]::IsNullOrWhiteSpace($newName) -or $newName -eq $oldName) { return }
 
     if ([System.IO.Path]::GetFileName($newName) -ne $newName -or $newName.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
-        [System.Windows.MessageBox]::Show('Назва файлу містить недопустимі символи.', 'Некоректна назва') | Out-Null
+        [System.Windows.MessageBox]::Show((T 'InvalidFileName'), (T 'InvalidNameTitle')) | Out-Null
         return
     }
 
     $destination = Join-Path ([System.IO.Path]::GetDirectoryName($path)) $newName
     if (Test-Path -LiteralPath $destination) {
-        [System.Windows.MessageBox]::Show('Файл з такою назвою вже існує.', 'Перейменування') | Out-Null
+        [System.Windows.MessageBox]::Show((T 'FileExists'), (T 'RenameTitle')) | Out-Null
         return
     }
 
@@ -2516,9 +2694,9 @@ $script:ImageRenameHandler = {
             $script:LastSelectedImagePath = $destination
         }
         Load-Images $script:CurrentFolder
-        $StatusText.Text = "Перейменовано: $newName"
+        $StatusText.Text = T 'Renamed' @($newName)
     } catch {
-        [System.Windows.MessageBox]::Show("Не вдалося перейменувати файл.`r`n`r`n$($_.Exception.Message)", 'Помилка') | Out-Null
+        [System.Windows.MessageBox]::Show("$(T 'RenameFileError')`r`n`r`n$($_.Exception.Message)", (T 'ErrorTitle')) | Out-Null
     }
 }
 
@@ -2528,7 +2706,7 @@ $script:ImageDeleteHandler = {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return }
     $name = [System.IO.Path]::GetFileName($path)
 
-    if (-not (Show-ConfirmDialog -Title 'Видалити зображення' -Message "Перемістити '$name' до кошика?" -ConfirmText 'Так' -CancelText 'Ні')) { return }
+    if (-not (Show-ConfirmDialog -Title (T 'DeleteImageTitle') -Message (T 'DeleteFileMessage' @($name)) -ConfirmText (T 'Yes') -CancelText (T 'No'))) { return }
 
     if (& $script:SendFileToRecycleBinAction $path) {
         if ($script:PreviewImagePath -and $script:PreviewImagePath.Equals($path, [System.StringComparison]::OrdinalIgnoreCase)) {
@@ -2538,7 +2716,7 @@ $script:ImageDeleteHandler = {
             $script:LastSelectedImagePath = $null
         }
         Load-Images $script:CurrentFolder
-        $StatusText.Text = "Переміщено до кошика: $name"
+        $StatusText.Text = T 'Recycled' @($name)
     }
 }
 
@@ -2551,7 +2729,7 @@ $script:TextCutHandler = {
     param($sender, $e)
     $path = [string]$sender.Tag
     if (& $script:SetFileClipboardAction $path $true) {
-        $StatusText.Text = "Вирізано до буфера обміну: $([System.IO.Path]::GetFileName($path))"
+        $StatusText.Text = T 'CutClipboard' @([System.IO.Path]::GetFileName($path))
     }
 }
 
@@ -2559,7 +2737,7 @@ $script:TextCopyHandler = {
     param($sender, $e)
     $path = [string]$sender.Tag
     if (& $script:SetFileClipboardAction $path $false) {
-        $StatusText.Text = "Скопійовано до буфера обміну: $([System.IO.Path]::GetFileName($path))"
+        $StatusText.Text = T 'CopyClipboard' @([System.IO.Path]::GetFileName($path))
     }
 }
 
@@ -2570,17 +2748,17 @@ $script:TextRenameHandler = {
     if (-not (Confirm-PendingTextChanges)) { return }
 
     $oldName = [System.IO.Path]::GetFileName($path)
-    $newName = Show-TextInputDialog -Title 'Перейменувати текстовий файл' -Prompt 'Введіть нову назву файлу:' -DefaultText $oldName
+    $newName = Show-TextInputDialog -Title (T 'RenameTextTitle') -Prompt (T 'RenamePrompt') -DefaultText $oldName
     if ([string]::IsNullOrWhiteSpace($newName) -or $newName -eq $oldName) { return }
 
     if ([System.IO.Path]::GetFileName($newName) -ne $newName -or $newName.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
-        [System.Windows.MessageBox]::Show('Назва файлу містить недопустимі символи.', 'Некоректна назва') | Out-Null
+        [System.Windows.MessageBox]::Show((T 'InvalidFileName'), (T 'InvalidNameTitle')) | Out-Null
         return
     }
 
     $destination = Join-Path ([System.IO.Path]::GetDirectoryName($path)) $newName
     if (Test-Path -LiteralPath $destination) {
-        [System.Windows.MessageBox]::Show('Файл з такою назвою вже існує.', 'Перейменування') | Out-Null
+        [System.Windows.MessageBox]::Show((T 'FileExists'), (T 'RenameTitle')) | Out-Null
         return
     }
 
@@ -2591,9 +2769,9 @@ $script:TextRenameHandler = {
         if ([System.IO.Path]::GetExtension($destination) -ieq '.txt' -or [System.IO.Path]::GetExtension($destination) -ieq '.md') {
             Open-TextFileByPath $destination | Out-Null
         }
-        $StatusText.Text = "Перейменовано: $newName"
+        $StatusText.Text = T 'Renamed' @($newName)
     } catch {
-        [System.Windows.MessageBox]::Show("Не вдалося перейменувати файл.`r`n`r`n$($_.Exception.Message)", 'Помилка') | Out-Null
+        [System.Windows.MessageBox]::Show("$(T 'RenameFileError')`r`n`r`n$($_.Exception.Message)", (T 'ErrorTitle')) | Out-Null
     }
 }
 
@@ -2604,13 +2782,13 @@ $script:TextDeleteHandler = {
     if (-not (Confirm-PendingTextChanges)) { return }
     $name = [System.IO.Path]::GetFileName($path)
 
-    if (-not (Show-ConfirmDialog -Title 'Видалити текстовий файл' -Message "Перемістити '$name' до кошика?" -ConfirmText 'Так' -CancelText 'Ні')) { return }
+    if (-not (Show-ConfirmDialog -Title (T 'DeleteTextTitle') -Message (T 'DeleteFileMessage' @($name)) -ConfirmText (T 'Yes') -CancelText (T 'No'))) { return }
 
     if (& $script:SendFileToRecycleBinAction $path) {
         Load-Folders $script:CurrentFolder
         Load-TextFiles $script:CurrentFolder
         Show-TextMode
-        $StatusText.Text = "Переміщено до кошика: $name"
+        $StatusText.Text = T 'Recycled' @($name)
     }
 }
 
@@ -2619,25 +2797,25 @@ $script:CreateFolderHandler = {
     if (-not $script:CurrentFolder) { return }
     if (-not (Confirm-PendingTextChanges)) { return }
 
-    $name = Show-TextInputDialog -Title 'Створити папку' -Prompt 'Назва нової папки:' -DefaultText 'Нова папка'
+    $name = Show-TextInputDialog -Title (T 'CreateFolderTitle') -Prompt (T 'CreateFolderPrompt') -DefaultText (T 'NewFolder')
     if ([string]::IsNullOrWhiteSpace($name)) { return }
     if ([System.IO.Path]::GetFileName($name) -ne $name -or $name.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
-        [System.Windows.MessageBox]::Show('Назва папки містить недопустимі символи.', 'Некоректна назва') | Out-Null
+        [System.Windows.MessageBox]::Show((T 'InvalidFolderName'), (T 'InvalidNameTitle')) | Out-Null
         return
     }
 
     $path = Join-Path $script:CurrentFolder $name
     if (Test-Path -LiteralPath $path) {
-        [System.Windows.MessageBox]::Show('Папка з такою назвою вже існує.', 'Створення папки') | Out-Null
+        [System.Windows.MessageBox]::Show((T 'FolderExists'), (T 'CreateFolderExistsTitle')) | Out-Null
         return
     }
 
     try {
         New-Item -ItemType Directory -Path $path -ErrorAction Stop | Out-Null
         Load-Folders $script:CurrentFolder
-        $StatusText.Text = "Створено папку: $name"
+        $StatusText.Text = T 'FolderCreated' @($name)
     } catch {
-        [System.Windows.MessageBox]::Show("Не вдалося створити папку.`r`n`r`n$($_.Exception.Message)", 'Помилка') | Out-Null
+        [System.Windows.MessageBox]::Show("$(T 'CreateFolderError')`r`n`r`n$($_.Exception.Message)", (T 'ErrorTitle')) | Out-Null
     }
 }
 
@@ -2646,18 +2824,18 @@ $script:CreateTxtHandler = {
     if (-not $script:CurrentFolder) { return }
     if (-not (Confirm-PendingTextChanges)) { return }
 
-    $name = Show-TextInputDialog -Title 'Створити TXT' -Prompt 'Назва нового TXT-файлу:' -DefaultText 'Новий файл.txt'
+    $name = Show-TextInputDialog -Title (T 'CreateTxtTitle') -Prompt (T 'CreateTxtPrompt') -DefaultText (T 'NewTxt')
     if ([string]::IsNullOrWhiteSpace($name)) { return }
     if (-not $name.EndsWith('.txt', [System.StringComparison]::OrdinalIgnoreCase)) { $name += '.txt' }
 
     if ([System.IO.Path]::GetFileName($name) -ne $name -or $name.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
-        [System.Windows.MessageBox]::Show('Назва файлу містить недопустимі символи.', 'Некоректна назва') | Out-Null
+        [System.Windows.MessageBox]::Show((T 'InvalidFileName'), (T 'InvalidNameTitle')) | Out-Null
         return
     }
 
     $path = Join-Path $script:CurrentFolder $name
     if (Test-Path -LiteralPath $path) {
-        [System.Windows.MessageBox]::Show('Файл з такою назвою вже існує.', 'Створення файлу') | Out-Null
+        [System.Windows.MessageBox]::Show((T 'FileExists'), (T 'CreateFileExistsTitle')) | Out-Null
         return
     }
 
@@ -2666,9 +2844,9 @@ $script:CreateTxtHandler = {
         Load-Folders $script:CurrentFolder
         Load-TextFiles $script:CurrentFolder
         Open-TextFileByPath $path | Out-Null
-        $StatusText.Text = "Створено: $name"
+        $StatusText.Text = T 'FileCreated' @($name)
     } catch {
-        [System.Windows.MessageBox]::Show("Не вдалося створити файл.`r`n`r`n$($_.Exception.Message)", 'Помилка') | Out-Null
+        [System.Windows.MessageBox]::Show("$(T 'CreateFileError')`r`n`r`n$($_.Exception.Message)", (T 'ErrorTitle')) | Out-Null
     }
 }
 
@@ -2677,18 +2855,18 @@ $script:CreateMdHandler = {
     if (-not $script:CurrentFolder) { return }
     if (-not (Confirm-PendingTextChanges)) { return }
 
-    $name = Show-TextInputDialog -Title 'Створити Markdown' -Prompt 'Назва нового Markdown-файлу:' -DefaultText 'Новий файл.md'
+    $name = Show-TextInputDialog -Title (T 'CreateMdTitle') -Prompt (T 'CreateMdPrompt') -DefaultText (T 'NewMd')
     if ([string]::IsNullOrWhiteSpace($name)) { return }
     if (-not $name.EndsWith('.md', [System.StringComparison]::OrdinalIgnoreCase)) { $name += '.md' }
 
     if ([System.IO.Path]::GetFileName($name) -ne $name -or $name.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
-        [System.Windows.MessageBox]::Show('Назва файлу містить недопустимі символи.', 'Некоректна назва') | Out-Null
+        [System.Windows.MessageBox]::Show((T 'InvalidFileName'), (T 'InvalidNameTitle')) | Out-Null
         return
     }
 
     $path = Join-Path $script:CurrentFolder $name
     if (Test-Path -LiteralPath $path) {
-        [System.Windows.MessageBox]::Show('Файл з такою назвою вже існує.', 'Створення файлу') | Out-Null
+        [System.Windows.MessageBox]::Show((T 'FileExists'), (T 'CreateFileExistsTitle')) | Out-Null
         return
     }
 
@@ -2697,16 +2875,35 @@ $script:CreateMdHandler = {
         Load-Folders $script:CurrentFolder
         Load-TextFiles $script:CurrentFolder
         Open-TextFileByPath $path | Out-Null
-        $StatusText.Text = "Створено: $name"
+        $StatusText.Text = T 'FileCreated' @($name)
     } catch {
-        [System.Windows.MessageBox]::Show("Не вдалося створити файл.`r`n`r`n$($_.Exception.Message)", 'Помилка') | Out-Null
+        [System.Windows.MessageBox]::Show("$(T 'CreateFileError')`r`n`r`n$($_.Exception.Message)", (T 'ErrorTitle')) | Out-Null
     }
 }
+
+
+# Styled text-edit context menu (replaces the default Windows English menu).
+$script:TextEditMenu = New-ModernContextMenu
+$script:TextCutMenuItem = New-ModernMenuItem
+$script:TextCutMenuItem.Add_Click({ if (-not $TextViewer.IsReadOnly) { $TextViewer.Cut() } })
+[void]$script:TextEditMenu.Items.Add($script:TextCutMenuItem)
+$script:TextCopyMenuItem = New-ModernMenuItem
+$script:TextCopyMenuItem.Add_Click({ $TextViewer.Copy() })
+[void]$script:TextEditMenu.Items.Add($script:TextCopyMenuItem)
+$script:TextPasteMenuItem = New-ModernMenuItem
+$script:TextPasteMenuItem.Add_Click({ if (-not $TextViewer.IsReadOnly) { $TextViewer.Paste() } })
+[void]$script:TextEditMenu.Items.Add($script:TextPasteMenuItem)
+[void]$script:TextEditMenu.Items.Add((New-ModernSeparator))
+$script:TextSelectAllMenuItem = New-ModernMenuItem
+$script:TextSelectAllMenuItem.Add_Click({ $TextViewer.SelectAll() })
+[void]$script:TextEditMenu.Items.Add($script:TextSelectAllMenuItem)
+$script:TextEditMenu.Add_Opened({ Update-TextContextMenuState })
+$TextViewer.ContextMenu = $script:TextEditMenu
 
 # Context menu for the current location in the left "Провідник" panel.
 $script:CreateTextMenu = New-ModernContextMenu
 $pasteMenuItem = New-ModernMenuItem
-$pasteMenuItem.Header = 'Вставити'
+$pasteMenuItem.Header = T 'Paste'
 $pasteMenuItem.Add_Click({ Paste-ClipboardItems })
 [void]$script:CreateTextMenu.Items.Add($pasteMenuItem)
 [void]$script:CreateTextMenu.Items.Add((New-ModernSeparator))
@@ -2718,25 +2915,25 @@ $script:CreateTextMenu.Add_Opened({
 })
 
 $createFolderMenuItem = New-ModernMenuItem
-$createFolderMenuItem.Header = 'Створити папку'
+$createFolderMenuItem.Header = T 'CreateFolder'
 $createFolderMenuItem.Add_Click($script:CreateFolderHandler)
 [void]$script:CreateTextMenu.Items.Add($createFolderMenuItem)
 [void]$script:CreateTextMenu.Items.Add((New-ModernSeparator))
 
 $createTxtMenuItem = New-ModernMenuItem
-$createTxtMenuItem.Header = 'Створити TXT-файл'
+$createTxtMenuItem.Header = T 'CreateTxt'
 $createTxtMenuItem.Add_Click($script:CreateTxtHandler)
 [void]$script:CreateTextMenu.Items.Add($createTxtMenuItem)
 
 $createMdMenuItem = New-ModernMenuItem
-$createMdMenuItem.Header = 'Створити Markdown-файл (.md)'
+$createMdMenuItem.Header = T 'CreateMd'
 $createMdMenuItem.Add_Click($script:CreateMdHandler)
 [void]$script:CreateTextMenu.Items.Add($createMdMenuItem)
 
 
 $script:CreateImageMenu = New-ModernContextMenu
 $imagePasteMenuItem = New-ModernMenuItem
-$imagePasteMenuItem.Header = 'Вставити'
+$imagePasteMenuItem.Header = T 'Paste'
 $imagePasteMenuItem.Add_Click({ Paste-ClipboardItems })
 [void]$script:CreateImageMenu.Items.Add($imagePasteMenuItem)
 
@@ -2765,6 +2962,15 @@ $ImageSortDirectionCombo.Add_SelectionChanged({
     Save-Settings
 })
 
+$LanguageCombo.Add_SelectionChanged({
+    if ($script:InitializingLanguageControl -or $null -eq $LanguageCombo.SelectedItem) { return }
+    $newLanguage = [string]$LanguageCombo.SelectedItem.Tag
+    if ($newLanguage -notin @('UA','EN') -or $newLanguage -eq $script:Language) { return }
+    $script:Language = $newLanguage
+    Apply-Language
+    Save-Settings
+})
+
 $ChooseRootButton.Add_Click({ Choose-RootFolder })
 $ReturnToTextButton.Add_Click({ Show-TextMode })
 $MarkdownModeButton.Add_Click({
@@ -2775,7 +2981,7 @@ $SaveTextButton.Add_Click({ Save-CurrentTextFile | Out-Null })
 $TextViewer.Add_TextChanged({
     if (-not $script:IsLoadingText -and -not $TextViewer.IsReadOnly -and $script:TextFiles.Count -gt 0) {
         Set-TextDirty $true
-        $StatusText.Text = 'Є незбережені зміни'
+        $StatusText.Text = T 'UnsavedStatus'
     }
 })
 
@@ -2889,14 +3095,14 @@ $PreviewImage.Add_PreviewMouseLeftButtonUp({
 
         if ($script:PreviewDragMoved) {
             $script:PreviewDragMoved = $false
-            $StatusText.Text = 'Превʼю 300%: перетягування завершено. Клік без руху повертає стандартний масштаб.'
+            $StatusText.Text = T 'ZoomDragDone'
         } else {
             Set-PreviewZoom $false
-            $StatusText.Text = 'Масштаб превʼю: стандартний'
+            $StatusText.Text = T 'ZoomNormal'
         }
     } else {
         Set-PreviewZoom $true
-        $StatusText.Text = 'Масштаб превʼю: 300% — затисніть ліву кнопку та перетягуйте. Клік без руху повертає 100%.'
+        $StatusText.Text = T 'Zoom300'
     }
     $e.Handled = $true
 })
@@ -2963,12 +3169,17 @@ $UpButton.IsEnabled = $false
 $HomeButton.IsEnabled = $false
 $PrevTextButton.IsEnabled = $false
 $NextTextButton.IsEnabled = $false
-$TextViewer.Text = 'Оберіть кореневу папку, щоб почати.'
+$TextViewer.Text = T 'SelectRoot'
 $TextCounter.Text = '0 / 0'
 
 # Load settings before ShowDialog so the saved size is applied before the
 # window becomes visible, without a visible resize after startup.
 $script:StartupSettingsLoaded = Load-Settings
+
+# Apply saved/default interface language before the window is shown.
+$LanguageCombo.SelectedIndex = if ($script:Language -eq 'EN') { 1 } else { 0 }
+$script:InitializingLanguageControl = $false
+Apply-Language
 
 # Reflect the saved image-sort options in the toolbar.
 switch ($script:ImageSortField) {
