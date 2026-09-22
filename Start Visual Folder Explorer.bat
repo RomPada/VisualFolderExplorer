@@ -1,15 +1,15 @@
 @echo off
 setlocal
 cd /d "%~dp0"
+title Visual Folder Explorer v0.1.0
 
 rem Run the PowerShell code from memory instead of using -File.
-rem This avoids Windows execution-policy errors such as "script is not digitally signed"
-rem on PCs where script files are blocked by policy.
+rem This avoids execution-policy errors for unsigned downloaded .ps1 files.
 powershell.exe -NoLogo -NoProfile -STA -Command "$ErrorActionPreference='Stop'; $p = Join-Path (Get-Location) 'VisualFolderExplorer.ps1'; $code = [System.IO.File]::ReadAllText($p); & ([ScriptBlock]::Create($code))"
 
 if errorlevel 1 (
   echo.
-  echo Visual Folder Explorer could not be started.
+  echo Visual Folder Explorer v0.1.0 could not be started.
   echo.
   echo If Windows blocked the downloaded ZIP, right-click the ZIP or extracted files,
   echo choose Properties, check Unblock if it is shown, then extract/run again.

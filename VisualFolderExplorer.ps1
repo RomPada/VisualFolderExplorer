@@ -11,11 +11,14 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
+$script:AppVersion = '0.1.0'
+$script:SettingsFolder = Join-Path $env:LOCALAPPDATA 'VisualFolderExplorer'
+$script:SettingsPath = Join-Path $script:SettingsFolder 'settings.json'
 
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.1.0" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -168,20 +171,31 @@ $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.t
 
                     <Grid Grid.Row="0">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="Текст" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23"/>
-                        <TextBlock x:Name="TextFileName" Grid.Column="1" Foreground="#7A838B" FontSize="12" MaxWidth="230" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="SidePanelTitle" Text="Текст" FontWeight="SemiBold" FontSize="16" Foreground="#1B1F23" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TextFileName" Grid.Column="1" Margin="10,0,8,0" Foreground="#7A838B" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" TextAlignment="Right"/>
+                        <Button x:Name="ReturnToTextButton" Grid.Column="2" Content="До тексту" Style="{StaticResource ToolbarButton}" Margin="0" Padding="9,5" FontSize="12" Visibility="Collapsed" ToolTip="Повернутися до текстового опису"/>
                     </Grid>
 
-                    <Border Grid.Row="2" BorderBrush="#E6EAED" BorderThickness="1" CornerRadius="8" Background="#FBFCFD">
-                        <TextBox x:Name="TextViewer" BorderThickness="0" Background="Transparent" Padding="12" TextWrapping="Wrap"
-                                 AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                                 IsReadOnly="True" FontSize="14" Foreground="#252A2E"/>
-                    </Border>
+                    <Grid Grid.Row="2">
+                        <Border x:Name="TextContentBorder" BorderBrush="#E6EAED" BorderThickness="1" CornerRadius="8" Background="#FBFCFD">
+                            <TextBox x:Name="TextViewer" BorderThickness="0" Background="Transparent" Padding="12" TextWrapping="Wrap"
+                                     AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                     IsReadOnly="True" FontSize="14" Foreground="#252A2E"/>
+                        </Border>
 
-                    <Grid Grid.Row="4">
+                        <Border x:Name="PreviewContentBorder" BorderBrush="#E6EAED" BorderThickness="1" CornerRadius="8" Background="#101214" Visibility="Collapsed" ClipToBounds="True">
+                            <Grid>
+                                <Image x:Name="PreviewImage" Stretch="Uniform" Margin="8"/>
+                                <TextBlock x:Name="PreviewError" Text="Не вдалося відкрити прев'ю." Foreground="White" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <Grid x:Name="TextNavigationPanel" Grid.Row="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
@@ -213,6 +227,13 @@ $ImagePanel      = $window.FindName('ImagePanel')
 $ImageCountText  = $window.FindName('ImageCountText')
 $TextViewer      = $window.FindName('TextViewer')
 $TextFileName    = $window.FindName('TextFileName')
+$SidePanelTitle  = $window.FindName('SidePanelTitle')
+$ReturnToTextButton = $window.FindName('ReturnToTextButton')
+$TextContentBorder = $window.FindName('TextContentBorder')
+$PreviewContentBorder = $window.FindName('PreviewContentBorder')
+$PreviewImage    = $window.FindName('PreviewImage')
+$PreviewError    = $window.FindName('PreviewError')
+$TextNavigationPanel = $window.FindName('TextNavigationPanel')
 $PrevTextButton  = $window.FindName('PrevTextButton')
 $NextTextButton  = $window.FindName('NextTextButton')
 $TextCounter     = $window.FindName('TextCounter')
@@ -240,31 +261,68 @@ function New-BitmapImage([string]$path, [int]$decodeWidth = 0) {
     }
 }
 
-function Show-ImagePreview([string]$path) {
-    $preview = New-Object System.Windows.Window
-    $preview.Title = [System.IO.Path]::GetFileName($path)
-    $preview.Width = 1100
-    $preview.Height = 780
-    $preview.MinWidth = 620
-    $preview.MinHeight = 420
-    $preview.WindowStartupLocation = 'CenterOwner'
-    $preview.Owner = $window
-    $preview.Background = [System.Windows.Media.Brushes]::Black
+function Save-Settings {
+    try {
+        if (-not (Test-Path -LiteralPath $script:SettingsFolder -PathType Container)) {
+            New-Item -ItemType Directory -Path $script:SettingsFolder -Force | Out-Null
+        }
 
-    $grid = New-Object System.Windows.Controls.Grid
-    $scroll = New-Object System.Windows.Controls.ScrollViewer
-    $scroll.HorizontalScrollBarVisibility = 'Auto'
-    $scroll.VerticalScrollBarVisibility = 'Auto'
-    $scroll.Background = [System.Windows.Media.Brushes]::Black
+        $settings = [ordered]@{
+            Version = $script:AppVersion
+            RootFolder = $script:RootFolder
+            CurrentFolder = $script:CurrentFolder
+        }
+        $settings | ConvertTo-Json | Set-Content -LiteralPath $script:SettingsPath -Encoding UTF8 -Force
+    } catch {
+        # Налаштування не повинні заважати основній роботі програми.
+    }
+}
 
-    $img = New-Object System.Windows.Controls.Image
-    $img.Stretch = 'Uniform'
-    $img.Margin = 10
-    $img.Source = New-BitmapImage $path 1600
-    $scroll.Content = $img
-    $grid.Children.Add($scroll) | Out-Null
-    $preview.Content = $grid
-    $preview.ShowDialog() | Out-Null
+function Load-Settings {
+    try {
+        if (-not (Test-Path -LiteralPath $script:SettingsPath -PathType Leaf)) { return $false }
+        $raw = Get-Content -LiteralPath $script:SettingsPath -Raw -ErrorAction Stop
+        if ([string]::IsNullOrWhiteSpace($raw)) { return $false }
+        $saved = $raw | ConvertFrom-Json -ErrorAction Stop
+
+        $savedRoot = [string]$saved.RootFolder
+        $savedCurrent = [string]$saved.CurrentFolder
+
+        if ([string]::IsNullOrWhiteSpace($savedRoot) -or -not (Test-Path -LiteralPath $savedRoot -PathType Container)) {
+            return $false
+        }
+
+        $script:RootFolder = (Resolve-Path -LiteralPath $savedRoot).Path
+
+        if (-not [string]::IsNullOrWhiteSpace($savedCurrent) -and (Test-Path -LiteralPath $savedCurrent -PathType Container)) {
+            $rootNormalized = [System.IO.Path]::GetFullPath($script:RootFolder).TrimEnd('\')
+            $currentNormalized = [System.IO.Path]::GetFullPath($savedCurrent).TrimEnd('\')
+            if ($currentNormalized.Equals($rootNormalized, [System.StringComparison]::OrdinalIgnoreCase) -or
+                $currentNormalized.StartsWith($rootNormalized + '\', [System.StringComparison]::OrdinalIgnoreCase)) {
+                $script:CurrentFolder = (Resolve-Path -LiteralPath $savedCurrent).Path
+            }
+        }
+
+        if (-not $script:CurrentFolder) { $script:CurrentFolder = $script:RootFolder }
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+function Show-TextMode {
+    $TextContentBorder.Visibility = 'Visible'
+    $PreviewContentBorder.Visibility = 'Collapsed'
+    $TextNavigationPanel.Visibility = 'Visible'
+    $ReturnToTextButton.Visibility = 'Collapsed'
+    $SidePanelTitle.Text = 'Текст'
+    $PreviewImage.Source = $null
+    $PreviewError.Visibility = 'Collapsed'
+    if ($script:TextFiles.Count -gt 0 -and $script:TextIndex -ge 0) {
+        $TextFileName.Text = $script:TextFiles[$script:TextIndex].Name
+    } else {
+        $TextFileName.Text = ''
+    }
 }
 
 function Update-TextNavigation {
@@ -376,8 +434,44 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
     $grid.Children.Add($label) | Out-Null
 
     $tile.Child = $grid
+
+    # Capture only UI references and the path. The preview is rendered directly in
+    # the right panel, so the click handler does not depend on a helper function.
     $imagePath = $file.FullName
-    $clickHandler = { Show-ImagePreview $imagePath }.GetNewClosure()
+    $previewImageRef = $PreviewImage
+    $previewErrorRef = $PreviewError
+    $textContentRef = $TextContentBorder
+    $previewContentRef = $PreviewContentBorder
+    $textNavRef = $TextNavigationPanel
+    $returnButtonRef = $ReturnToTextButton
+    $sideTitleRef = $SidePanelTitle
+    $fileNameRef = $TextFileName
+
+    $clickHandler = {
+        try {
+            $bitmapPreview = New-Object System.Windows.Media.Imaging.BitmapImage
+            $bitmapPreview.BeginInit()
+            $bitmapPreview.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+            $bitmapPreview.CreateOptions = [System.Windows.Media.Imaging.BitmapCreateOptions]::IgnoreImageCache
+            $bitmapPreview.DecodePixelWidth = 1600
+            $bitmapPreview.UriSource = New-Object System.Uri($imagePath, [System.UriKind]::Absolute)
+            $bitmapPreview.EndInit()
+            $bitmapPreview.Freeze()
+
+            $previewImageRef.Source = $bitmapPreview
+            $previewErrorRef.Visibility = 'Collapsed'
+        } catch {
+            $previewImageRef.Source = $null
+            $previewErrorRef.Visibility = 'Visible'
+        }
+
+        $textContentRef.Visibility = 'Collapsed'
+        $previewContentRef.Visibility = 'Visible'
+        $textNavRef.Visibility = 'Collapsed'
+        $returnButtonRef.Visibility = 'Visible'
+        $sideTitleRef.Text = "Прев'ю"
+        $fileNameRef.Text = [System.IO.Path]::GetFileName($imagePath)
+    }.GetNewClosure()
     $tile.Add_MouseLeftButtonUp($clickHandler)
 
     $ImagePanel.Children.Add($tile) | Out-Null
@@ -433,6 +527,7 @@ function Navigate-To([string]$folder, [bool]$addHistory = $true) {
     $PathText.Text = $script:CurrentFolder
     $PathText.ToolTip = $script:CurrentFolder
     $StatusText.Text = "Відкрито: $script:CurrentFolder"
+    Show-TextMode
 
     Load-Folders $script:CurrentFolder
     Load-Images $script:CurrentFolder
@@ -448,6 +543,8 @@ function Navigate-To([string]$folder, [bool]$addHistory = $true) {
     } else {
         $UpButton.IsEnabled = $false
     }
+
+    Save-Settings
 }
 
 function Choose-RootFolder {
@@ -466,6 +563,7 @@ function Choose-RootFolder {
 }
 
 $ChooseRootButton.Add_Click({ Choose-RootFolder })
+$ReturnToTextButton.Add_Click({ Show-TextMode })
 
 $FolderList.Add_MouseDoubleClick({
     if ($FolderList.SelectedItem -and $FolderList.SelectedItem.Tag) {
@@ -518,6 +616,9 @@ $window.Add_KeyDown({
     if ($e.Key -eq [System.Windows.Input.Key]::F5 -and $script:CurrentFolder) {
         Navigate-To $script:CurrentFolder $false
         $e.Handled = $true
+    } elseif ($e.Key -eq [System.Windows.Input.Key]::Escape -and $PreviewContentBorder.Visibility -eq 'Visible') {
+        Show-TextMode
+        $e.Handled = $true
     }
 })
 
@@ -530,7 +631,14 @@ $TextViewer.Text = 'Оберіть кореневу папку, щоб поча�
 $TextCounter.Text = '0 / 0'
 
 $window.Add_ContentRendered({
-    if (-not $script:RootFolder) { Choose-RootFolder }
+    if (Load-Settings) {
+        $savedFolder = $script:CurrentFolder
+        $script:CurrentFolder = $null
+        Navigate-To $savedFolder $false
+    } else {
+        Choose-RootFolder
+    }
 })
 
+$window.Add_Closed({ Save-Settings })
 $window.ShowDialog() | Out-Null
