@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.3.0'
+$script:AppVersion = '0.3.1'
 $script:PreviewZoomed = $false
 $script:PreviewImagePath = $null
 $script:IsLoadingText = $false
@@ -71,7 +71,7 @@ $script:SendFileToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.3.0" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.3.1" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -879,7 +879,7 @@ $script:ImageTileClickHandler = {
     $SaveTextButton.Visibility = 'Collapsed'
     $SidePanelTitle.Text = "Прев'ю"
     $TextFileName.Text = [System.IO.Path]::GetFileName($imagePath)
-    $StatusText.Text = 'Лівий клік по прев’ю: збільшити / повернути розмір'
+    $StatusText.Text = 'Лівий клік по превʼю: збільшити / повернути розмір'
     $e.Handled = $true
 }
 
@@ -1161,11 +1161,11 @@ $PreviewImage.Add_MouseLeftButtonUp({
     if ($script:PreviewZoomed) {
         $PreviewImage.RenderTransform = [System.Windows.Media.ScaleTransform]::new(1, 1)
         $script:PreviewZoomed = $false
-        $StatusText.Text = 'Масштаб прев’ю: стандартний'
+        $StatusText.Text = 'Масштаб превʼю: стандартний'
     } else {
         $PreviewImage.RenderTransform = [System.Windows.Media.ScaleTransform]::new(2, 2)
         $script:PreviewZoomed = $true
-        $StatusText.Text = 'Масштаб прев’ю: 200% — натисніть ще раз, щоб повернути'
+        $StatusText.Text = 'Масштаб превʼю: 200% — натисніть ще раз, щоб повернути'
     }
     $e.Handled = $true
 })
