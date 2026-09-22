@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.11.0'
+$script:AppVersion = '0.11.1'
 $script:ImageSortField = 'Name'
 $script:ImageSortDescending = $false
 $script:InitializingSortControls = $true
@@ -92,7 +92,7 @@ $script:Strings = @{
         ErrorTitle='Помилка'; RenameFolderError='Не вдалося перейменувати папку.'; RenameFileError='Не вдалося перейменувати файл.'; FolderRenamed='Перейменовано папку: {0}'; Renamed='Перейменовано: {0}'; FolderRecycled='Папку переміщено до кошика: {0}'; Recycled='Переміщено до кошика: {0}';
         FolderCreated='Створено папку: {0}'; FileCreated='Створено: {0}'; CreateFolderError='Не вдалося створити папку.'; CreateFileError='Не вдалося створити файл.'; CreateFolderExistsTitle='Створення папки'; CreateFileExistsTitle='Створення файлу';
         ZoomDragDone="Прев'ю 300%: перетягування завершено. Клік без руху повертає стандартний масштаб."; ZoomNormal="Масштаб прев'ю: стандартний"; Zoom300="Масштаб прев'ю: 300% — затисніть ліву кнопку та перетягуйте. Клік без руху повертає 100%.";
-        MoveImagesButton='Перенести'; MoveImagesTitle='Перенесення зображень'; MoveSource='Звідки'; MoveDestination='Куди'; Browse='Обрати'; MoveStart='Перенести'; MoveHint='Переносяться зображення лише з цієї папки (без підпапок). При збігу назви додається _1, _2 тощо.'; MoveSourceMissing='Папка-джерело не існує.'; MoveDestinationRequired='Оберіть папку призначення.'; MoveSameFolder='Джерело і призначення не можуть бути однаковими.'; MoveNoImages='У папці-джерелі немає підтримуваних зображень.'; MoveComplete='Перенесено зображень: {0}. Автоперейменовано: {1}.'; MoveError='Не вдалося перенести зображення.'; MoveSelectSource='Оберіть папку-джерело'; MoveSelectDestination='Оберіть папку призначення';
+        MoveImagesButton='Перенести'; MoveImagesTitle='Перенесення зображень'; MoveSource='Звідки'; MoveDestination='Куди'; Browse='Обрати'; MoveStart='Перенести'; MoveHint='Переносяться зображення лише з цієї папки (без підпапок). При збігу назви додається _1, _2 тощо.'; MoveSourceMissing='Папка-джерело не існує.'; MoveDestinationRequired='Оберіть папку призначення.'; MoveSameFolder='Джерело і призначення не можуть бути однаковими.'; MoveNoImages='У папці-джерелі немає підтримуваних зображень.'; MoveComplete='Перенесено зображень: {0}. Автоперейменовано: {1}.'; MoveError='Не вдалося перенести зображення.'; MoveSelectSource='Оберіть папку-джерело'; MoveSelectDestination='Оберіть папку призначення'; FolderPickerPath='Поточна папка'; FolderPickerDrives='Диск'; FolderPickerUp='Вгору'; FolderPickerSelect='Обрати цю папку'; FolderPickerEmpty='У цій папці немає підпапок.'; FolderPickerInvalid='Вказана папка не існує або недоступна.';
     }
     EN = @{
         ChooseFolder='Choose folder'; Explorer='Explorer'; Images='Images'; Text='Text'; Preview='Preview'; BackToText='Back to text';
@@ -122,7 +122,7 @@ $script:Strings = @{
         ErrorTitle='Error'; RenameFolderError='Could not rename the folder.'; RenameFileError='Could not rename the file.'; FolderRenamed='Folder renamed: {0}'; Renamed='Renamed: {0}'; FolderRecycled='Folder moved to Recycle Bin: {0}'; Recycled='Moved to Recycle Bin: {0}';
         FolderCreated='Folder created: {0}'; FileCreated='Created: {0}'; CreateFolderError='Could not create folder.'; CreateFileError='Could not create file.'; CreateFolderExistsTitle='Create folder'; CreateFileExistsTitle='Create file';
         ZoomDragDone='Preview 300%: panning finished. Click without dragging to return to the standard scale.'; ZoomNormal='Preview scale: standard'; Zoom300='Preview scale: 300% — hold the left mouse button and drag. Click without moving to return to 100%.';
-        MoveImagesButton='Move images'; MoveImagesTitle='Move images'; MoveSource='From'; MoveDestination='To'; Browse='Browse'; MoveStart='Move'; MoveHint='Moves supported images from this folder only (not subfolders). Name conflicts receive _1, _2, and so on.'; MoveSourceMissing='The source folder does not exist.'; MoveDestinationRequired='Choose a destination folder.'; MoveSameFolder='Source and destination cannot be the same.'; MoveNoImages='The source folder contains no supported images.'; MoveComplete='Moved images: {0}. Auto-renamed: {1}.'; MoveError='Could not move images.'; MoveSelectSource='Choose source folder'; MoveSelectDestination='Choose destination folder';
+        MoveImagesButton='Move images'; MoveImagesTitle='Move images'; MoveSource='From'; MoveDestination='To'; Browse='Browse'; MoveStart='Move'; MoveHint='Moves supported images from this folder only (not subfolders). Name conflicts receive _1, _2, and so on.'; MoveSourceMissing='The source folder does not exist.'; MoveDestinationRequired='Choose a destination folder.'; MoveSameFolder='Source and destination cannot be the same.'; MoveNoImages='The source folder contains no supported images.'; MoveComplete='Moved images: {0}. Auto-renamed: {1}.'; MoveError='Could not move images.'; MoveSelectSource='Choose source folder'; MoveSelectDestination='Choose destination folder'; FolderPickerPath='Current folder'; FolderPickerDrives='Drive'; FolderPickerUp='Up'; FolderPickerSelect='Choose this folder'; FolderPickerEmpty='This folder has no subfolders.'; FolderPickerInvalid='The selected folder does not exist or is not accessible.';
     }
 }
 
@@ -223,7 +223,7 @@ $script:SendFolderToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.11.0" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.11.1" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -272,7 +272,7 @@ $($script:StyleResourceFragment)
                        HorizontalOffset="0"
                        VerticalOffset="8"
                        AllowsTransparency="True"
-                       StaysOpen="False"
+                       StaysOpen="True"
                        PopupAnimation="Fade">
                     <Border Style="{StaticResource ModernPopupCard}" Width="610">
                         <Grid>
@@ -294,7 +294,7 @@ $($script:StyleResourceFragment)
                                 <TextBlock x:Name="MoveSourceLabel" Grid.Row="0" Style="{StaticResource ModernFieldLabel}"/>
                                 <Grid Grid.Row="1">
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <TextBox x:Name="MoveSourceTextBox" Grid.Column="0" Height="38" Style="{StaticResource ModernTextBox}"/>
+                                    <TextBox x:Name="MoveSourceTextBox" Grid.Column="0" Height="42" Style="{StaticResource ModernTextBox}"/>
                                     <Button x:Name="MoveSourceBrowseButton" Grid.Column="1" Content="Обрати" Style="{StaticResource ToolbarButton}" Margin="8,0,0,0" MinWidth="82"/>
                                 </Grid>
                             </Grid>
@@ -304,7 +304,7 @@ $($script:StyleResourceFragment)
                                 <TextBlock x:Name="MoveDestinationLabel" Grid.Row="0" Style="{StaticResource ModernFieldLabel}"/>
                                 <Grid Grid.Row="1">
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                    <TextBox x:Name="MoveDestinationTextBox" Grid.Column="0" Height="38" Style="{StaticResource ModernTextBox}"/>
+                                    <TextBox x:Name="MoveDestinationTextBox" Grid.Column="0" Height="42" Style="{StaticResource ModernTextBox}"/>
                                     <Button x:Name="MoveDestinationBrowseButton" Grid.Column="1" Content="Обрати" Style="{StaticResource ToolbarButton}" Margin="8,0,0,0" MinWidth="82"/>
                                 </Grid>
                             </Grid>
@@ -1480,19 +1480,233 @@ function Paste-ClipboardItems {
 }
 
 
+function Show-ModernFolderPicker {
+    param(
+        [string]$InitialPath,
+        [string]$Title
+    )
+
+    [xml]$pickerXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Folder picker"
+        Width="760" Height="560"
+        MinWidth="620" MinHeight="440"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        ShowInTaskbar="False"
+        Background="#F4F6F8"
+        FontFamily="Segoe UI">
+    <Window.Resources>
+$($script:StyleResourceFragment)
+    </Window.Resources>
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="14"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Name="PickerTitle" Grid.Row="0" FontSize="18" FontWeight="SemiBold" Foreground="#1B1F23"/>
+
+        <Border Grid.Row="2" Style="{StaticResource ModernPopupCard}" Padding="12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="8"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="170"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="PathLabel" Grid.Row="0" Grid.Column="0" Style="{StaticResource ModernFieldLabel}"/>
+                <TextBlock x:Name="DriveLabel" Grid.Row="0" Grid.Column="2" Style="{StaticResource ModernFieldLabel}"/>
+
+                <TextBox x:Name="PathBox" Grid.Row="2" Grid.Column="0" Height="42" Style="{StaticResource ModernTextBox}"/>
+                <ComboBox x:Name="DriveCombo" Grid.Row="2" Grid.Column="2" Height="42" Style="{StaticResource ModernComboBox}"/>
+                <Button x:Name="UpButton" Grid.Row="2" Grid.Column="4" MinWidth="92" Height="42" Style="{StaticResource ToolbarButton}" Margin="0"/>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="4" Background="White" BorderBrush="#E3E7EA" BorderThickness="1" CornerRadius="12" Padding="8">
+            <Grid>
+                <ListBox x:Name="FolderList" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                <TextBlock x:Name="EmptyText" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#7A838B" FontSize="13" Visibility="Collapsed"/>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="SelectionHint" Grid.Column="0" VerticalAlignment="Center" Foreground="#6D767E" FontSize="12" TextTrimming="CharacterEllipsis" Margin="2,0,12,0"/>
+            <Button x:Name="CancelButton" Grid.Column="1" Style="{StaticResource ModernDialogSecondaryButton}" Margin="0,0,8,0"/>
+            <Button x:Name="SelectButton" Grid.Column="2" Style="{StaticResource ModernDialogPrimaryButton}" IsDefault="True"/>
+        </Grid>
+    </Grid>
+</Window>
+"@
+
+    $pickerReader = New-Object System.Xml.XmlNodeReader $pickerXaml
+    $picker = [Windows.Markup.XamlReader]::Load($pickerReader)
+    if ($window) { $picker.Owner = $window }
+    $picker.Title = $Title
+
+    $pickerTitle = $picker.FindName('PickerTitle')
+    $pathLabel = $picker.FindName('PathLabel')
+    $driveLabel = $picker.FindName('DriveLabel')
+    $pathBox = $picker.FindName('PathBox')
+    $driveCombo = $picker.FindName('DriveCombo')
+    $upButton = $picker.FindName('UpButton')
+    $folderList = $picker.FindName('FolderList')
+    $emptyText = $picker.FindName('EmptyText')
+    $selectionHint = $picker.FindName('SelectionHint')
+    $cancelButton = $picker.FindName('CancelButton')
+    $selectButton = $picker.FindName('SelectButton')
+
+    $pickerTitle.Text = $Title
+    $pathLabel.Text = T 'FolderPickerPath'
+    $driveLabel.Text = T 'FolderPickerDrives'
+    $upButton.Content = T 'FolderPickerUp'
+    $emptyText.Text = T 'FolderPickerEmpty'
+    $cancelButton.Content = T 'Cancel'
+    $selectButton.Content = T 'FolderPickerSelect'
+
+    $script:PickerCurrentPath = ''
+    $script:PickerSelectedPath = ''
+    $script:PickerUpdatingDrive = $false
+
+    foreach ($drive in @(Get-PSDrive -PSProvider FileSystem -ErrorAction SilentlyContinue | Sort-Object Name)) {
+        if ([string]::IsNullOrWhiteSpace($drive.Root)) { continue }
+        $item = New-Object System.Windows.Controls.ComboBoxItem
+        $item.Content = if ([string]::IsNullOrWhiteSpace($drive.Name)) { $drive.Root } else { "$($drive.Name):\" }
+        $item.Tag = $drive.Root
+        [void]$driveCombo.Items.Add($item)
+    }
+
+    $refreshPicker = {
+        param([string]$Path)
+        try {
+            if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path -LiteralPath $Path -PathType Container)) { return $false }
+            $resolved = (Resolve-Path -LiteralPath $Path -ErrorAction Stop).Path
+            $script:PickerCurrentPath = $resolved
+            $script:PickerSelectedPath = $resolved
+            $pathBox.Text = $resolved
+            $selectionHint.Text = $resolved
+            $folderList.Items.Clear()
+
+            $folders = @(Get-ChildItem -LiteralPath $resolved -Directory -ErrorAction SilentlyContinue | Sort-Object Name)
+            foreach ($folder in $folders) {
+                $item = New-Object System.Windows.Controls.ListBoxItem
+                $item.Content = $folder.Name
+                $item.Tag = $folder.FullName
+                $item.Style = $window.FindResource('ModernExplorerItem')
+                $item.ToolTip = $folder.FullName
+                [void]$folderList.Items.Add($item)
+            }
+            $emptyText.Visibility = if ($folders.Count -eq 0) { 'Visible' } else { 'Collapsed' }
+
+            $script:PickerUpdatingDrive = $true
+            try {
+                for ($i = 0; $i -lt $driveCombo.Items.Count; $i++) {
+                    $root = [string]$driveCombo.Items[$i].Tag
+                    if (-not [string]::IsNullOrWhiteSpace($root) -and $resolved.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase)) {
+                        $driveCombo.SelectedIndex = $i
+                        break
+                    }
+                }
+            } finally {
+                $script:PickerUpdatingDrive = $false
+            }
+            return $true
+        } catch {
+            Show-NoticeDialog -Title $Title -Message (T 'FolderPickerInvalid') -Kind 'Warning'
+            return $false
+        }
+    }
+
+    $folderList.Add_SelectionChanged({
+        if ($null -ne $folderList.SelectedItem) {
+            $script:PickerSelectedPath = [string]$folderList.SelectedItem.Tag
+            $selectionHint.Text = $script:PickerSelectedPath
+        } else {
+            $script:PickerSelectedPath = $script:PickerCurrentPath
+            $selectionHint.Text = $script:PickerCurrentPath
+        }
+    })
+
+    $folderList.Add_MouseDoubleClick({
+        if ($null -ne $folderList.SelectedItem) {
+            & $refreshPicker ([string]$folderList.SelectedItem.Tag) | Out-Null
+        }
+    })
+
+    $upButton.Add_Click({
+        if ([string]::IsNullOrWhiteSpace($script:PickerCurrentPath)) { return }
+        $parent = Split-Path -Parent $script:PickerCurrentPath
+        if (-not [string]::IsNullOrWhiteSpace($parent) -and (Test-Path -LiteralPath $parent -PathType Container)) {
+            & $refreshPicker $parent | Out-Null
+        }
+    })
+
+    $driveCombo.Add_SelectionChanged({
+        if ($script:PickerUpdatingDrive -or $null -eq $driveCombo.SelectedItem) { return }
+        $root = [string]$driveCombo.SelectedItem.Tag
+        if (-not [string]::IsNullOrWhiteSpace($root)) { & $refreshPicker $root | Out-Null }
+    })
+
+    $pathBox.Add_KeyDown({
+        if ($_.Key -eq [System.Windows.Input.Key]::Enter) {
+            & $refreshPicker $pathBox.Text.Trim() | Out-Null
+            $_.Handled = $true
+        }
+    })
+
+    $cancelButton.Add_Click({
+        $picker.DialogResult = $false
+        $picker.Close()
+    })
+    $selectButton.Add_Click({
+        $candidate = if (-not [string]::IsNullOrWhiteSpace($script:PickerSelectedPath)) { $script:PickerSelectedPath } else { $script:PickerCurrentPath }
+        if (-not [string]::IsNullOrWhiteSpace($candidate) -and (Test-Path -LiteralPath $candidate -PathType Container)) {
+            $picker.Tag = (Resolve-Path -LiteralPath $candidate).Path
+            $picker.DialogResult = $true
+            $picker.Close()
+        }
+    })
+
+    $startPath = $InitialPath
+    if ([string]::IsNullOrWhiteSpace($startPath) -or -not (Test-Path -LiteralPath $startPath -PathType Container)) {
+        $startPath = if ($script:CurrentFolder -and (Test-Path -LiteralPath $script:CurrentFolder -PathType Container)) { $script:CurrentFolder } elseif ($script:RootFolder -and (Test-Path -LiteralPath $script:RootFolder -PathType Container)) { $script:RootFolder } else { [Environment]::GetFolderPath('MyDocuments') }
+    }
+    & $refreshPicker $startPath | Out-Null
+
+    $result = $picker.ShowDialog()
+    if ($result -eq $true -and $picker.Tag) { return [string]$picker.Tag }
+    return $null
+}
+
 function Select-MoveFolder {
     param(
         [System.Windows.Controls.TextBox]$TargetTextBox,
         [string]$DescriptionKey
     )
-    $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
-    $dialog.Description = T $DescriptionKey
-    $dialog.ShowNewFolderButton = $true
-    if (-not [string]::IsNullOrWhiteSpace($TargetTextBox.Text) -and (Test-Path -LiteralPath $TargetTextBox.Text -PathType Container)) {
-        $dialog.SelectedPath = $TargetTextBox.Text
-    }
-    if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-        $TargetTextBox.Text = $dialog.SelectedPath
+    $selected = Show-ModernFolderPicker -InitialPath $TargetTextBox.Text -Title (T $DescriptionKey)
+    if (-not [string]::IsNullOrWhiteSpace($selected)) {
+        $TargetTextBox.Text = $selected
+        $TargetTextBox.CaretIndex = $TargetTextBox.Text.Length
+        $TargetTextBox.ScrollToHorizontalOffset([double]::MaxValue)
     }
 }
 

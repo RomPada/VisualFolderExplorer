@@ -1,4 +1,4 @@
-# Visual Folder Explorer v0.11.0
+# Visual Folder Explorer v0.11.1
 
 Visual Folder Explorer is a lightweight Windows desktop application for browsing folders that contain many images together with TXT or Markdown notes. It is designed for a workflow where images are shown as thumbnails while the related text remains available in the same window.
 
@@ -14,7 +14,7 @@ Visual Folder Explorer is a lightweight Windows desktop application for browsing
 
 ## Start
 
-1. Extract the entire `VisualFolderExplorer_v0.11.0` folder.
+1. Extract the entire `VisualFolderExplorer_v0.11.1` folder.
 2. Double-click `Start Visual Folder Explorer.bat`.
 3. On first launch, choose the root folder with your materials.
 4. On later launches, the application restores the last opened folder and saved window state.
@@ -72,7 +72,7 @@ A **Move images** button is located between **Choose folder** and the UA/EN lang
 
 - **From** defaults to the folder currently open in Visual Folder Explorer.
 - **To** restores the last successful destination; it is empty until a destination has been used.
-- Browse buttons can be used for both paths.
+- Browse buttons can be used for both paths. They open the built-in styled WPF folder picker while keeping the Move images panel open in the background.
 - Supported image files in the source folder are moved without scanning subfolders.
 - Original filenames are preserved. If the destination already contains the same name, the moved file is renamed automatically using `_1`, `_2`, and so on.
 - The last successful destination is saved in `settings.json`.
@@ -120,5 +120,5 @@ The application remembers the last folder, navigation history, window size/state
 The project uses Semantic Versioning-style release numbers:
 
 - PATCH: fixes and small non-breaking changes, e.g. `v0.10.0 → v0.10.1`
-- MINOR: new backward-compatible features, e.g. `v0.10.1 → v0.11.0`
+- MINOR: new backward-compatible features, e.g. `v0.10.1 → v0.11.1`
 - MAJOR: major or breaking releases, e.g. `v0.x.x → v1.0.0`

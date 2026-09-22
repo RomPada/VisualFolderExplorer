@@ -6,6 +6,20 @@ Every release of Visual Folder Explorer is recorded here. Each entry is provided
 
 ---
 
+## v0.11.1 — 2026-09-22
+
+**English**
+- Fixed vertical clipping/alignment of source and destination path fields in the image mover.
+- The Move images popup now remains open while choosing a source or destination folder.
+- Replaced the legacy Windows folder browser with a styled bilingual WPF folder picker that matches the application UI.
+- Added shared folder-picker list styling to `Styles.xaml`.
+
+**Українська**
+- Виправлено вертикальне відображення та обрізання шляхів у полях «Звідки» і «Куди».
+- Панель «Перенесення зображень» тепер не закривається під час вибору папки-джерела або папки призначення.
+- Старе системне вікно вибору папок Windows замінено на стилізований двомовний WPF-провідник у стилі програми.
+- Стиль елементів вибору папок винесено до спільного `Styles.xaml`.
+
 ## v0.11.0 — 2026-09-22
 
 **English**
