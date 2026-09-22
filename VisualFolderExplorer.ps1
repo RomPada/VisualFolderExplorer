@@ -12,7 +12,7 @@ $script:CurrentFolder = $null
 $script:TextFiles = @()
 $script:TextIndex = -1
 $script:ImageExtensions = @('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff', '.webp')
-$script:AppVersion = '0.8.2'
+$script:AppVersion = '0.9.0'
 $script:ImageSortField = 'Name'
 $script:ImageSortDescending = $false
 $script:InitializingSortControls = $true
@@ -27,6 +27,17 @@ $script:PreviewScaleTransform = $null
 $script:PreviewTranslateTransform = $null
 $script:LastSelectedImagePath = $null
 $script:ImageTiles = @{}
+# Performance: image tiles are loaded incrementally so folders with hundreds of
+# images do not block the UI.  The generation number cancels stale batches when
+# the user changes folders or sorting while a previous folder is still loading.
+$script:ImageLoadTimer = $null
+$script:ImageLoadGeneration = 0
+$script:PendingImages = @()
+$script:PendingImageIndex = 0
+$script:ImageLoadBatchSize = 14
+$script:ImageThumbnailDecodeWidth = 240
+$script:ImageLoadStartedAt = $null
+$script:MarkerUpdateTimer = $null
 $script:SyncingExplorerSelection = $false
 $script:IsCurrentMarkdown = $false
 $script:MarkdownRendered = $false
@@ -35,6 +46,24 @@ $script:TextDirty = $false
 $script:CurrentTextEncoding = [System.Text.UTF8Encoding]::new($false)
 $script:SettingsFolder = Join-Path $env:LOCALAPPDATA 'VisualFolderExplorer'
 $script:SettingsPath = Join-Path $script:SettingsFolder 'settings.json'
+
+# Reuse frozen brushes instead of converting the same color strings thousands
+# of times while creating/updating image tiles.
+function New-FrozenBrush([string]$hex) {
+    $color = [System.Windows.Media.ColorConverter]::ConvertFromString($hex)
+    $brush = [System.Windows.Media.SolidColorBrush]::new($color)
+    if ($brush.CanFreeze) { $brush.Freeze() }
+    return $brush
+}
+$script:BrushTileNormalBg     = New-FrozenBrush '#F7F8FA'
+$script:BrushTileNormalBorder = New-FrozenBrush '#E2E6EA'
+$script:BrushTileActiveBg     = New-FrozenBrush '#DCEEFF'
+$script:BrushTileActiveBorder = New-FrozenBrush '#2B7CD3'
+$script:BrushTileLastBg       = New-FrozenBrush '#EEF5FA'
+$script:BrushTileLastBorder   = New-FrozenBrush '#A8C8E3'
+$script:BrushImageWellBg      = New-FrozenBrush '#ECEFF2'
+$script:BrushTileLabel        = New-FrozenBrush '#3C434A'
+$script:BrushMutedText        = New-FrozenBrush '#7A838B'
 
 # Shared file-operation actions used by dynamically created context menus.
 $script:SetFileClipboardAction = {
@@ -107,7 +136,7 @@ $script:SendFolderToRecycleBinAction = {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Visual Folder Explorer v0.8.2" Height="820" Width="1420"
+        Title="Visual Folder Explorer v0.9.0" Height="820" Width="1420"
         MinHeight="620" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F8" FontFamily="Segoe UI">
@@ -1148,33 +1177,54 @@ function Update-ImageScrollMarker {
     }
 }
 
+function Set-ImageTileVisualState {
+    param(
+        [System.Windows.Controls.Border]$Tile,
+        [string]$Path
+    )
+    if ($null -eq $Tile) { return }
+
+    $isActivePreview = ($PreviewContentBorder.Visibility -eq 'Visible' -and
+        $script:PreviewImagePath -and
+        $script:PreviewImagePath.Equals($Path, [System.StringComparison]::OrdinalIgnoreCase))
+    $isLastSelected = ($script:LastSelectedImagePath -and
+        $script:LastSelectedImagePath.Equals($Path, [System.StringComparison]::OrdinalIgnoreCase))
+
+    if ($isActivePreview) {
+        $Tile.Background = $script:BrushTileActiveBg
+        $Tile.BorderBrush = $script:BrushTileActiveBorder
+        $Tile.BorderThickness = [System.Windows.Thickness]::new(2)
+    } elseif ($isLastSelected) {
+        $Tile.Background = $script:BrushTileLastBg
+        $Tile.BorderBrush = $script:BrushTileLastBorder
+        $Tile.BorderThickness = [System.Windows.Thickness]::new(1)
+    } else {
+        $Tile.Background = $script:BrushTileNormalBg
+        $Tile.BorderBrush = $script:BrushTileNormalBorder
+        $Tile.BorderThickness = [System.Windows.Thickness]::new(1)
+    }
+}
+
 function Update-ImageTileSelection {
     foreach ($entry in @($script:ImageTiles.GetEnumerator())) {
-        $path = [string]$entry.Key
-        $tile = $entry.Value
-        if ($null -eq $tile) { continue }
-
-        $isActivePreview = ($PreviewContentBorder.Visibility -eq 'Visible' -and
-            $script:PreviewImagePath -and
-            $script:PreviewImagePath.Equals($path, [System.StringComparison]::OrdinalIgnoreCase))
-        $isLastSelected = ($script:LastSelectedImagePath -and
-            $script:LastSelectedImagePath.Equals($path, [System.StringComparison]::OrdinalIgnoreCase))
-
-        if ($isActivePreview) {
-            $tile.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#DCEEFF')
-            $tile.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#2B7CD3')
-            $tile.BorderThickness = [System.Windows.Thickness]::new(2)
-        } elseif ($isLastSelected) {
-            $tile.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#EEF5FA')
-            $tile.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#A8C8E3')
-            $tile.BorderThickness = [System.Windows.Thickness]::new(1)
-        } else {
-            $tile.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F7F8FA')
-            $tile.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#E2E6EA')
-            $tile.BorderThickness = [System.Windows.Thickness]::new(1)
-        }
+        Set-ImageTileVisualState -Tile $entry.Value -Path ([string]$entry.Key)
     }
     Update-ImageScrollMarker
+}
+
+function Request-ImageScrollMarkerUpdate {
+    # SizeChanged can fire hundreds of times while a large folder is being
+    # populated. Coalesce those calls into a single marker update.
+    if ($null -eq $script:MarkerUpdateTimer) {
+        $script:MarkerUpdateTimer = New-Object System.Windows.Threading.DispatcherTimer
+        $script:MarkerUpdateTimer.Interval = [TimeSpan]::FromMilliseconds(70)
+        $script:MarkerUpdateTimer.Add_Tick({
+            $script:MarkerUpdateTimer.Stop()
+            Update-ImageScrollMarker
+        })
+    }
+    $script:MarkerUpdateTimer.Stop()
+    $script:MarkerUpdateTimer.Start()
 }
 
 function Add-MarkdownInlineContent {
@@ -1824,13 +1874,14 @@ Reset-PreviewTransform
     }
 }
 
-function Load-TextFiles([string]$folder) {
+function Load-TextFiles([string]$folder, [object[]]$entries = $null) {
     $script:TextFiles = @()
     $script:TextIndex = -1
 
     try {
-        $files = @(Get-ChildItem -LiteralPath $folder -File -ErrorAction Stop | Where-Object {
-            $_.Extension -ieq '.txt' -or $_.Extension -ieq '.md'
+        if ($null -eq $entries) { $entries = @(Get-ChildItem -LiteralPath $folder -ErrorAction Stop) }
+        $files = @($entries | Where-Object {
+            $_ -is [System.IO.FileInfo] -and ($_.Extension -ieq '.txt' -or $_.Extension -ieq '.md')
         })
         if ($files.Count -gt 0) {
             $folderName = Split-Path -Leaf $folder
@@ -1881,13 +1932,45 @@ function Open-TextFileByPath([string]$path) {
     return $true
 }
 
+function New-ImageTileContextMenu([string]$path) {
+    $menu = New-ModernContextMenu
+
+    $cut = New-ModernMenuItem
+    $cut.Header = 'Вирізати'
+    $cut.Tag = $path
+    $cut.Add_Click($script:ImageCutHandler)
+    [void]$menu.Items.Add($cut)
+
+    $copy = New-ModernMenuItem
+    $copy.Header = 'Копіювати'
+    $copy.Tag = $path
+    $copy.Add_Click($script:ImageCopyHandler)
+    [void]$menu.Items.Add($copy)
+
+    [void]$menu.Items.Add((New-ModernSeparator))
+
+    $rename = New-ModernMenuItem
+    $rename.Header = 'Перейменувати'
+    $rename.Tag = $path
+    $rename.Add_Click($script:ImageRenameHandler)
+    [void]$menu.Items.Add($rename)
+
+    $delete = New-ModernMenuItem
+    $delete.Header = 'Видалити'
+    $delete.Tag = $path
+    $delete.Add_Click($script:ImageDeleteHandler)
+    [void]$menu.Items.Add($delete)
+
+    return $menu
+}
+
 function Add-ImageTile([System.IO.FileInfo]$file) {
     $tile = New-Object System.Windows.Controls.Border
     $tile.Width = 190
     $tile.Height = 178
     $tile.Margin = '0,0,12,12'
-    $tile.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F7F8FA')
-    $tile.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#E2E6EA')
+    $tile.Background = $script:BrushTileNormalBg
+    $tile.BorderBrush = $script:BrushTileNormalBorder
     $tile.BorderThickness = 1
     $tile.CornerRadius = 10
     $tile.Cursor = [System.Windows.Input.Cursors]::Hand
@@ -1904,7 +1987,7 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
     $grid.RowDefinitions.Add($row2)
 
     $imageBorder = New-Object System.Windows.Controls.Border
-    $imageBorder.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#ECEFF2')
+    $imageBorder.Background = $script:BrushImageWellBg
     $imageBorder.CornerRadius = 7
     $imageBorder.ClipToBounds = $true
 
@@ -1913,7 +1996,9 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
     $img.HorizontalAlignment = 'Stretch'
     $img.VerticalAlignment = 'Stretch'
 
-    $bitmap = New-BitmapImage $file.FullName 420
+    # 240 px is already larger than the visible tile image area.  The previous
+    # 420 px thumbnails consumed much more CPU and memory for no visible gain.
+    $bitmap = New-BitmapImage $file.FullName $script:ImageThumbnailDecodeWidth
     if ($null -ne $bitmap) {
         $img.Source = $bitmap
     } else {
@@ -1922,7 +2007,7 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
         $fallback.TextAlignment = 'Center'
         $fallback.HorizontalAlignment = 'Center'
         $fallback.VerticalAlignment = 'Center'
-        $fallback.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#7A838B')
+        $fallback.Foreground = $script:BrushMutedText
         $imageBorder.Child = $fallback
     }
 
@@ -1934,7 +2019,7 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
     $label.Text = $file.Name
     $label.Margin = '3,7,3,0'
     $label.FontSize = 12
-    $label.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#3C434A')
+    $label.Foreground = $script:BrushTileLabel
     $label.TextTrimming = 'CharacterEllipsis'
     $label.HorizontalAlignment = 'Stretch'
     [System.Windows.Controls.Grid]::SetRow($label, 1)
@@ -1942,45 +2027,25 @@ function Add-ImageTile([System.IO.FileInfo]$file) {
 
     $tile.Child = $grid
     $tile.Add_MouseLeftButtonUp($script:ImageTileClickHandler)
+    # Context menus are expensive WPF object trees. Build one only if the user
+    # actually right-clicks this tile instead of creating 1,000 of them upfront.
+    $tile.Add_PreviewMouseRightButtonDown($script:ImageTileContextMenuHandler)
 
-    $menu = New-ModernContextMenu
-
-    $cut = New-ModernMenuItem
-    $cut.Header = 'Вирізати'
-    $cut.Tag = $file.FullName
-    $cut.Add_Click($script:ImageCutHandler)
-    [void]$menu.Items.Add($cut)
-
-    $copy = New-ModernMenuItem
-    $copy.Header = 'Копіювати'
-    $copy.Tag = $file.FullName
-    $copy.Add_Click($script:ImageCopyHandler)
-    [void]$menu.Items.Add($copy)
-
-    [void]$menu.Items.Add((New-ModernSeparator))
-
-    $rename = New-ModernMenuItem
-    $rename.Header = 'Перейменувати'
-    $rename.Tag = $file.FullName
-    $rename.Add_Click($script:ImageRenameHandler)
-    [void]$menu.Items.Add($rename)
-
-    $delete = New-ModernMenuItem
-    $delete.Header = 'Видалити'
-    $delete.Tag = $file.FullName
-    $delete.Add_Click($script:ImageDeleteHandler)
-    [void]$menu.Items.Add($delete)
-
-    $tile.ContextMenu = $menu
     $ImagePanel.Children.Add($tile) | Out-Null
     $script:ImageTiles[$file.FullName] = $tile
-    Update-ImageTileSelection
+    Set-ImageTileVisualState -Tile $tile -Path $file.FullName
 }
 
-function Get-SortedImages([string]$folder) {
-    $images = @(Get-ChildItem -LiteralPath $folder -File -ErrorAction Stop | Where-Object {
-        $script:ImageExtensions -contains $_.Extension.ToLowerInvariant()
-    })
+function Get-SortedImages([string]$folder, [object[]]$entries = $null) {
+    if ($null -eq $entries) {
+        $images = @(Get-ChildItem -LiteralPath $folder -File -ErrorAction Stop | Where-Object {
+            $script:ImageExtensions -contains $_.Extension.ToLowerInvariant()
+        })
+    } else {
+        $images = @($entries | Where-Object {
+            $_ -is [System.IO.FileInfo] -and $script:ImageExtensions -contains $_.Extension.ToLowerInvariant()
+        })
+    }
 
     $descending = [bool]$script:ImageSortDescending
     switch ($script:ImageSortField) {
@@ -1999,38 +2064,101 @@ function Get-SortedImages([string]$folder) {
     }
 }
 
-function Load-Images([string]$folder) {
+function Stop-ImageLoading {
+    $script:ImageLoadGeneration++
+    if ($null -ne $script:ImageLoadTimer) {
+        try { $script:ImageLoadTimer.Stop() } catch { }
+        $script:ImageLoadTimer = $null
+    }
+    $script:PendingImages = @()
+    $script:PendingImageIndex = 0
+}
+
+$script:ImageLoadTickHandler = {
+    if ($null -eq $script:ImageLoadTimer) { return }
+    $total = $script:PendingImages.Count
+    if ($total -le 0) {
+        Stop-ImageLoading
+        return
+    }
+
+    $target = [Math]::Min($total, $script:PendingImageIndex + $script:ImageLoadBatchSize)
+    while ($script:PendingImageIndex -lt $target) {
+        $file = $script:PendingImages[$script:PendingImageIndex]
+        Add-ImageTile $file
+        $script:PendingImageIndex++
+    }
+
+    if ($script:PendingImageIndex -ge $total) {
+        $timer = $script:ImageLoadTimer
+        if ($null -ne $timer) { $timer.Stop() }
+        $script:ImageLoadTimer = $null
+        $script:PendingImages = @()
+        $script:PendingImageIndex = 0
+        $ImageCountText.Text = if ($total -eq 1) { '1 файл' } else { "$total файлів" }
+        $elapsedText = ''
+        if ($null -ne $script:ImageLoadStartedAt) {
+            $seconds = ((Get-Date) - $script:ImageLoadStartedAt).TotalSeconds
+            $elapsedText = (' за {0:N1} с' -f $seconds)
+        }
+        $StatusText.Text = "Прев'ю зображень завантажено: $total$elapsedText"
+        Update-ImageTileSelection
+        Request-ImageScrollMarkerUpdate
+    } else {
+        # Keep the window interactive and report background-style progressive load.
+        $StatusText.Text = "Завантаження прев'ю: $($script:PendingImageIndex) / $total"
+        Request-ImageScrollMarkerUpdate
+    }
+}
+
+function Load-Images([string]$folder, [object[]]$entries = $null) {
+    Stop-ImageLoading
     $ImagePanel.Children.Clear()
     $script:ImageTiles = @{}
+    $ImageScrollMarker.Visibility = 'Collapsed'
+
     try {
-        $images = @(Get-SortedImages $folder)
+        $images = @(Get-SortedImages $folder $entries)
+        $count = $images.Count
+        $ImageCountText.Text = if ($count -eq 1) { '1 файл' } else { "$count файлів" }
 
-        foreach ($imgFile in $images) { Add-ImageTile $imgFile }
-        $ImageCountText.Text = if ($images.Count -eq 1) { '1 файл' } else { "$($images.Count) файлів" }
-
-        if ($images.Count -eq 0) {
+        if ($count -eq 0) {
             $empty = New-Object System.Windows.Controls.TextBlock
             $empty.Text = 'У цій папці немає зображень.'
             $empty.Margin = 8
-            $empty.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#7A838B')
+            $empty.Foreground = $script:BrushMutedText
             $empty.FontSize = 14
             $ImagePanel.Children.Add($empty) | Out-Null
+            return
         }
 
-        $window.Dispatcher.BeginInvoke([System.Action]{
-            Update-ImageTileSelection
-            Update-ImageScrollMarker
-        }, [System.Windows.Threading.DispatcherPriority]::Loaded) | Out-Null
+        $script:PendingImages = $images
+        $script:PendingImageIndex = 0
+        $script:ImageLoadStartedAt = Get-Date
+
+        # Smaller batches for very large folders keep scrolling/text editing
+        # responsive while thumbnails continue appearing progressively.
+        if ($count -ge 800) { $script:ImageLoadBatchSize = 8 }
+        elseif ($count -ge 400) { $script:ImageLoadBatchSize = 10 }
+        elseif ($count -ge 150) { $script:ImageLoadBatchSize = 14 }
+        else { $script:ImageLoadBatchSize = 24 }
+
+        $script:ImageLoadTimer = New-Object System.Windows.Threading.DispatcherTimer
+        $script:ImageLoadTimer.Interval = [TimeSpan]::FromMilliseconds(1)
+        $script:ImageLoadTimer.Add_Tick($script:ImageLoadTickHandler)
+        $script:ImageLoadTimer.Start()
+        $StatusText.Text = "Завантаження прев'ю: 0 / $count"
     } catch {
         $ImageCountText.Text = '0 файлів'
         $StatusText.Text = "Помилка читання зображень: $($_.Exception.Message)"
     }
 }
 
-function Load-Folders([string]$folder) {
+function Load-Folders([string]$folder, [object[]]$entries = $null) {
     $FolderList.Items.Clear()
     try {
-        $dirs = @(Get-ChildItem -LiteralPath $folder -Directory -ErrorAction Stop | Sort-Object { Get-NaturalSortKey $_.Name })
+        if ($null -eq $entries) { $entries = @(Get-ChildItem -LiteralPath $folder -ErrorAction Stop) }
+        $dirs = @($entries | Where-Object { $_ -is [System.IO.DirectoryInfo] } | Sort-Object { Get-NaturalSortKey $_.Name })
         foreach ($dir in $dirs) {
             $item = New-Object System.Windows.Controls.ListBoxItem
             $item.Content = "📁  $($dir.Name)"
@@ -2076,8 +2204,8 @@ function Load-Folders([string]$folder) {
             $FolderList.Items.Add($item) | Out-Null
         }
 
-        $textFiles = @(Get-ChildItem -LiteralPath $folder -File -ErrorAction Stop | Where-Object {
-            $_.Extension -ieq '.txt' -or $_.Extension -ieq '.md'
+        $textFiles = @($entries | Where-Object {
+            $_ -is [System.IO.FileInfo] -and ($_.Extension -ieq '.txt' -or $_.Extension -ieq '.md')
         } | Sort-Object { Get-NaturalSortKey $_.Name })
 
         foreach ($file in $textFiles) {
@@ -2176,9 +2304,19 @@ function Navigate-To([string]$folder, [bool]$addHistory = $true, [bool]$skipUnsa
     $StatusText.Text = "Відкрито: $script:CurrentFolder"
     Show-TextMode
 
-    Load-Folders $script:CurrentFolder
-    Load-Images $script:CurrentFolder
-    Load-TextFiles $script:CurrentFolder
+    Stop-ImageLoading
+    $folderEntries = $null
+    try {
+        # One filesystem enumeration is shared by all three panels.  Previously
+        # the same 1,000-file folder was scanned several times during navigation.
+        $folderEntries = @(Get-ChildItem -LiteralPath $script:CurrentFolder -ErrorAction Stop)
+    } catch {
+        $StatusText.Text = "Помилка читання папки: $($_.Exception.Message)"
+    }
+
+    Load-Folders $script:CurrentFolder $folderEntries
+    Load-Images $script:CurrentFolder $folderEntries
+    Load-TextFiles $script:CurrentFolder $folderEntries
 
     Update-NavigationButtons
     Save-Settings
@@ -2283,6 +2421,13 @@ $script:FolderDeleteHandler = {
         Update-NavigationButtons
         Save-Settings
         $StatusText.Text = "Папку переміщено до кошика: $name"
+    }
+}
+
+$script:ImageTileContextMenuHandler = {
+    param($sender, $e)
+    if ($null -eq $sender.ContextMenu) {
+        $sender.ContextMenu = New-ImageTileContextMenu ([string]$sender.Tag)
     }
 }
 
@@ -2694,11 +2839,11 @@ $ImageScrollViewer.Add_PreviewMouseRightButtonUp({
 
 
 $ImagePanel.Add_SizeChanged({
-    Update-ImageScrollMarker
+    Request-ImageScrollMarkerUpdate
 })
 
 $ImageScrollViewer.Add_SizeChanged({
-    Update-ImageScrollMarker
+    Request-ImageScrollMarkerUpdate
 })
 
 $PreviewImage.Add_PreviewMouseLeftButtonDown({
@@ -2853,6 +2998,8 @@ $window.Add_Closing({
         $e.Cancel = $true
         return
     }
+    Stop-ImageLoading
+    if ($null -ne $script:MarkerUpdateTimer) { try { $script:MarkerUpdateTimer.Stop() } catch { } }
     Save-Settings
 })
 $window.Add_Closed({ Save-Settings })

@@ -1,7 +1,7 @@
-﻿VISUAL FOLDER EXPLORER v0.8.2
+﻿VISUAL FOLDER EXPLORER v0.9.0
 ================================
 
-Що нового у v0.8.2
+Що нового у v0.9.0
 ------------------
 - При конфлікті назв під час вставлення файл або папка автоматично отримує суфікс _1, _2 і т.д.
 - Перемикання TXT/MD стрілками у блоці "Текст" синхронно виділяє відповідний файл у "Провіднику".
@@ -25,7 +25,7 @@
 
 Запуск
 ------
-1. Розпакуйте всю папку VisualFolderExplorer_v0.8.2.
+1. Розпакуйте всю папку VisualFolderExplorer_v0.9.0.
 2. Двічі натисніть "Start Visual Folder Explorer.bat".
 3. Програма відкриє останню папку та відновить розмір/стан вікна.
 
@@ -85,3 +85,12 @@ WPF у Windows.
 Вимоги
 ------
 Windows 10/11, Windows PowerShell 5.1 та .NET Framework/WPF.
+
+
+v0.9.0 PERFORMANCE
+- Optimized for folders with hundreds / 1000+ images.
+- Progressive thumbnail loading keeps the UI responsive.
+- Reduced thumbnail decode size and memory usage.
+- Image context menus are created only on demand.
+- Removed quadratic tile-selection refresh during loading.
+- Folder contents are enumerated once per navigation and shared across panels.
