@@ -1,3 +1,4 @@
+﻿using System.Collections.Generic;
 namespace VisualFolderExplorer.Services;
 
 public sealed class LocalizationService

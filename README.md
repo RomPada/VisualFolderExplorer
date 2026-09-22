@@ -1,8 +1,8 @@
-# Visual Folder Explorer v1.0.2
+﻿# Visual Folder Explorer v1.0.3
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.0.2 is the first deployment/hardening patch after the C#/.NET 8 WPF rewrite.** The goal of the rewrite is better performance, maintainability, asynchronous image loading, thumbnail caching, and a cleaner foundation for future features.
+**v1.0.3 is the first deployment/hardening patch after the C#/.NET 8 WPF rewrite.** The goal of the rewrite is better performance, maintainability, asynchronous image loading, thumbnail caching, and a cleaner foundation for future features.
 
 ## Requirements
 
@@ -128,4 +128,4 @@ Semantic Versioning is used:
 - MINOR — backward-compatible features;
 - MAJOR — major/breaking changes or architecture migrations.
 
-The PowerShell → C# rewrite was released as **v1.0.0**. Deployment/offline-restore fixes are released as **v1.0.2**.
+The PowerShell → C# rewrite was released as **v1.0.0**. Deployment/offline-restore fixes are released as **v1.0.3**.

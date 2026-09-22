@@ -1,9 +1,25 @@
-# Visual Folder Explorer — Patch List / Список змін
+﻿# Visual Folder Explorer — Patch List / Список змін
 
 This file is maintained for every release in English and Ukrainian.  
 Цей файл оновлюється для кожної версії англійською та українською мовами.
 
 ---
+
+## v1.0.3 — 2026-09-22
+
+**English**
+- Fixed GitHub Actions WPF compilation errors `CS0246` for `FileSystemInfo` / `FileInfo`.
+- Added source-level `GlobalUsings.cs` and explicit `System.IO` imports so WPF's temporary markup compilation project does not depend on generated implicit usings.
+- Added explicit common framework usings to IO-heavy code-behind/services for more deterministic CI compilation.
+- GitHub Actions now runs on pushes from any branch, not only `main` / `master`.
+- Updated portable artifact naming to `VisualFolderExplorer_v1.0.3_win-x64-portable`.
+
+**Українська**
+- Виправлено помилки компіляції GitHub Actions `CS0246` для `FileSystemInfo` / `FileInfo`.
+- Додано вихідний `GlobalUsings.cs` та явні імпорти `System.IO`, щоб тимчасовий WPF-проєкт компіляції XAML не залежав від автоматично згенерованих implicit usings.
+- До IO-залежних code-behind/сервісів додано явні стандартні using для стабільнішої CI-збірки.
+- GitHub Actions тепер запускається при push у будь-яку гілку, а не лише `main` / `master`.
+- Назву portable artifact оновлено до `VisualFolderExplorer_v1.0.3_win-x64-portable`.
 
 ## v1.0.2 — 2026-09-22
 
