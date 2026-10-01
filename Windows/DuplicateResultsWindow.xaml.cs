@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
@@ -44,6 +44,7 @@ public partial class DuplicateResultsWindow : Window
         PreviewPlaceholder.Text = loc.T("DuplicatePreview");
         CloseButton.Content = loc.T("Close");
         SelectButton.Content = loc.T("SelectDuplicateCopies");
+        DeleteAllConflictsButton.Content = loc.T("DeleteAllConflicts");
         DeleteButton.Content = loc.T("DeleteSelected");
         ResultsGrid.ItemsSource = _rows;
         UpdateSummary();
@@ -75,7 +76,11 @@ public partial class DuplicateResultsWindow : Window
         PreviewMeta.Text = $"{bitmap.PixelWidth} × {bitmap.PixelHeight}  •  {row.SizeText}";
     }
 
-    private void UpdateButtons() => DeleteButton.IsEnabled = ResultsGrid.SelectedItems.Count > 0;
+    private void UpdateButtons()
+    {
+        DeleteButton.IsEnabled = ResultsGrid.SelectedItems.Count > 0;
+        DeleteAllConflictsButton.IsEnabled = _rows.GroupBy(r => r.GroupNumber).Any(g => g.Count() > 1);
+    }
 
     private void UpdateSummary()
     {
@@ -115,6 +120,44 @@ public partial class DuplicateResultsWindow : Window
         }
 
         // A group with only one remaining file is no longer a duplicate group.
+        var orphanRows = _rows.GroupBy(r => r.GroupNumber).Where(g => g.Count() < 2).SelectMany(g => g).ToList();
+        foreach (var row in orphanRows) _rows.Remove(row);
+
+        DeletedAny |= deleted > 0;
+        UpdateSummary();
+        PreviewImage.Source = null;
+        PreviewName.Text = string.Empty;
+        PreviewMeta.Text = deleted > 0 ? _loc.T("DuplicateDeleted", deleted) : string.Empty;
+        PreviewPlaceholder.Visibility = Visibility.Visible;
+        UpdateButtons();
+    }
+
+    private void DeleteAllConflictsButton_Click(object sender, RoutedEventArgs e)
+    {
+        var conflicts = _rows
+            .GroupBy(r => r.GroupNumber)
+            .Where(g => g.Count() > 1)
+            .SelectMany(g => g.Skip(1))
+            .Where(r => File.Exists(r.FullPath))
+            .ToList();
+        if (conflicts.Count == 0) return;
+
+        var confirm = new ConfirmWindow(_loc.T("Delete"), _loc.T("DeleteAllConflictsQuestion", conflicts.Count), _loc.T("Yes"), string.Empty, _loc.T("No"), false) { Owner = this };
+        confirm.ShowDialog();
+        if (confirm.Choice != ConfirmChoice.Primary) return;
+
+        var deleted = 0;
+        foreach (var row in conflicts)
+        {
+            try
+            {
+                FileService.SendToRecycleBin(row.FullPath);
+                _rows.Remove(row);
+                deleted++;
+            }
+            catch { }
+        }
+
         var orphanRows = _rows.GroupBy(r => r.GroupNumber).Where(g => g.Count() < 2).SelectMany(g => g).ToList();
         foreach (var row in orphanRows) _rows.Remove(row);
 

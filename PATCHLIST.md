@@ -5,6 +5,24 @@ This file is maintained for every release in English and Ukrainian.
 
 ---
 
+## v1.4.0 — 2026-10-01
+
+**English**
+- Adjusted the selected-image scrollbar marker to match the scrollbar width more closely.
+- Moved image metadata from the preview overlay into the Preview header and hide it automatically while zoomed.
+- Removed adjustable tile sizing and restored the fixed pre-v1.3.0 tile layout.
+- Reworked Explorer context menus with a fully custom rounded ContextMenu template.
+- Added **Delete all conflicts** to duplicate results: it keeps one file per duplicate group and sends the remaining copies to the Recycle Bin.
+- Kept context-aware sort direction labels for name, date, and size.
+
+**Українська**
+- Синю відмітку вибраного зображення підігнано під ширину скролбара.
+- Метадані зображення перенесено з overlay поверх картинки у заголовок «Перегляд»; під час zoom вони автоматично ховаються.
+- Регулятор розміру плиток прибрано та повернуто фіксований розмір плиток, як до v1.3.0.
+- Контекстне меню «Провідника» переведено на повністю кастомний округлений шаблон ContextMenu.
+- У пошуку дублікатів додано **«Видалити всі конфлікти»**: по одному файлу з кожної групи залишається, решта копій переміщується до Кошика.
+- Збережено контекстні назви напрямку сортування за назвою, датою та розміром.
+
 ## v1.3.1 — 2026-10-01
 
 **English**

@@ -23,15 +23,12 @@ public partial class MainWindow
     {
         ExplorerColumn.Width = new GridLength(Math.Clamp(_settings.ExplorerPaneWidth, 180, 520));
         PreviewColumn.Width = new GridLength(Math.Clamp(_settings.PreviewPaneWidth, 300, 760));
-        TileSizeSlider.Value = Math.Clamp(_settings.TileSize, TileSizeSlider.Minimum, TileSizeSlider.Maximum);
-        ApplyTileSize(TileSizeSlider.Value);
     }
 
     private void CaptureLayoutSettings()
     {
         _settings.ExplorerPaneWidth = Math.Clamp(ExplorerColumn.ActualWidth, 180, 520);
         _settings.PreviewPaneWidth = Math.Clamp(PreviewColumn.ActualWidth, 300, 760);
-        _settings.TileSize = Math.Clamp(TileSizeSlider.Value, TileSizeSlider.Minimum, TileSizeSlider.Maximum);
     }
 
     private void BuildBreadcrumb(string path)
@@ -80,22 +77,6 @@ public partial class MainWindow
         BreadcrumbPanel.Children.Add(button);
     }
 
-    private void TileSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-    {
-        ApplyTileSize(e.NewValue);
-        if (!_initializingControls) _settings.TileSize = e.NewValue;
-    }
-
-    private void ApplyTileSize(double size)
-    {
-        if (!IsInitialized || ImageList is null) return;
-        size = Math.Clamp(size, 140, 280);
-        if (FindResource("ImageTileStyle") is not Style baseStyle) return;
-        var style = new Style(typeof(ListBoxItem), baseStyle);
-        style.Setters.Add(new Setter(FrameworkElement.WidthProperty, size));
-        style.Setters.Add(new Setter(FrameworkElement.HeightProperty, Math.Round(size * 0.94)));
-        ImageList.ItemContainerStyle = style;
-    }
 
     private void UpdateSortDirectionLabels()
     {
@@ -174,10 +155,7 @@ public partial class MainWindow
     {
         var (pixelWidth, pixelHeight) = ReadOriginalPixelSize(item.FullPath);
         var dimensions = pixelWidth > 0 && pixelHeight > 0 ? $"{pixelWidth} × {pixelHeight}px" : source is null ? "—" : $"{source.PixelWidth} × {source.PixelHeight}px";
-        MetadataDimensionsText.Text = $"{_loc.T("Dimensions")}: {dimensions}";
-        MetadataSizeText.Text = $"{_loc.T("FileSize")}: {FormatBytes(item.Length)}";
-        MetadataCreatedText.Text = $"{_loc.T("Created")}: {item.CreationTime:g}";
-        MetadataModifiedText.Text = $"{_loc.T("Modified")}: {item.LastWriteTime:g}";
+        PreviewMetadataInline.Text = $"{_loc.T("Dimensions")}: {dimensions}  •  {_loc.T("FileSize")}: {FormatBytes(item.Length)}  •  {_loc.T("Created")}: {item.CreationTime:g}  •  {_loc.T("Modified")}: {item.LastWriteTime:g}";
     }
 
     private static (int Width, int Height) ReadOriginalPixelSize(string path)

@@ -32,8 +32,8 @@ public sealed class LocalizationService
             ["Prefix"] = "Префікс", ["StartNumber"] = "Початковий номер", ["Digits"] = "Кількість цифр", ["Find"] = "Знайти", ["Replace"] = "Замінити на", ["Conflict"] = "Конфлікт", ["ApplyRename"] = "Перейменувати",
             ["BatchRenameSummary"] = "Вибрано: {0}. Буде змінено: {1}. Конфліктів: {2}.", ["BatchRenameDone"] = "Перейменовано файлів: {0}.", ["SelectImagesFirst"] = "Спочатку виберіть одне або кілька зображень.",
             ["NameConflict"] = "Конфлікт назви", ["ConflictHelp"] = "Конфлікт означає, що нова назва недопустима, уже зайнята іншим файлом або однакова для кількох вибраних файлів.",
-            ["DeleteSelected"] = "Видалити вибрані", ["DeleteDuplicatesQuestion"] = "Перемістити вибрані дублікати ({0}) до кошика?", ["DuplicatePreview"] = "Прев'ю", ["DuplicateDeleted"] = "Видалено дублікатів: {0}.",
-            ["SortNameAsc"] = "Від А до Я ↑", ["SortNameDesc"] = "Від Я до А ↓", ["SortDateAsc"] = "Від старіших ↑", ["SortDateDesc"] = "Від новіших ↓", ["SortSizeAsc"] = "Від меншого ↑", ["SortSizeDesc"] = "Від більшого ↓",
+            ["DeleteSelected"] = "Видалити вибрані", ["DeleteAllConflicts"] = "Видалити всі конфлікти", ["DeleteAllConflictsQuestion"] = "Перемістити до кошика всі дублікати-конфлікти ({0}), залишивши по одному файлу в кожній групі?", ["DeleteDuplicatesQuestion"] = "Перемістити вибрані дублікати ({0}) до кошика?", ["DuplicatePreview"] = "Прев'ю", ["DuplicateDeleted"] = "Видалено дублікатів: {0}.",
+            ["SortNameAsc"] = "Від А до Я", ["SortNameDesc"] = "Від Я до А", ["SortDateAsc"] = "Від старіших до новіших", ["SortDateDesc"] = "Від новіших до старіших", ["SortSizeAsc"] = "Від меншого до більшого", ["SortSizeDesc"] = "Від більшого до меншого",
             ["TileSize"] = "Плитки", ["Dimensions"] = "Розмір", ["FileSize"] = "Файл", ["Created"] = "Створено", ["Modified"] = "Змінено",
             ["FolderImageCount"] = "Зображень у папці: {0}", ["DropCopyHere"] = "Скопіювати сюди", ["DropMoveHere"] = "Перемістити сюди", ["DropDone"] = "Оброблено перетягуванням: {0}",
             ["WatcherPending"] = "У папці є зовнішні зміни. Оновлення відбудеться після збереження тексту."
@@ -64,8 +64,8 @@ public sealed class LocalizationService
             ["Prefix"] = "Prefix", ["StartNumber"] = "Start number", ["Digits"] = "Digits", ["Find"] = "Find", ["Replace"] = "Replace with", ["Conflict"] = "Conflict", ["ApplyRename"] = "Rename",
             ["BatchRenameSummary"] = "Selected: {0}. Will change: {1}. Conflicts: {2}.", ["BatchRenameDone"] = "Renamed files: {0}.", ["SelectImagesFirst"] = "Select one or more images first.",
             ["NameConflict"] = "Name conflict", ["ConflictHelp"] = "A conflict means the new name is invalid, already used by another file, or duplicated among the selected files.",
-            ["DeleteSelected"] = "Delete selected", ["DeleteDuplicatesQuestion"] = "Move the selected duplicate files ({0}) to the Recycle Bin?", ["DuplicatePreview"] = "Preview", ["DuplicateDeleted"] = "Deleted duplicates: {0}.",
-            ["SortNameAsc"] = "A to Z ↑", ["SortNameDesc"] = "Z to A ↓", ["SortDateAsc"] = "Oldest first ↑", ["SortDateDesc"] = "Newest first ↓", ["SortSizeAsc"] = "Smallest first ↑", ["SortSizeDesc"] = "Largest first ↓",
+            ["DeleteSelected"] = "Delete selected", ["DeleteAllConflicts"] = "Delete all conflicts", ["DeleteAllConflictsQuestion"] = "Move all duplicate conflicts ({0}) to the Recycle Bin, keeping one file from each group?", ["DeleteDuplicatesQuestion"] = "Move the selected duplicate files ({0}) to the Recycle Bin?", ["DuplicatePreview"] = "Preview", ["DuplicateDeleted"] = "Deleted duplicates: {0}.",
+            ["SortNameAsc"] = "A to Z", ["SortNameDesc"] = "Z to A", ["SortDateAsc"] = "Oldest to newest", ["SortDateDesc"] = "Newest to oldest", ["SortSizeAsc"] = "Smallest to largest", ["SortSizeDesc"] = "Largest to smallest",
             ["TileSize"] = "Tiles", ["Dimensions"] = "Dimensions", ["FileSize"] = "File", ["Created"] = "Created", ["Modified"] = "Modified",
             ["FolderImageCount"] = "Images in folder: {0}", ["DropCopyHere"] = "Copy here", ["DropMoveHere"] = "Move here", ["DropDone"] = "Drag & drop processed: {0}",
             ["WatcherPending"] = "The folder changed externally. It will refresh after the text is saved."

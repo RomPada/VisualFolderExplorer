@@ -136,7 +136,6 @@ public partial class MainWindow : Window
             ((ComboBoxItem)SortFieldCombo.Items[3]).Content = _loc.T("SortSize");
         }
         UpdateSortDirectionLabels();
-        TileSizeLabel.Text = _loc.T("TileSize");
         RefreshPreviewMetadataLanguage();
         UpdateTextFileName();
         UpdateImageCount();
@@ -246,7 +245,7 @@ public partial class MainWindow : Window
 
         var semaphore = new SemaphoreSlim(6);
         var thumbnailTasks = new List<Task>();
-        var thumbnailWidth = (int)Math.Clamp(TileSizeSlider.Value * 1.25, 200, 420);
+        const int thumbnailWidth = 240;
         const int batchSize = 24;
 
         try
@@ -366,6 +365,7 @@ public partial class MainWindow : Window
         PreviewPanel.Visibility = Visibility.Collapsed;
         BackToTextButton.Visibility = Visibility.Collapsed;
         SideTitle.Text = _loc.T("Text");
+        PreviewMetadataInline.Visibility = Visibility.Collapsed;
         SaveTextButton.Visibility = Visibility.Visible;
         if (_textIndex >= 0 && _textIndex < _textFiles.Count && _textFiles[_textIndex].Extension.Equals(".md", StringComparison.OrdinalIgnoreCase))
         {
@@ -405,6 +405,7 @@ public partial class MainWindow : Window
         BackToTextButton.Visibility = Visibility.Visible;
         BackToTextButton.Content = _loc.T("BackToText");
         SideTitle.Text = _loc.T("Preview");
+        PreviewMetadataInline.Visibility = Visibility.Visible;
         SaveTextButton.Visibility = Visibility.Collapsed;
         MarkdownModeButton.Visibility = Visibility.Collapsed;
         TextFileName.Text = item.Name;
@@ -712,6 +713,8 @@ public partial class MainWindow : Window
         _previewDragging = false;
         _previewDragMoved = false;
         PreviewPanel.Cursor = Cursors.Hand;
+        if (PreviewPanel.Visibility == Visibility.Visible && PreviewImage.Source is not null)
+            PreviewMetadataInline.Visibility = Visibility.Visible;
     }
 
     private void PreviewPanel_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -721,6 +724,7 @@ public partial class MainWindow : Window
         {
             _previewScale.ScaleX = _previewScale.ScaleY = 3;
             _previewTranslate.X = _previewTranslate.Y = 0;
+            PreviewMetadataInline.Visibility = Visibility.Collapsed;
             PreviewPanel.Cursor = Cursors.SizeAll;
             e.Handled = true;
             return;

@@ -1,24 +1,19 @@
-# Visual Folder Explorer v1.3.1
+# Visual Folder Explorer v1.4.0
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.3.1 expands the C# WPF application into a more complete visual asset manager:** duplicate preview/deletion, context-aware sorting, Drag & Drop, breadcrumb navigation, persistent layout/scroll state, adjustable tile size, metadata preview, and automatic folder watching.
+**v1.4.0 refines the image-management workflow:** preview metadata is moved out of the image, zoom becomes cleaner, Explorer context menus are fully styled, duplicate cleanup gains a one-click bulk action, and the fixed tile layout returns.
 
 
-## What's new in v1.3.1
+## What's new in v1.4.0
 
-- Duplicate-results window now includes a live image preview and can send selected duplicate files directly to the Recycle Bin.
-- Batch rename now explains name conflicts clearly and shows a warning marker instead of a checkbox.
-- Sort-direction wording changes with the selected field: A→Z/Z→A, oldest/newest first, or smallest/largest first.
-- Replaced the plain path field in the main window with a clickable breadcrumb path.
-- Added Drag & Drop: external files/folders can be dropped into the current folder, and selected images can be dragged onto folders in Explorer.
-- Layout persistence now remembers Explorer/Preview pane widths and tile size.
-- Per-folder image scroll position and last selected image are restored automatically, including across restarts.
-- Added a tile-size slider.
-- Added image metadata in preview: pixel dimensions, file size, created date, and modified date.
-- Folder picker now shows the number of images in the current/selected folder.
-- Added a debounced `FileSystemWatcher` so external file changes refresh the open folder automatically.
-- Reworked scrollbars to a compact rounded style without the old arrow-button look.
+- The selected-image marker now matches the visual width of the image scrollbar more closely.
+- Image metadata moved from the image overlay to the Preview header, immediately after the Preview title.
+- Metadata automatically hides while the image is zoomed and returns at normal scale.
+- Removed the tile-size slider and restored the fixed tile size used before v1.3.0.
+- Explorer context menus now use the full modern rounded menu template instead of the native-looking Windows container.
+- Duplicate search now includes **Delete all conflicts**, which sends every duplicate copy to the Recycle Bin while keeping one file from each duplicate group.
+- Context-aware sort labels remain: A→Z/Z→A, oldest/newest first, and smallest/largest first.
 
 ## What's new in v1.2.1
 
@@ -86,7 +81,7 @@ See `DEPLOYMENT.md` for details.
 - Image tile browser with sorting by name, modified date, creation date, and size, in ascending or descending order.
 - Progressive asynchronous thumbnail loading so large folders remain responsive.
 - Persistent thumbnail cache under `%LOCALAPPDATA%\VisualFolderExplorer\thumbcache`.
-- Large image preview with 300% zoom and mouse panning.
+- Large image preview with 300% zoom and mouse panning; metadata is shown in the Preview header and hidden while zoomed.
 - Last selected image marker next to the image scrollbar.
 - Text editing with save / `Ctrl+S` workflow and unsaved-change confirmation.
 - Markdown files open in rendered preview mode and can be switched to source-edit mode.
@@ -98,7 +93,7 @@ See `DEPLOYMENT.md` for details.
 - Styled image-moving dialog with remembered destination and automatic conflict renaming.
 - Custom styled folder picker.
 - UA / EN interface switch, remembered between launches.
-- Window size/state, last folder, sorting, language, last image, and move destination are persisted in `settings.json`.
+- Window size/state, pane layout, last folder, sorting, language, last image, scroll position, and move destination are persisted in `settings.json`.
 
 ## Architecture
 

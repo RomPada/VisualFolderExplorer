@@ -1,9 +1,9 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 namespace VisualFolderExplorer.Services;
 
 public sealed class AppSettings
 {
-    public string Version { get; set; } = "1.3.0";
+    public string Version { get; set; } = "1.4.0";
     public string? RootFolder { get; set; }
     public string? CurrentFolder { get; set; }
     public List<string> History { get; set; } = [];
@@ -17,7 +17,6 @@ public sealed class AppSettings
     public string? LastSelectedImagePath { get; set; }
     public double ExplorerPaneWidth { get; set; } = 280;
     public double PreviewPaneWidth { get; set; } = 430;
-    public double TileSize { get; set; } = 190;
     public Dictionary<string, double> FolderScrollOffsets { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, string> FolderLastSelectedImages { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
