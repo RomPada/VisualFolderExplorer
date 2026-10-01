@@ -7,7 +7,7 @@ public sealed class LocalizationService
     {
         ["UA"] = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["ChooseFolder"] = "Обрати папку", ["MoveImages"] = "Перенести", ["Explorer"] = "Провідник", ["Images"] = "Зображення", ["Text"] = "Текст",
+            ["ChooseFolder"] = "Обрати папку", ["ImageTools"] = "Операції з зображеннями", ["MoveImages"] = "Перенести", ["Explorer"] = "Провідник", ["Images"] = "Зображення", ["Text"] = "Текст",
             ["Save"] = "Зберегти", ["Edit"] = "Редагувати", ["Preview"] = "Перегляд", ["BackToText"] = "До тексту", ["Ready"] = "Готово",
             ["SortName"] = "За назвою", ["SortModified"] = "За датою зміни", ["SortCreated"] = "За датою створення", ["SortSize"] = "За розміром",
             ["Ascending"] = "Звичайне ↑", ["Descending"] = "Зворотне ↓", ["Open"] = "Відкрити", ["Cut"] = "Вирізати", ["Copy"] = "Копіювати",
@@ -17,7 +17,7 @@ public sealed class LocalizationService
             ["MoveTitle"] = "Перенесення зображень", ["From"] = "Звідки", ["To"] = "Куди", ["Browse"] = "Обрати", ["Move"] = "Перенести",
             ["MoveHint"] = "Переносяться зображення лише з цієї папки. При збігу назви додається _1, _2 тощо.", ["MoveDone"] = "Перенесено: {0}. Автоперейменовано: {1}.", ["MoveSourceMissing"] = "Папка-джерело не існує.", ["MoveDestinationRequired"] = "Оберіть папку призначення.", ["MoveSameFolder"] = "Джерело і призначення не можуть бути однаковими.",
             ["NoImages"] = "У цій папці немає зображень.", ["NoText"] = "У цій папці немає файлів .txt або .md.", ["FolderPicker"] = "Оберіть папку", ["SelectThisFolder"] = "Обрати цю папку",
-            ["CurrentFolder"] = "Поточна папка", ["Drive"] = "Диск", ["Up"] = "Вгору", ["NoSubfolders"] = "У цій папці немає підпапок.", ["Name"] = "Назва",
+            ["CurrentFolder"] = "Поточна папка", ["BrowseAddress"] = "Огляд...", ["Up"] = "Вгору", ["NoSubfolders"] = "У цій папці немає підпапок.", ["Name"] = "Назва",
             ["NewFolder"] = "Нова папка", ["NewFile"] = "Новий файл.txt", ["NewMarkdown"] = "Новий файл.md", ["Error"] = "Помилка", ["Warning"] = "Увага",
             ["DeleteFileQuestion"] = "Перемістити '{0}' до кошика?", ["DeleteFolderQuestion"] = "Перемістити папку '{0}' разом з усім вмістом до кошика?",
             ["RenamePrompt"] = "Введіть нову назву:", ["OpenFolder"] = "Відкрито: {0}", ["Loading"] = "Завантаження прев'ю: {0} / {1}", ["Loaded"] = "Прев'ю завантажено: {0}",
@@ -34,7 +34,7 @@ public sealed class LocalizationService
         },
         ["EN"] = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["ChooseFolder"] = "Choose folder", ["MoveImages"] = "Move images", ["Explorer"] = "Explorer", ["Images"] = "Images", ["Text"] = "Text",
+            ["ChooseFolder"] = "Choose folder", ["ImageTools"] = "Image actions", ["MoveImages"] = "Move images", ["Explorer"] = "Explorer", ["Images"] = "Images", ["Text"] = "Text",
             ["Save"] = "Save", ["Edit"] = "Edit", ["Preview"] = "Preview", ["BackToText"] = "Back to text", ["Ready"] = "Ready",
             ["SortName"] = "By name", ["SortModified"] = "By modified date", ["SortCreated"] = "By creation date", ["SortSize"] = "By size",
             ["Ascending"] = "Ascending ↑", ["Descending"] = "Descending ↓", ["Open"] = "Open", ["Cut"] = "Cut", ["Copy"] = "Copy", ["Paste"] = "Paste",
@@ -43,7 +43,7 @@ public sealed class LocalizationService
             ["UnsavedTitle"] = "Unsaved changes", ["UnsavedMessage"] = "File '{0}' has unsaved changes. Save them before continuing?", ["MoveTitle"] = "Move images", ["From"] = "From",
             ["To"] = "To", ["Browse"] = "Browse", ["Move"] = "Move", ["MoveHint"] = "Moves images from this folder only. Name conflicts receive _1, _2, and so on.",
             ["MoveDone"] = "Moved: {0}. Auto-renamed: {1}.", ["MoveSourceMissing"] = "The source folder does not exist.", ["MoveDestinationRequired"] = "Choose a destination folder.", ["MoveSameFolder"] = "Source and destination cannot be the same.", ["NoImages"] = "There are no images in this folder.", ["NoText"] = "There are no .txt or .md files in this folder.",
-            ["FolderPicker"] = "Choose folder", ["SelectThisFolder"] = "Choose this folder", ["CurrentFolder"] = "Current folder", ["Drive"] = "Drive", ["Up"] = "Up",
+            ["FolderPicker"] = "Choose folder", ["SelectThisFolder"] = "Choose this folder", ["CurrentFolder"] = "Current folder", ["BrowseAddress"] = "Browse...", ["Up"] = "Up",
             ["NoSubfolders"] = "This folder has no subfolders.", ["Name"] = "Name", ["NewFolder"] = "New folder", ["NewFile"] = "New file.txt", ["NewMarkdown"] = "New file.md",
             ["Error"] = "Error", ["Warning"] = "Warning", ["DeleteFileQuestion"] = "Move '{0}' to the Recycle Bin?", ["DeleteFolderQuestion"] = "Move folder '{0}' and all of its contents to the Recycle Bin?",
             ["RenamePrompt"] = "Enter a new name:", ["OpenFolder"] = "Opened: {0}", ["Loading"] = "Loading previews: {0} / {1}", ["Loaded"] = "Previews loaded: {0}",

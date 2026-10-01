@@ -5,6 +5,24 @@ This file is maintained for every release in English and Ukrainian.
 
 ---
 
+## v1.2.0 — 2026-10-01
+
+**English**
+- Moved **Move images**, **Duplicates**, and **Batch rename** out of the image header into a dedicated image-actions bar between the address toolbar and the Explorer / Images / Preview workspace.
+- Simplified the image header so it now focuses on image title, sorting, and file/selection count.
+- Reworked the shared folder picker used both by **Choose folder** and image-transfer browsing: the dedicated **Drive** combo was removed.
+- Added **Browse...** in its place. It opens the native Windows folder-browser tree, matching the familiar address/folder-selection workflow while keeping the styled in-app picker and current-path navigation available.
+- Added UA / EN labels for the new image-actions bar and native-address browsing button.
+- Enabled Windows Forms support only for the native Windows folder browser; no extra software is required for portable builds.
+
+**Українська**
+- Кнопки **«Перенести»**, **«Дублікати»** та **«Масове перейменування»** винесено із заголовка блока «Зображення» в окрему панель операцій між адресним рядком і основними блоками «Провідник / Зображення / Перегляд».
+- Заголовок блока «Зображення» спрощено: у ньому залишилися назва блока, сортування та лічильник файлів/вибраних елементів.
+- Перероблено спільне вікно вибору папки, яке використовується і кнопкою **«Обрати папку»**, і під час перенесення: окремий блок **«Диск»** прибрано.
+- Замість нього додано **«Огляд...»**, який відкриває стандартне дерево вибору папок Windows, як у звичному системному меню вибору адреси; при цьому стилізоване вікно програми та навігація поточним шляхом збережені.
+- Додано UA / EN локалізацію для нової панелі операцій і кнопки системного огляду папок.
+- Windows Forms увімкнено лише для системного Folder Browser; для portable-збірки це не потребує встановлення додаткового ПЗ.
+
 ## v1.1.1 — 2026-10-01
 
 **English**

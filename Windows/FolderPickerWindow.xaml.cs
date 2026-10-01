@@ -9,7 +9,6 @@ namespace VisualFolderExplorer.Windows;
 public partial class FolderPickerWindow : Window
 {
     private readonly LocalizationService _loc;
-    private bool _updatingDrive;
     private string _currentPath = string.Empty;
     public string? SelectedPath { get; private set; }
 
@@ -18,23 +17,16 @@ public partial class FolderPickerWindow : Window
         InitializeComponent();
         _loc = loc;
         ApplyLanguage();
-        LoadDrives();
         var start = Directory.Exists(initialPath) ? initialPath! : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         Navigate(start);
     }
 
     private void ApplyLanguage()
     {
-        Title = _loc.T("FolderPicker"); TitleText.Text = _loc.T("FolderPicker"); PathLabel.Text = _loc.T("CurrentFolder"); DriveLabel.Text = _loc.T("Drive");
-        UpButton.Content = _loc.T("Up"); EmptyText.Text = _loc.T("NoSubfolders"); CancelButton.Content = _loc.T("Cancel"); SelectButton.Content = _loc.T("SelectThisFolder");
+        Title = _loc.T("FolderPicker"); TitleText.Text = _loc.T("FolderPicker"); PathLabel.Text = _loc.T("CurrentFolder");
+        BrowseAddressButton.Content = _loc.T("BrowseAddress"); UpButton.Content = _loc.T("Up"); EmptyText.Text = _loc.T("NoSubfolders"); CancelButton.Content = _loc.T("Cancel"); SelectButton.Content = _loc.T("SelectThisFolder");
     }
 
-    private void LoadDrives()
-    {
-        DriveCombo.Items.Clear();
-        foreach (var drive in DriveInfo.GetDrives().Where(d => d.IsReady))
-            DriveCombo.Items.Add(new ComboBoxItem { Content = drive.Name, Tag = drive.RootDirectory.FullName });
-    }
 
     private bool Navigate(string path)
     {
@@ -48,14 +40,6 @@ public partial class FolderPickerWindow : Window
             FolderList.ItemsSource = new DirectoryInfo(_currentPath).EnumerateDirectories().OrderBy(d => d.Name, NaturalStringComparer.Instance).ToList();
             EmptyText.Visibility = FolderList.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
-            _updatingDrive = true;
-            var index = 0;
-            foreach (ComboBoxItem item in DriveCombo.Items)
-            {
-                if (_currentPath.StartsWith((string)item.Tag, StringComparison.OrdinalIgnoreCase)) { DriveCombo.SelectedIndex = index; break; }
-                index++;
-            }
-            _updatingDrive = false;
             return true;
         }
         catch { return false; }
@@ -78,10 +62,18 @@ public partial class FolderPickerWindow : Window
         if (!string.IsNullOrWhiteSpace(parent)) Navigate(parent);
     }
 
-    private void DriveCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+
+    private void BrowseAddressButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_updatingDrive || DriveCombo.SelectedItem is not ComboBoxItem item) return;
-        Navigate((string)item.Tag);
+        using var dialog = new System.Windows.Forms.FolderBrowserDialog
+        {
+            Description = _loc.T("FolderPicker"),
+            ShowNewFolderButton = true,
+            SelectedPath = Directory.Exists(_currentPath) ? _currentPath : string.Empty
+        };
+
+        if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK && Directory.Exists(dialog.SelectedPath))
+            Navigate(dialog.SelectedPath);
     }
 
     private void PathBox_KeyDown(object sender, KeyEventArgs e)

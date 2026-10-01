@@ -1,25 +1,16 @@
-﻿# Visual Folder Explorer v1.1.1
+﻿# Visual Folder Explorer v1.2.0
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.1.1 is a compatibility patch for local development with the installed .NET 10 SDK. The v1.1.0 bulk-image features are preserved.** It adds true multi-selection, moving selected images with a preflight preview, exact duplicate detection, and safe batch renaming.
+**v1.2.0 reorganizes the image-management tools into a dedicated action bar and improves folder selection with direct access to the native Windows folder-browser tree.** All v1.1.x multi-selection, move preview, duplicate detection, and batch rename features remain available.
 
-## What's new in v1.1.1
+## What's new in v1.2.0
 
-- Retargeted the WPF project from `net8.0-windows` to `net10.0-windows` so local offline restore works with the installed .NET 10 SDK.
-- Updated local build/publish scripts and GitHub Actions to .NET 10.
-- No functional changes to multi-select, selected-image move, duplicate search, move preview, or batch rename.
+- Added a dedicated **Image actions** bar between the address toolbar and the main workspace. **Move images**, **Duplicates**, and **Batch rename** now live there instead of inside the Images header.
+- Removed the dedicated **Drive** selector from the shared folder picker. The new **Browse...** button opens the native Windows folder-browser tree while the custom current-path/subfolder picker remains available.
+- The same folder picker is used by the main **Choose folder** action and the move-images source/destination browse buttons.
+- The application remains bilingual (UA / EN) and the new controls follow the shared styles/localization system.
 
-- **Image multi-select:** use `Ctrl + click`, `Shift + click`, and `Ctrl+A` while the image grid has focus.
-- **Move selected:** the Move images dialog can switch between all images in the current folder and only the selected images.
-- **Move preview:** every bulk move shows the planned source/destination names, total file count, and how many files will be auto-renamed because of name conflicts before anything is moved.
-- **Exact duplicate search:** the Duplicates action first filters by file size, then verifies candidates by SHA-256 content hash. Results are grouped and duplicate copies can be selected back in the image grid.
-- **Batch rename:** selected images can be renamed by sequential numbering (`prefix_001`, `prefix_002`, ...) or case-insensitive find/replace. A preview is shown before applying changes, and conflicting target names disable the operation.
-- Batch rename uses a two-phase temporary rename strategy so selected files can safely swap or reuse each other's previous names.
-
-### Fast local testing
-
-Because you have the .NET 10 SDK installed, use `StartDev.bat` for day-to-day testing. You only need GitHub Actions when you want a self-contained portable release.
 
 ## Requirements
 
@@ -145,7 +136,7 @@ Semantic Versioning is used:
 - MINOR — backward-compatible features;
 - MAJOR — major/breaking changes or architecture migrations.
 
-The PowerShell → C# rewrite was released as **v1.0.0**. The current source target is **.NET 10 WPF** as of **v1.1.1**.
+The PowerShell → C# rewrite was released as **v1.0.0**. The current source target is **.NET 10 WPF** as of **v1.1.1**; v1.2.0 also enables Windows Forms integration only for the native folder-browser dialog.
 
 ## GitHub Actions artifact
 

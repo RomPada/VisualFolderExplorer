@@ -1,4 +1,12 @@
-﻿
+﻿# Visual Folder Explorer deployment
+
+## Current release: v1.2.0
+
+The current C# WPF source targets **.NET 10**. The portable self-contained build contains the runtime and does not require .NET on the target PC. v1.2.0 also enables Windows Forms only to expose the native Windows folder-browser tree from the shared WPF folder picker; this adds no separate end-user installation requirement.
+
+---
+
+
 ## Local SDK compatibility in v1.1.1
 
 The source project now targets `net10.0-windows`. This matches a machine that has the .NET 10 SDK installed and allows `NuGet.Offline.Config` to resolve the Windows Desktop reference packs directly from the local SDK without contacting NuGet.org. End-user portable builds remain self-contained and do not require .NET to be installed.

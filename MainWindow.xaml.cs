@@ -111,6 +111,7 @@ public partial class MainWindow : Window
     private void ApplyLanguage()
     {
         ChooseFolderButton.Content = _loc.T("ChooseFolder");
+        ImageToolsTitle.Text = _loc.T("ImageTools");
         MoveImagesButton.Content = _loc.T("MoveImages");
         FindDuplicatesButton.Content = _loc.T("FindDuplicates");
         BatchRenameButton.Content = _loc.T("BatchRename");
