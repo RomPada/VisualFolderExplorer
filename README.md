@@ -1,11 +1,11 @@
-# Visual Folder Explorer v1.3.0
+# Visual Folder Explorer v1.3.1
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.3.0 expands the C# WPF application into a more complete visual asset manager:** duplicate preview/deletion, context-aware sorting, Drag & Drop, breadcrumb navigation, persistent layout/scroll state, adjustable tile size, metadata preview, and automatic folder watching.
+**v1.3.1 expands the C# WPF application into a more complete visual asset manager:** duplicate preview/deletion, context-aware sorting, Drag & Drop, breadcrumb navigation, persistent layout/scroll state, adjustable tile size, metadata preview, and automatic folder watching.
 
 
-## What's new in v1.3.0
+## What's new in v1.3.1
 
 - Duplicate-results window now includes a live image preview and can send selected duplicate files directly to the Recycle Bin.
 - Batch rename now explains name conflicts clearly and shows a warning marker instead of a checkbox.

@@ -5,6 +5,18 @@ This file is maintained for every release in English and Ukrainian.
 
 ---
 
+## v1.3.1 — 2026-10-01
+
+**English**
+- Fixed build error `CS0103` in `MainWindow.Features.cs` where `NoticeKind` was not visible in the feature partial class.
+- Added the missing `using VisualFolderExplorer.Windows;` import so Drag & Drop error dialogs compile correctly.
+- No functional changes to v1.3.0 features.
+
+**Українська**
+- Виправлено помилку збірки `CS0103` у `MainWindow.Features.cs`, де `NoticeKind` не був доступний у partial-класі функцій.
+- Додано відсутній `using VisualFolderExplorer.Windows;`, щоб коректно компілювалися повідомлення про помилки Drag & Drop.
+- Функціонал v1.3.0 не змінювався.
+
 ## v1.3.0 — 2026-10-01
 
 **English**
