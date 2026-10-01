@@ -1,8 +1,8 @@
 ﻿# Visual Folder Explorer deployment
 
-## Current release: v1.2.0
+## Current release: v1.2.1
 
-The current C# WPF source targets **.NET 10**. The portable self-contained build contains the runtime and does not require .NET on the target PC. v1.2.0 also enables Windows Forms only to expose the native Windows folder-browser tree from the shared WPF folder picker; this adds no separate end-user installation requirement.
+The current C# WPF source targets **.NET 10**. The portable self-contained build contains the runtime and does not require .NET on the target PC. v1.2.1 uses the built-in WPF `Microsoft.Win32.OpenFolderDialog` for native folder browsing, so Windows Forms is no longer enabled and there are no WPF/WinForms type-name collisions.
 
 ---
 

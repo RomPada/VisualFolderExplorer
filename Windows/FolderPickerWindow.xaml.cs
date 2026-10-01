@@ -65,15 +65,15 @@ public partial class FolderPickerWindow : Window
 
     private void BrowseAddressButton_Click(object sender, RoutedEventArgs e)
     {
-        using var dialog = new System.Windows.Forms.FolderBrowserDialog
+        var dialog = new Microsoft.Win32.OpenFolderDialog
         {
-            Description = _loc.T("FolderPicker"),
-            ShowNewFolderButton = true,
-            SelectedPath = Directory.Exists(_currentPath) ? _currentPath : string.Empty
+            Title = _loc.T("FolderPicker"),
+            Multiselect = false,
+            InitialDirectory = Directory.Exists(_currentPath) ? _currentPath : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
         };
 
-        if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK && Directory.Exists(dialog.SelectedPath))
-            Navigate(dialog.SelectedPath);
+        if (dialog.ShowDialog(this) == true && Directory.Exists(dialog.FolderName))
+            Navigate(dialog.FolderName);
     }
 
     private void PathBox_KeyDown(object sender, KeyEventArgs e)

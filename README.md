@@ -1,10 +1,15 @@
-﻿# Visual Folder Explorer v1.2.0
+﻿# Visual Folder Explorer v1.2.1
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.2.0 reorganizes the image-management tools into a dedicated action bar and improves folder selection with direct access to the native Windows folder-browser tree.** All v1.1.x multi-selection, move preview, duplicate detection, and batch rename features remain available.
+**v1.2.1 fixes the WPF build after the v1.2.0 native folder-browser change.** The app now uses WPF’s built-in `Microsoft.Win32.OpenFolderDialog` instead of enabling Windows Forms, eliminating ambiguous type references such as `KeyEventArgs`, `MouseEventArgs`, `ContextMenu`, and `Point`.
 
-## What's new in v1.2.0
+## What's new in v1.2.1
+
+- Removed `<UseWindowsForms>true</UseWindowsForms>` from the project.
+- Replaced `System.Windows.Forms.FolderBrowserDialog` with WPF `Microsoft.Win32.OpenFolderDialog`.
+- Fixes CS0104 ambiguous-reference build errors for `KeyEventArgs`, `MouseEventArgs`, `ContextMenu`, and `Point`.
+- Keeps the native Windows folder selection experience without an extra UI framework dependency.
 
 - Added a dedicated **Image actions** bar between the address toolbar and the main workspace. **Move images**, **Duplicates**, and **Batch rename** now live there instead of inside the Images header.
 - Removed the dedicated **Drive** selector from the shared folder picker. The new **Browse...** button opens the native Windows folder-browser tree while the custom current-path/subfolder picker remains available.
@@ -136,7 +141,7 @@ Semantic Versioning is used:
 - MINOR — backward-compatible features;
 - MAJOR — major/breaking changes or architecture migrations.
 
-The PowerShell → C# rewrite was released as **v1.0.0**. The current source target is **.NET 10 WPF** as of **v1.1.1**; v1.2.0 also enables Windows Forms integration only for the native folder-browser dialog.
+The PowerShell → C# rewrite was released as **v1.0.0**. The current source target is **.NET 10 WPF** as of **v1.1.1**; v1.2.1 uses WPF `Microsoft.Win32.OpenFolderDialog` for native folder selection; Windows Forms is no longer enabled.
 
 ## GitHub Actions artifact
 

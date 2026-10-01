@@ -5,6 +5,20 @@ This file is maintained for every release in English and Ukrainian.
 
 ---
 
+## v1.2.1 — 2026-10-01
+
+**English**
+- Fixed the C# build failure introduced by enabling Windows Forms alongside WPF.
+- Removed Windows Forms from the project to eliminate CS0104 ambiguous references for `KeyEventArgs`, `MouseEventArgs`, `ContextMenu`, and `Point`.
+- Replaced `System.Windows.Forms.FolderBrowserDialog` with the built-in WPF `Microsoft.Win32.OpenFolderDialog`.
+- Native Windows folder browsing remains available without adding a second UI framework.
+
+**Українська**
+- Виправлено помилку збірки C#, спричинену одночасним підключенням Windows Forms і WPF.
+- Windows Forms прибрано з проєкту, що усуває CS0104 для `KeyEventArgs`, `MouseEventArgs`, `ContextMenu` і `Point`.
+- `System.Windows.Forms.FolderBrowserDialog` замінено на вбудований WPF `Microsoft.Win32.OpenFolderDialog`.
+- Стандартний Windows-вибір папок збережено без другого UI-фреймворку.
+
 ## v1.2.0 — 2026-10-01
 
 **English**
