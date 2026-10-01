@@ -22,7 +22,15 @@ public sealed class LocalizationService
             ["DeleteFileQuestion"] = "Перемістити '{0}' до кошика?", ["DeleteFolderQuestion"] = "Перемістити папку '{0}' разом з усім вмістом до кошика?",
             ["RenamePrompt"] = "Введіть нову назву:", ["OpenFolder"] = "Відкрито: {0}", ["Loading"] = "Завантаження прев'ю: {0} / {1}", ["Loaded"] = "Прев'ю завантажено: {0}",
             ["FilesCount"] = "{0} файлів", ["OneFile"] = "1 файл", ["Back"] = "Назад", ["Home"] = "До кореневої папки", ["FolderUp"] = "На рівень вище",
-            ["UnsavedMark"] = "незбережено", ["Saved"] = "Збережено: {0}", ["ClipboardEmpty"] = "У буфері обміну немає файлів або папок для вставлення."
+            ["UnsavedMark"] = "незбережено", ["Saved"] = "Збережено: {0}", ["ClipboardEmpty"] = "У буфері обміну немає файлів або папок для вставлення.",
+            ["MoveMode"] = "Що переносити", ["MoveAllImages"] = "Усі зображення з папки", ["MoveSelectedImages"] = "Тільки вибрані ({0})",
+            ["MoveSelectedHint"] = "Буде перенесено лише {0} вибраних зображень. При конфлікті назви додається _1, _2 тощо.", ["PreviewMove"] = "Переглянути й перенести",
+            ["MoveSelected"] = "Перенести вибрані", ["MovePreviewTitle"] = "Попередній перегляд перенесення", ["MovePreviewDestination"] = "Куди: {0}", ["MovePreviewCount"] = "Файлів до перенесення: {0}", ["MovePreviewConflicts"] = "Перейменувань: {0}", ["CurrentName"] = "Поточна назва", ["NewName"] = "Нова назва", ["ContinueMove"] = "Перенести",
+            ["SelectedCount"] = "{0} вибрано", ["FindDuplicates"] = "Дублікати", ["SearchingDuplicates"] = "Пошук дублікатів: {0} / {1}", ["DuplicatesTitle"] = "Пошук дублікатів", ["NoDuplicates"] = "Точних дублікатів у цій папці не знайдено.",
+            ["DuplicatesSummary"] = "Груп дублікатів: {0}. Файлів у групах: {1}.", ["DuplicateGroup"] = "Група", ["Size"] = "Розмір", ["Path"] = "Шлях", ["Close"] = "Закрити", ["SelectDuplicateCopies"] = "Вибрати копії",
+            ["BatchRename"] = "Масове перейменування", ["BatchRenameTitle"] = "Масове перейменування", ["RenameSequence"] = "Послідовна нумерація", ["RenameFindReplace"] = "Знайти та замінити",
+            ["Prefix"] = "Префікс", ["StartNumber"] = "Початковий номер", ["Digits"] = "Кількість цифр", ["Find"] = "Знайти", ["Replace"] = "Замінити на", ["Conflict"] = "Конфлікт", ["ApplyRename"] = "Перейменувати",
+            ["BatchRenameSummary"] = "Вибрано: {0}. Буде змінено: {1}. Конфліктів: {2}.", ["BatchRenameDone"] = "Перейменовано файлів: {0}.", ["SelectImagesFirst"] = "Спочатку виберіть одне або кілька зображень."
         },
         ["EN"] = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -40,7 +48,15 @@ public sealed class LocalizationService
             ["Error"] = "Error", ["Warning"] = "Warning", ["DeleteFileQuestion"] = "Move '{0}' to the Recycle Bin?", ["DeleteFolderQuestion"] = "Move folder '{0}' and all of its contents to the Recycle Bin?",
             ["RenamePrompt"] = "Enter a new name:", ["OpenFolder"] = "Opened: {0}", ["Loading"] = "Loading previews: {0} / {1}", ["Loaded"] = "Previews loaded: {0}",
             ["FilesCount"] = "{0} files", ["OneFile"] = "1 file", ["Back"] = "Back", ["Home"] = "Go to root folder", ["FolderUp"] = "Up one level", ["UnsavedMark"] = "unsaved",
-            ["Saved"] = "Saved: {0}", ["ClipboardEmpty"] = "The clipboard does not contain files or folders to paste."
+            ["Saved"] = "Saved: {0}", ["ClipboardEmpty"] = "The clipboard does not contain files or folders to paste.",
+            ["MoveMode"] = "What to move", ["MoveAllImages"] = "All images in folder", ["MoveSelectedImages"] = "Selected only ({0})",
+            ["MoveSelectedHint"] = "Only the {0} selected images will be moved. Name conflicts receive _1, _2, and so on.", ["PreviewMove"] = "Preview and move",
+            ["MoveSelected"] = "Move selected", ["MovePreviewTitle"] = "Move preview", ["MovePreviewDestination"] = "To: {0}", ["MovePreviewCount"] = "Files to move: {0}", ["MovePreviewConflicts"] = "Renames: {0}", ["CurrentName"] = "Current name", ["NewName"] = "New name", ["ContinueMove"] = "Move",
+            ["SelectedCount"] = "{0} selected", ["FindDuplicates"] = "Duplicates", ["SearchingDuplicates"] = "Searching duplicates: {0} / {1}", ["DuplicatesTitle"] = "Find duplicates", ["NoDuplicates"] = "No exact duplicates were found in this folder.",
+            ["DuplicatesSummary"] = "Duplicate groups: {0}. Files in groups: {1}.", ["DuplicateGroup"] = "Group", ["Size"] = "Size", ["Path"] = "Path", ["Close"] = "Close", ["SelectDuplicateCopies"] = "Select duplicate copies",
+            ["BatchRename"] = "Batch rename", ["BatchRenameTitle"] = "Batch rename", ["RenameSequence"] = "Sequential numbering", ["RenameFindReplace"] = "Find and replace",
+            ["Prefix"] = "Prefix", ["StartNumber"] = "Start number", ["Digits"] = "Digits", ["Find"] = "Find", ["Replace"] = "Replace with", ["Conflict"] = "Conflict", ["ApplyRename"] = "Rename",
+            ["BatchRenameSummary"] = "Selected: {0}. Will change: {1}. Conflicts: {2}.", ["BatchRenameDone"] = "Renamed files: {0}.", ["SelectImagesFirst"] = "Select one or more images first."
         }
     };
 

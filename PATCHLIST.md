@@ -5,6 +5,28 @@ This file is maintained for every release in English and Ukrainian.
 
 ---
 
+## v1.1.0 — 2026-10-01
+
+**English**
+- Added extended image multi-selection with `Ctrl + click`, `Shift + click`, and explicit `Ctrl+A` support.
+- Added selected-image count to the image header and preserved clear visual states for multi-selected, last-selected, and previewed images.
+- Added **Move selected** mode. The move dialog can now operate on all images in the folder or only the current selection.
+- Added a mandatory move preview showing source/destination filenames, total count, and automatic conflict renames before files are moved.
+- Added exact duplicate detection using file-size prefiltering plus SHA-256 content hashing, with an option to select duplicate copies in the image grid.
+- Added safe batch rename for selected images with sequential numbering and case-insensitive find/replace modes, live preview, conflict detection, and two-phase temporary renaming.
+- Added modern dedicated windows for move preview, duplicate results, and batch rename.
+- Added fast local-development guidance: use `StartDev.bat` with the installed .NET 8 SDK and reserve GitHub Actions for portable releases.
+
+**Українська**
+- Додано розширений мультивибір зображень через `Ctrl + клік`, `Shift + клік` і явну підтримку `Ctrl+A`.
+- У заголовку блока «Зображення» тепер показується кількість вибраних файлів; окремо збережені візуальні стани мультивибору, останнього вибраного та відкритого у preview зображення.
+- Додано режим **«Перенести вибрані»**: вікно перенесення працює або з усіма картинками папки, або лише з поточним вибором.
+- Додано обов'язковий preview перед масовим перенесенням із поточними/новими назвами, кількістю файлів та автоматичних перейменувань через конфлікти.
+- Додано пошук точних дублікатів через попереднє групування за розміром і SHA-256 перевірку вмісту; копії можна одразу виділити у сітці.
+- Додано безпечний Batch rename вибраних картинок: послідовна нумерація або «знайти / замінити», live preview, перевірка конфліктів і двофазне тимчасове перейменування.
+- Додано окремі сучасні вікна для preview перенесення, результатів пошуку дублікатів і масового перейменування.
+- Додано рекомендацію для швидкої локальної розробки: `StartDev.bat` з установленим .NET 8 SDK, GitHub Actions — лише для portable-релізів.
+
 ## v1.0.4 — 2026-09-22
 
 **English**

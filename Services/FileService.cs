@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.VisualBasic.FileIO;
+using VisualFolderExplorer.Models;
 
 namespace VisualFolderExplorer.Services;
 
@@ -30,6 +31,55 @@ public sealed class FileService
         {
             var candidate = Path.Combine(directory, $"{baseName}_{index}{extension}");
             if (!File.Exists(candidate) && !Directory.Exists(candidate)) return candidate;
+            index++;
+        }
+    }
+
+
+    public static List<MovePlanItem> BuildMovePlan(IEnumerable<string> paths, string destinationFolder)
+    {
+        Directory.CreateDirectory(destinationFolder);
+        var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var result = new List<MovePlanItem>();
+        foreach (var source in paths.Where(File.Exists))
+        {
+            var desired = Path.Combine(destinationFolder, Path.GetFileName(source));
+            var final = GetUniqueDestinationPath(desired, reserved);
+            reserved.Add(Path.GetFullPath(final));
+            result.Add(new MovePlanItem
+            {
+                SourcePath = source,
+                DestinationPath = final,
+                AutoRenamed = !Path.GetFullPath(final).Equals(Path.GetFullPath(desired), StringComparison.OrdinalIgnoreCase)
+            });
+        }
+        return result;
+    }
+
+    public static async Task ExecuteMovePlanAsync(IEnumerable<MovePlanItem> plan, CancellationToken cancellationToken = default)
+    {
+        foreach (var item in plan)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Directory.CreateDirectory(Path.GetDirectoryName(item.DestinationPath) ?? string.Empty);
+            await Task.Run(() => MoveFileSafe(item.SourcePath, item.DestinationPath), cancellationToken);
+        }
+    }
+
+    public static string GetUniqueDestinationPath(string destination, ISet<string> reserved)
+    {
+        var normalized = Path.GetFullPath(destination);
+        if (!File.Exists(destination) && !Directory.Exists(destination) && !reserved.Contains(normalized)) return destination;
+
+        var directory = Path.GetDirectoryName(destination) ?? string.Empty;
+        var baseName = Path.GetFileNameWithoutExtension(destination);
+        var extension = Path.GetExtension(destination);
+        var index = 1;
+        while (true)
+        {
+            var candidate = Path.Combine(directory, $"{baseName}_{index}{extension}");
+            var candidateFull = Path.GetFullPath(candidate);
+            if (!File.Exists(candidate) && !Directory.Exists(candidate) && !reserved.Contains(candidateFull)) return candidate;
             index++;
         }
     }

@@ -1,0 +1,57 @@
+<Window x:Class="VisualFolderExplorer.Windows.BatchRenameWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="820" Height="640" MinWidth="680" MinHeight="520"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{StaticResource WindowBg}">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/><RowDefinition Height="12"/><RowDefinition Height="Auto"/><RowDefinition Height="12"/>
+            <RowDefinition Height="*"/><RowDefinition Height="12"/><RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock x:Name="TitleText" Grid.Row="0" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+
+        <Border Grid.Row="2" Style="{StaticResource CardBorder}" Padding="14">
+            <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="12"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Orientation="Horizontal">
+                    <RadioButton x:Name="SequenceRadio" Margin="0,0,20,0" Checked="ModeChanged"/>
+                    <RadioButton x:Name="FindReplaceRadio" Checked="ModeChanged"/>
+                </StackPanel>
+                <Grid Grid.Row="2">
+                    <Grid x:Name="SequencePanel">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="120"/><ColumnDefinition Width="12"/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"><TextBlock x:Name="PrefixLabel" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,5"/><TextBox x:Name="PrefixBox" Height="38" TextChanged="InputChanged"/></StackPanel>
+                        <StackPanel Grid.Column="2"><TextBlock x:Name="StartLabel" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,5"/><TextBox x:Name="StartBox" Height="38" Text="1" TextChanged="InputChanged"/></StackPanel>
+                        <StackPanel Grid.Column="4"><TextBlock x:Name="DigitsLabel" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,5"/><TextBox x:Name="DigitsBox" Height="38" Text="3" TextChanged="InputChanged"/></StackPanel>
+                    </Grid>
+                    <Grid x:Name="FindReplacePanel" Visibility="Collapsed">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"><TextBlock x:Name="FindLabel" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,5"/><TextBox x:Name="FindBox" Height="38" TextChanged="InputChanged"/></StackPanel>
+                        <StackPanel Grid.Column="2"><TextBlock x:Name="ReplaceLabel" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,5"/><TextBox x:Name="ReplaceBox" Height="38" TextChanged="InputChanged"/></StackPanel>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="8">
+            <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="8"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <TextBlock x:Name="SummaryText" Grid.Row="0" Foreground="{StaticResource MutedTextBrush}"/>
+                <DataGrid x:Name="PreviewGrid" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column"
+                          GridLinesVisibility="None" BorderThickness="0" Background="Transparent" RowHeaderWidth="0">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn x:Name="OldColumn" Binding="{Binding OldName}" Width="*"/>
+                        <DataGridTextColumn x:Name="NewColumn" Binding="{Binding NewName}" Width="*"/>
+                        <DataGridCheckBoxColumn x:Name="ConflictColumn" Binding="{Binding HasConflict}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="CancelButton" MinWidth="100" Margin="0,0,8,0" IsCancel="True" Click="CancelButton_Click"/>
+            <Button x:Name="ApplyButton" MinWidth="130" Style="{StaticResource PrimaryButton}" IsDefault="True" Click="ApplyButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

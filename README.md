@@ -1,8 +1,21 @@
-﻿# Visual Folder Explorer v1.0.4
+﻿# Visual Folder Explorer v1.1.0
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.0.4 is the first deployment/hardening patch after the C#/.NET 8 WPF rewrite.** The goal of the rewrite is better performance, maintainability, asynchronous image loading, thumbnail caching, and a cleaner foundation for future features.
+**v1.1.0 is a feature release focused on bulk image workflows.** It adds true multi-selection, moving selected images with a preflight preview, exact duplicate detection, and safe batch renaming.
+
+## What's new in v1.1.0
+
+- **Image multi-select:** use `Ctrl + click`, `Shift + click`, and `Ctrl+A` while the image grid has focus.
+- **Move selected:** the Move images dialog can switch between all images in the current folder and only the selected images.
+- **Move preview:** every bulk move shows the planned source/destination names, total file count, and how many files will be auto-renamed because of name conflicts before anything is moved.
+- **Exact duplicate search:** the Duplicates action first filters by file size, then verifies candidates by SHA-256 content hash. Results are grouped and duplicate copies can be selected back in the image grid.
+- **Batch rename:** selected images can be renamed by sequential numbering (`prefix_001`, `prefix_002`, ...) or case-insensitive find/replace. A preview is shown before applying changes, and conflicting target names disable the operation.
+- Batch rename uses a two-phase temporary rename strategy so selected files can safely swap or reuse each other's previous names.
+
+### Fast local testing
+
+Because you have the .NET 8 SDK installed, use `StartDev.bat` for day-to-day testing. You only need GitHub Actions when you want a self-contained portable release.
 
 ## Requirements
 
@@ -14,7 +27,7 @@ Visual Folder Explorer is a Windows desktop application for working with folders
 ### Developers / build machines
 
 - .NET 8 SDK, or Visual Studio 2022 with the **.NET desktop development** workload.
-- Internet access is not required for this project itself because it has no third-party `PackageReference` dependencies. `NuGet.Config` clears external package sources and NuGet audit is disabled for local restore.
+- For normal local development, `StartDev.bat` uses `NuGet.Offline.Config`; the project has no third-party `PackageReference` dependencies. `NuGet.Config` is kept for CI/self-contained publishing runtime packs.
 
 ## Run / publish
 
@@ -23,7 +36,7 @@ Visual Folder Explorer is a Windows desktop application for working with folders
 - Open `VisualFolderExplorer.sln` in Visual Studio and press **F5**, or
 - run `StartDev.bat` on a machine with the .NET 8 SDK.
 
-`StartDev.bat` now restores with the repository's offline-safe `NuGet.Config`, so a corporate firewall blocking `api.nuget.org` no longer breaks this project when the local SDK contains the required Windows Desktop reference packs.
+`StartDev.bat` restores with the repository's offline-safe `NuGet.Offline.Config`, so a corporate firewall blocking `api.nuget.org` no longer breaks this project when the local SDK contains the required Windows Desktop reference packs.
 
 ### End-user build without .NET installed
 
@@ -128,7 +141,7 @@ Semantic Versioning is used:
 - MINOR — backward-compatible features;
 - MAJOR — major/breaking changes or architecture migrations.
 
-The PowerShell → C# rewrite was released as **v1.0.0**. Deployment/offline-restore fixes are released as **v1.0.4**.
+The PowerShell → C# rewrite was released as **v1.0.0**. Deployment/offline-restore fixes are released as **v1.1.0**.
 
 ## GitHub Actions artifact
 

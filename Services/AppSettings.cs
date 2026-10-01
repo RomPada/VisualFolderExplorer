@@ -3,7 +3,7 @@ namespace VisualFolderExplorer.Services;
 
 public sealed class AppSettings
 {
-    public string Version { get; set; } = "1.0.3";
+    public string Version { get; set; } = "1.1.0";
     public string? RootFolder { get; set; }
     public string? CurrentFolder { get; set; }
     public List<string> History { get; set; } = [];

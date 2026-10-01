@@ -112,6 +112,8 @@ public partial class MainWindow : Window
     {
         ChooseFolderButton.Content = _loc.T("ChooseFolder");
         MoveImagesButton.Content = _loc.T("MoveImages");
+        FindDuplicatesButton.Content = _loc.T("FindDuplicates");
+        BatchRenameButton.Content = _loc.T("BatchRename");
         ExplorerTitle.Text = _loc.T("Explorer");
         ImagesTitle.Text = _loc.T("Images");
         SideTitle.Text = PreviewPanel.Visibility == Visibility.Visible ? _loc.T("Preview") : _loc.T("Text");
@@ -157,14 +159,7 @@ public partial class MainWindow : Window
 
     private async void MoveImagesButton_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new MoveImagesWindow(_loc, _currentFolder, _settings.LastMoveDestination) { Owner = this };
-        if (dialog.ShowDialog() == true)
-        {
-            _settings.LastMoveDestination = dialog.DestinationPath;
-            SaveSettings();
-            StatusText.Text = _loc.T("MoveDone", dialog.MovedCount, dialog.RenamedCount);
-            if (_currentFolder is not null) await ReloadCurrentFolderAsync();
-        }
+        await OpenMoveImagesAsync(GetSelectedImagePathsInVisualOrder());
     }
 
     private async Task NavigateToAsync(string folder, bool addHistory = true, bool confirmChanges = true)
@@ -283,7 +278,10 @@ public partial class MainWindow : Window
     private void UpdateImageCount(int? count = null)
     {
         var value = count ?? _images.Count;
-        ImageCountText.Text = value == 1 ? _loc.T("OneFile") : _loc.T("FilesCount", value);
+        var baseText = value == 1 ? _loc.T("OneFile") : _loc.T("FilesCount", value);
+        var selected = ImageList.SelectedItems.Count;
+        ImageCountText.Text = selected > 0 ? $"{baseText}  •  {_loc.T("SelectedCount", selected)}" : baseText;
+        BatchRenameButton.IsEnabled = selected > 0;
     }
 
     private async Task LoadTextFilesAsync(List<FileInfo> files)
@@ -518,8 +516,15 @@ public partial class MainWindow : Window
         {
             if (ImageList.ItemContainerGenerator.ContainerFromItem(item) is not ListBoxItem container) continue;
             var active = PreviewPanel.Visibility == Visibility.Visible && _previewImagePath?.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase) == true;
+            var selected = ImageList.SelectedItems.Contains(item);
             var last = _lastSelectedImagePath?.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase) == true;
             if (active)
+            {
+                container.Background = new SolidColorBrush(Color.FromRgb(214, 235, 253));
+                container.BorderBrush = new SolidColorBrush(Color.FromRgb(43, 124, 211));
+                container.BorderThickness = new Thickness(2);
+            }
+            else if (selected)
             {
                 container.Background = new SolidColorBrush(Color.FromRgb(220, 238, 255));
                 container.BorderBrush = new SolidColorBrush(Color.FromRgb(43, 124, 211));
@@ -571,6 +576,14 @@ public partial class MainWindow : Window
         if ((Keyboard.Modifiers & ModifierKeys.Control) != 0 && e.Key == Key.S)
         {
             if (_textDirty) SaveCurrentTextFile();
+            e.Handled = true;
+            return;
+        }
+        if ((Keyboard.Modifiers & ModifierKeys.Control) != 0 && e.Key == Key.A && ImageList.IsKeyboardFocusWithin)
+        {
+            ImageList.SelectAll();
+            UpdateImageCount();
+            ApplyImageSelectionVisuals();
             e.Handled = true;
             return;
         }
@@ -639,11 +652,12 @@ public partial class MainWindow : Window
 
     private async void ImageList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ImageList.SelectedItem is not ImageItem item) return;
-        _lastSelectedImagePath = item.FullPath;
+        var item = e.AddedItems.OfType<ImageItem>().LastOrDefault() ?? ImageList.SelectedItem as ImageItem;
+        if (item is not null) _lastSelectedImagePath = item.FullPath;
+        UpdateImageCount();
         UpdateImageMarker();
         ApplyImageSelectionVisuals();
-        if (ImageList.SelectedItems.Count == 1) await ShowPreviewAsync(item);
+        if (item is not null && ImageList.SelectedItems.Count == 1) await ShowPreviewAsync(item);
     }
 
     private void BackToTextButton_Click(object sender, RoutedEventArgs e) => ShowTextMode();
@@ -794,6 +808,9 @@ public partial class MainWindow : Window
             AddMenuItem(menu, _loc.T("Cut"), () => FileService.PutFilesOnClipboard(selected, true));
             AddMenuItem(menu, _loc.T("Copy"), () => FileService.PutFilesOnClipboard(selected, false));
             menu.Items.Add(new Separator());
+            AddMenuItem(menu, _loc.T("MoveSelected"), () => _ = OpenMoveImagesAsync(selected), selected.Count > 0);
+            AddMenuItem(menu, _loc.T("BatchRename"), () => _ = BatchRenameSelectedAsync(), selected.Count > 0);
+            menu.Items.Add(new Separator());
             AddMenuItem(menu, _loc.T("Rename"), () => RenameImage(item), selected.Count == 1);
             AddMenuItem(menu, _loc.T("Delete"), () => DeleteImage(item), selected.Count == 1);
         }
@@ -805,6 +822,86 @@ public partial class MainWindow : Window
         ImageList.ContextMenu = menu;
         menu.IsOpen = true;
         e.Handled = true;
+    }
+
+    private List<string> GetSelectedImagePathsInVisualOrder()
+    {
+        var selected = ImageList.SelectedItems.Cast<ImageItem>().Select(x => x.FullPath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return _images.Where(x => selected.Contains(x.FullPath)).Select(x => x.FullPath).ToList();
+    }
+
+    private async Task OpenMoveImagesAsync(IReadOnlyList<string> selected)
+    {
+        var dialog = new MoveImagesWindow(_loc, _currentFolder, _settings.LastMoveDestination, selected) { Owner = this };
+        if (dialog.ShowDialog() != true) return;
+        _settings.LastMoveDestination = dialog.DestinationPath;
+        SaveSettings();
+        StatusText.Text = _loc.T("MoveDone", dialog.MovedCount, dialog.RenamedCount);
+        if (_currentFolder is not null) await ReloadCurrentFolderAsync();
+    }
+
+    private async void FindDuplicatesButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_images.Count < 2) { ShowNotice(_loc.T("NoDuplicates")); return; }
+        FindDuplicatesButton.IsEnabled = false;
+        try
+        {
+            var paths = _images.Select(x => x.FullPath).ToList();
+            var progress = new Progress<(int Done, int Total)>(p => StatusText.Text = _loc.T("SearchingDuplicates", p.Done, p.Total));
+            var groups = await DuplicateService.FindDuplicatesAsync(paths, progress);
+            if (groups.Count == 0) { ShowNotice(_loc.T("NoDuplicates")); StatusText.Text = _loc.T("Ready"); return; }
+
+            var dialog = new DuplicateResultsWindow(_loc, groups) { Owner = this };
+            if (dialog.ShowDialog() == true && dialog.PathsToSelect.Count > 0)
+            {
+                SelectImagesByPaths(dialog.PathsToSelect);
+                StatusText.Text = _loc.T("SelectedCount", dialog.PathsToSelect.Count);
+            }
+        }
+        catch (Exception ex) { ShowNotice(ex.Message, NoticeKind.Error); }
+        finally { FindDuplicatesButton.IsEnabled = true; }
+    }
+
+    private async void BatchRenameButton_Click(object sender, RoutedEventArgs e) => await BatchRenameSelectedAsync();
+
+    private async Task BatchRenameSelectedAsync()
+    {
+        var paths = GetSelectedImagePathsInVisualOrder();
+        if (paths.Count == 0) { ShowNotice(_loc.T("SelectImagesFirst"), NoticeKind.Warning); return; }
+
+        var dialog = new BatchRenameWindow(_loc, paths) { Owner = this };
+        if (dialog.ShowDialog() != true) return;
+        try
+        {
+            var changed = dialog.Plan.Where(x => x.IsChanged).ToList();
+            await Task.Run(() => BatchRenameService.Apply(changed));
+            if (_lastSelectedImagePath is not null)
+            {
+                var lastPlan = changed.FirstOrDefault(x => x.SourcePath.Equals(_lastSelectedImagePath, StringComparison.OrdinalIgnoreCase));
+                if (lastPlan is not null) _lastSelectedImagePath = lastPlan.DestinationPath;
+            }
+            var renamedPaths = changed.Select(x => x.DestinationPath).ToList();
+            await ReloadCurrentFolderAsync();
+            SelectImagesByPaths(renamedPaths);
+            StatusText.Text = _loc.T("BatchRenameDone", changed.Count);
+        }
+        catch (Exception ex) { ShowNotice(ex.Message, NoticeKind.Error); }
+    }
+
+    private void SelectImagesByPaths(IEnumerable<string> paths)
+    {
+        var set = paths.Select(Path.GetFullPath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        ImageList.SelectedItems.Clear();
+        ImageItem? first = null;
+        foreach (var item in _images)
+        {
+            if (!set.Contains(Path.GetFullPath(item.FullPath))) continue;
+            ImageList.SelectedItems.Add(item);
+            first ??= item;
+        }
+        if (first is not null) ImageList.ScrollIntoView(first);
+        UpdateImageCount();
+        ApplyImageSelectionVisuals();
     }
 
     private static T? FindAncestor<T>(DependencyObject? child) where T : DependencyObject
