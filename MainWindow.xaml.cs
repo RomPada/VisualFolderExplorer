@@ -557,15 +557,41 @@ public partial class MainWindow : Window
             ImageScrollMarker.Visibility = Visibility.Collapsed;
             return;
         }
+
         var index = _images.ToList().FindIndex(i => i.FullPath.Equals(_lastSelectedImagePath, StringComparison.OrdinalIgnoreCase));
-        if (index < 0 || ImageMarkerLayer.ActualHeight <= 0)
+        var scrollBar = GetImageVerticalScrollBar();
+        if (index < 0 || scrollBar is null || scrollBar.Visibility != Visibility.Visible || ImageMarkerLayer.ActualHeight <= 0)
         {
             ImageScrollMarker.Visibility = Visibility.Collapsed;
             return;
         }
+
+        var track = FindVisualDescendant<System.Windows.Controls.Primitives.Track>(scrollBar);
+        var thumb = track?.Thumb;
+        if (track is null || track.ActualHeight <= 0)
+        {
+            ImageScrollMarker.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        // Align horizontally to the actual visible scrollbar thumb instead of
+        // assuming the scrollbar is exactly at the outer edge of the image pane.
+        var barPoint = scrollBar.TranslatePoint(new Point(0, 0), ImageMarkerLayer);
+        var thumbWidth = thumb is not null && thumb.ActualWidth > 0 ? thumb.ActualWidth : scrollBar.ActualWidth;
+        // ModernScrollThumb has 2 px horizontal margin on each side.
+        var visibleThumbWidth = Math.Max(4, thumbWidth - 4);
+        var markerWidth = Math.Min(visibleThumbWidth, 8);
+        ImageScrollMarker.Width = markerWidth;
+        var left = barPoint.X + (scrollBar.ActualWidth - markerWidth) / 2.0;
+        Canvas.SetLeft(ImageScrollMarker, left);
+
+        // Use the actual Track coordinates so the marker sits on the scrollbar
+        // track even if templates/margins/pane sizes change.
+        var trackPoint = track.TranslatePoint(new Point(0, 0), ImageMarkerLayer);
         var ratio = _images.Count <= 1 ? 0 : (double)index / (_images.Count - 1);
-        var available = Math.Max(0, ImageMarkerLayer.ActualHeight - 4);
-        Canvas.SetTop(ImageScrollMarker, ratio * available);
+        var markerHeight = ImageScrollMarker.ActualHeight > 0 ? ImageScrollMarker.ActualHeight : 4;
+        var available = Math.Max(0, track.ActualHeight - markerHeight);
+        Canvas.SetTop(ImageScrollMarker, trackPoint.Y + ratio * available);
         ImageScrollMarker.Visibility = Visibility.Visible;
     }
 

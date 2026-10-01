@@ -1,19 +1,16 @@
-# Visual Folder Explorer v1.4.0
+﻿# Visual Folder Explorer v1.4.1
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.4.0 refines the image-management workflow:** preview metadata is moved out of the image, zoom becomes cleaner, Explorer context menus are fully styled, duplicate cleanup gains a one-click bulk action, and the fixed tile layout returns.
+**v1.4.1 is a scrollbar interaction fix:** image Drag & Drop no longer intercepts scrollbar dragging, and the selected-image marker is positioned from the real WPF scrollbar/track coordinates.
 
 
-## What's new in v1.4.0
+## What's new in v1.4.1
 
-- The selected-image marker now matches the visual width of the image scrollbar more closely.
-- Image metadata moved from the image overlay to the Preview header, immediately after the Preview title.
-- Metadata automatically hides while the image is zoomed and returns at normal scale.
-- Removed the tile-size slider and restored the fixed tile size used before v1.3.0.
-- Explorer context menus now use the full modern rounded menu template instead of the native-looking Windows container.
-- Duplicate search now includes **Delete all conflicts**, which sends every duplicate copy to the Recycle Bin while keeping one file from each duplicate group.
-- Context-aware sort labels remain: A→Z/Z→A, oldest/newest first, and smallest/largest first.
+- Fixed the image scrollbar: dragging the thumb no longer starts image Drag & Drop.
+- Image file dragging is armed only when the mouse press starts on an actual image tile.
+- The selected-image blue marker now uses the real vertical ScrollBar and Track position instead of a fixed right-side offset.
+- The marker width is matched to the visible scrollbar thumb and stays aligned when layout/template sizes change.
 
 ## What's new in v1.2.1
 

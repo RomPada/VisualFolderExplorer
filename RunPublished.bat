@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 setlocal
 cd /d "%~dp0"
 set EXE=publish\win-x64-portable\VisualFolderExplorer.exe

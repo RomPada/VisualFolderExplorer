@@ -1,9 +1,21 @@
-# Visual Folder Explorer — Patch List / Список змін
+﻿# Visual Folder Explorer — Patch List / Список змін
 
 This file is maintained for every release in English and Ukrainian.  
 Цей файл оновлюється для кожної версії англійською та українською мовами.
 
 ---
+
+## v1.4.1 — 2026-10-01
+
+**English**
+- Fixed image scrollbar dragging being intercepted by image Drag & Drop; dragging now starts only when the press originates on an image tile.
+- Reworked the selected-image marker positioning to use the real WPF vertical ScrollBar and Track coordinates instead of a fixed right-side offset.
+- The blue marker now centers on the actual scrollbar track/thumb width and follows template/layout changes.
+
+**Українська**
+- Виправлено перетягування скролбара: Drag & Drop зображень тепер запускається лише тоді, коли натискання почалося безпосередньо на плитці картинки.
+- Позиціонування синьої відмітки перероблено: тепер воно використовує реальні координати вертикального ScrollBar/Track WPF замість фіксованого відступу справа.
+- Синя відмітка центрується відносно фактичного скролбара та коректно реагує на зміни шаблону й layout.
 
 ## v1.4.0 — 2026-10-01
 

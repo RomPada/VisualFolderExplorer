@@ -17,6 +17,7 @@ public partial class MainWindow
     private DispatcherTimer? _watcherDebounceTimer;
     private bool _watcherReloading;
     private Point _imageDragStartPoint;
+    private bool _imageDragArmed;
     private bool _suppressImageAutoPreview;
 
     private void ApplySavedLayout()
@@ -99,6 +100,24 @@ public partial class MainWindow
     }
 
     private ScrollViewer? GetImageScrollViewer() => FindVisualDescendant<ScrollViewer>(ImageList);
+
+    private System.Windows.Controls.Primitives.ScrollBar? GetImageVerticalScrollBar()
+    {
+        return FindVisualDescendantWhere<System.Windows.Controls.Primitives.ScrollBar>(ImageList,
+            bar => bar.Orientation == Orientation.Vertical);
+    }
+
+    private static T? FindVisualDescendantWhere<T>(DependencyObject root, Func<T, bool> predicate) where T : DependencyObject
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is T typed && predicate(typed)) return typed;
+            var nested = FindVisualDescendantWhere(child, predicate);
+            if (nested is not null) return nested;
+        }
+        return null;
+    }
 
     private static T? FindVisualDescendant<T>(DependencyObject root) where T : DependencyObject
     {
@@ -264,17 +283,31 @@ public partial class MainWindow
         _watcherDebounceTimer?.Stop();
     }
 
-    private void ImageList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) => _imageDragStartPoint = e.GetPosition(ImageList);
+    private void ImageList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _imageDragStartPoint = e.GetPosition(ImageList);
+        // Arm file Drag & Drop only when the mouse press started on an image tile.
+        // ScrollBar/Thumb are inside the ListBox visual tree too, so without this
+        // guard dragging the scrollbar was incorrectly converted into a file drag.
+        _imageDragArmed = FindAncestor<ListBoxItem>(e.OriginalSource as DependencyObject) is not null;
+    }
 
     private void ImageList_PreviewMouseMove(object sender, MouseEventArgs e)
     {
-        if (e.LeftButton != MouseButtonState.Pressed || ImageList.SelectedItems.Count == 0) return;
+        if (e.LeftButton != MouseButtonState.Pressed)
+        {
+            _imageDragArmed = false;
+            return;
+        }
+        if (!_imageDragArmed || ImageList.SelectedItems.Count == 0) return;
+
         var current = e.GetPosition(ImageList);
         if (Math.Abs(current.X - _imageDragStartPoint.X) < SystemParameters.MinimumHorizontalDragDistance &&
             Math.Abs(current.Y - _imageDragStartPoint.Y) < SystemParameters.MinimumVerticalDragDistance) return;
 
         var paths = GetSelectedImagePathsInVisualOrder().Where(File.Exists).ToArray();
         if (paths.Length == 0) return;
+        _imageDragArmed = false;
         var data = new DataObject();
         data.SetData(DataFormats.FileDrop, paths);
         data.SetData(InternalImageDragFormat, true);

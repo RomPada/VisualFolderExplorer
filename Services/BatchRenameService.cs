@@ -1,4 +1,4 @@
-using VisualFolderExplorer.Models;
+﻿using VisualFolderExplorer.Models;
 
 namespace VisualFolderExplorer.Services;
 

@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using VisualFolderExplorer.Models;
 
 namespace VisualFolderExplorer.Services;

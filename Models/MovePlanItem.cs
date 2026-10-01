@@ -1,4 +1,4 @@
-namespace VisualFolderExplorer.Models;
+﻿namespace VisualFolderExplorer.Models;
 
 public sealed class MovePlanItem
 {
