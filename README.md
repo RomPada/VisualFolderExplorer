@@ -1,10 +1,14 @@
-﻿# Visual Folder Explorer v1.1.0
+﻿# Visual Folder Explorer v1.1.1
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.1.0 is a feature release focused on bulk image workflows.** It adds true multi-selection, moving selected images with a preflight preview, exact duplicate detection, and safe batch renaming.
+**v1.1.1 is a compatibility patch for local development with the installed .NET 10 SDK. The v1.1.0 bulk-image features are preserved.** It adds true multi-selection, moving selected images with a preflight preview, exact duplicate detection, and safe batch renaming.
 
-## What's new in v1.1.0
+## What's new in v1.1.1
+
+- Retargeted the WPF project from `net8.0-windows` to `net10.0-windows` so local offline restore works with the installed .NET 10 SDK.
+- Updated local build/publish scripts and GitHub Actions to .NET 10.
+- No functional changes to multi-select, selected-image move, duplicate search, move preview, or batch rename.
 
 - **Image multi-select:** use `Ctrl + click`, `Shift + click`, and `Ctrl+A` while the image grid has focus.
 - **Move selected:** the Move images dialog can switch between all images in the current folder and only the selected images.
@@ -15,7 +19,7 @@ Visual Folder Explorer is a Windows desktop application for working with folders
 
 ### Fast local testing
 
-Because you have the .NET 8 SDK installed, use `StartDev.bat` for day-to-day testing. You only need GitHub Actions when you want a self-contained portable release.
+Because you have the .NET 10 SDK installed, use `StartDev.bat` for day-to-day testing. You only need GitHub Actions when you want a self-contained portable release.
 
 ## Requirements
 
@@ -26,7 +30,7 @@ Because you have the .NET 8 SDK installed, use `StartDev.bat` for day-to-day tes
 
 ### Developers / build machines
 
-- .NET 8 SDK, or Visual Studio 2022 with the **.NET desktop development** workload.
+- .NET 10 SDK, or Visual Studio 2022 with the **.NET desktop development** workload.
 - For normal local development, `StartDev.bat` uses `NuGet.Offline.Config`; the project has no third-party `PackageReference` dependencies. `NuGet.Config` is kept for CI/self-contained publishing runtime packs.
 
 ## Run / publish
@@ -34,7 +38,7 @@ Because you have the .NET 8 SDK installed, use `StartDev.bat` for day-to-day tes
 ### Development
 
 - Open `VisualFolderExplorer.sln` in Visual Studio and press **F5**, or
-- run `StartDev.bat` on a machine with the .NET 8 SDK.
+- run `StartDev.bat` on a machine with the .NET 10 SDK.
 
 `StartDev.bat` restores with the repository's offline-safe `NuGet.Offline.Config`, so a corporate firewall blocking `api.nuget.org` no longer breaks this project when the local SDK contains the required Windows Desktop reference packs.
 
@@ -141,7 +145,7 @@ Semantic Versioning is used:
 - MINOR — backward-compatible features;
 - MAJOR — major/breaking changes or architecture migrations.
 
-The PowerShell → C# rewrite was released as **v1.0.0**. Deployment/offline-restore fixes are released as **v1.1.0**.
+The PowerShell → C# rewrite was released as **v1.0.0**. The current source target is **.NET 10 WPF** as of **v1.1.1**.
 
 ## GitHub Actions artifact
 

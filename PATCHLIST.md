@@ -5,6 +5,22 @@ This file is maintained for every release in English and Ukrainian.
 
 ---
 
+## v1.1.1 — 2026-10-01
+
+**English**
+- Fixed local restore failure `NU1100` on machines that have .NET 10 SDK but not the .NET 8 reference packs.
+- Retargeted the application from `net8.0-windows` to `net10.0-windows`.
+- Updated `StartDev.bat`, `BuildRelease.bat`, publish scripts, and GitHub Actions to require/use .NET 10.
+- Portable self-contained builds still require no .NET installation on the target PC.
+- No feature regressions: v1.1.0 multi-select, selected-image move, transfer preview, duplicate search, and batch rename are unchanged.
+
+**Українська**
+- Виправлено локальну помилку restore `NU1100` на ПК, де встановлено .NET 10 SDK, але відсутні reference packs .NET 8.
+- Проєкт переведено з `net8.0-windows` на `net10.0-windows`.
+- `StartDev.bat`, `BuildRelease.bat`, publish-скрипти та GitHub Actions оновлено для .NET 10.
+- Кінцева self-contained portable-збірка, як і раніше, не потребує встановлення .NET на ПК користувача.
+- Функціональність v1.1.0 збережена без змін: мультивибір, перенесення вибраних, preview перенесення, пошук дублікатів і Batch rename.
+
 ## v1.1.0 — 2026-10-01
 
 **English**

@@ -1,4 +1,9 @@
-﻿# Visual Folder Explorer — Deployment / Розгортання
+﻿
+## Local SDK compatibility in v1.1.1
+
+The source project now targets `net10.0-windows`. This matches a machine that has the .NET 10 SDK installed and allows `NuGet.Offline.Config` to resolve the Windows Desktop reference packs directly from the local SDK without contacting NuGet.org. End-user portable builds remain self-contained and do not require .NET to be installed.
+
+# Visual Folder Explorer — Deployment / Розгортання
 
 ## English
 
@@ -8,7 +13,7 @@ Use `PublishWin64.bat` on a build/developer PC. It creates a self-contained `pub
 
 ### Why the old build failed with NU1301
 
-`dotnet run` performs NuGet restore before compiling. The project has no third-party NuGet packages, but NuGet still tried to reach the configured `https://api.nuget.org/v3/index.json` source (including vulnerability/audit metadata). A corporate firewall/socket policy blocked that request. v1.1.0 adds a local `NuGet.Config` that clears external package sources and disables NuGet audit for this project.
+`dotnet run` performs NuGet restore before compiling. The project has no third-party NuGet packages, but NuGet still tried to reach the configured `https://api.nuget.org/v3/index.json` source (including vulnerability/audit metadata). A corporate firewall/socket policy blocked that request. v1.1.1 adds a local `NuGet.Config` that clears external package sources and disables NuGet audit for this project.
 
 ### Corporate PCs
 
@@ -31,7 +36,7 @@ The optional `PublishSingleFileWin64.bat` is convenient for personal PCs, but a 
 
 ### Чому стара збірка падала з NU1301
 
-`dotnet run` перед компіляцією виконує NuGet restore. У проєкті немає сторонніх NuGet-пакетів, але NuGet усе одно намагався звертатися до налаштованого `https://api.nuget.org/v3/index.json` (у тому числі для audit/vulnerability metadata). Корпоративна мережева/socket-політика заблокувала цей запит. У v1.1.0 додано локальний `NuGet.Config`, який очищає зовнішні package sources і вимикає NuGet audit для цього проєкту.
+`dotnet run` перед компіляцією виконує NuGet restore. У проєкті немає сторонніх NuGet-пакетів, але NuGet усе одно намагався звертатися до налаштованого `https://api.nuget.org/v3/index.json` (у тому числі для audit/vulnerability metadata). Корпоративна мережева/socket-політика заблокувала цей запит. У v1.1.1 додано локальний `NuGet.Config`, який очищає зовнішні package sources і вимикає NuGet audit для цього проєкту.
 
 ### Корпоративні ПК
 
@@ -45,3 +50,8 @@ Self-contained збірка прибирає потребу встановлюв
 4. Для масового встановлення — MSI/MSIX і розгортання через стандартні корпоративні інструменти.
 
 `PublishSingleFileWin64.bat` зручний для персональних ПК, але self-extracting single-file bundle може бути менш прозорим для окремих EDR/application-control систем, ніж звичайна portable папка.
+
+
+## Локальна сумісність SDK у v1.1.1
+
+Вихідний проєкт тепер використовує `net10.0-windows`. Це відповідає ПК з установленим .NET 10 SDK і дозволяє `NuGet.Offline.Config` знаходити Windows Desktop reference packs безпосередньо у локальному SDK без звернення до NuGet.org. Кінцева portable-збірка залишається self-contained і не потребує встановленого .NET на ПК користувача.

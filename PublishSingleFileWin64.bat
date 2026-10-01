@@ -4,8 +4,17 @@ cd /d "%~dp0"
 
 where dotnet >nul 2>nul
 if errorlevel 1 (
-  echo .NET 8 SDK was not found.
+  echo .NET 10 SDK was not found.
   echo This script runs only on the developer/build machine.
+  pause
+  exit /b 1
+)
+
+dotnet --list-sdks | findstr /R /B "10\." >nul
+if errorlevel 1 (
+  echo .NET 10 SDK is required for this source build.
+  echo Installed SDKs:
+  dotnet --list-sdks
   pause
   exit /b 1
 )
