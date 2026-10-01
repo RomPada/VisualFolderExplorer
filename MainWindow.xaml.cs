@@ -74,6 +74,7 @@ public partial class MainWindow : Window
         LanguageCombo.SelectedIndex = _loc.Language == "EN" ? 1 : 0;
         SortFieldCombo.SelectedIndex = _settings.ImageSortField switch { "Modified" => 1, "Created" => 2, "Size" => 3, _ => 0 };
         SortDirectionCombo.SelectedIndex = _settings.ImageSortDescending ? 1 : 0;
+        ApplySavedLayout();
         _initializingControls = false;
         ApplyLanguage();
 
@@ -86,7 +87,9 @@ public partial class MainWindow : Window
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         if (!ConfirmPendingTextChanges()) { e.Cancel = true; return; }
+        CaptureCurrentFolderViewState();
         SaveSettings();
+        DisposeFolderWatcher();
         _imageLoadCts?.Cancel();
     }
 
@@ -103,6 +106,7 @@ public partial class MainWindow : Window
         _settings.ImageSortField = SelectedSortField();
         _settings.ImageSortDescending = SortDirectionCombo.SelectedIndex == 1;
         _settings.LastSelectedImagePath = _lastSelectedImagePath;
+        CaptureLayoutSettings();
         _settingsService.Save(_settings);
     }
 
@@ -131,11 +135,9 @@ public partial class MainWindow : Window
             ((ComboBoxItem)SortFieldCombo.Items[2]).Content = _loc.T("SortCreated");
             ((ComboBoxItem)SortFieldCombo.Items[3]).Content = _loc.T("SortSize");
         }
-        if (SortDirectionCombo.Items.Count >= 2)
-        {
-            ((ComboBoxItem)SortDirectionCombo.Items[0]).Content = _loc.T("Ascending");
-            ((ComboBoxItem)SortDirectionCombo.Items[1]).Content = _loc.T("Descending");
-        }
+        UpdateSortDirectionLabels();
+        TileSizeLabel.Text = _loc.T("TileSize");
+        RefreshPreviewMetadataLanguage();
         UpdateTextFileName();
         UpdateImageCount();
     }
@@ -169,11 +171,13 @@ public partial class MainWindow : Window
         if (confirmChanges && !ConfirmPendingTextChanges()) return;
 
         var resolved = Path.GetFullPath(folder);
+        if (_currentFolder is not null && _images.Count > 0) CaptureCurrentFolderViewState();
         if (addHistory && _currentFolder is not null && !_currentFolder.Equals(resolved, StringComparison.OrdinalIgnoreCase))
             _history.Add(_currentFolder);
 
         _currentFolder = resolved;
-        PathBox.Text = resolved;
+        BuildBreadcrumb(resolved);
+        ConfigureFolderWatcher(resolved);
         StatusText.Text = _loc.T("OpenFolder", resolved);
         UpdateNavigationButtons();
         ShowTextMode();
@@ -199,7 +203,13 @@ public partial class MainWindow : Window
     private async Task ReloadCurrentFolderAsync()
     {
         if (_currentFolder is null) return;
+        var previewPath = _previewImagePath;
         await NavigateToAsync(_currentFolder, addHistory: false, confirmChanges: false);
+        if (!string.IsNullOrWhiteSpace(previewPath))
+        {
+            var item = _images.FirstOrDefault(i => i.FullPath.Equals(previewPath, StringComparison.OrdinalIgnoreCase));
+            if (item is not null) await ShowPreviewAsync(item);
+        }
     }
 
     private void LoadExplorer(IEnumerable<FileSystemInfo> entries)
@@ -236,6 +246,7 @@ public partial class MainWindow : Window
 
         var semaphore = new SemaphoreSlim(6);
         var thumbnailTasks = new List<Task>();
+        var thumbnailWidth = (int)Math.Clamp(TileSizeSlider.Value * 1.25, 200, 420);
         const int batchSize = 24;
 
         try
@@ -252,7 +263,7 @@ public partial class MainWindow : Window
                     await semaphore.WaitAsync(token);
                     try
                     {
-                        var thumb = await _thumbnailService.GetThumbnailAsync(localItem.FullPath, 240, token);
+                        var thumb = await _thumbnailService.GetThumbnailAsync(localItem.FullPath, thumbnailWidth, token);
                         if (thumb is not null)
                             await Dispatcher.InvokeAsync(() => localItem.Thumbnail = thumb, DispatcherPriority.Background, token);
                     }
@@ -266,9 +277,9 @@ public partial class MainWindow : Window
                 }
             }
 
+            RestoreFolderViewState();
             await Task.WhenAll(thumbnailTasks);
             StatusText.Text = _loc.T("Loaded", sorted.Count);
-            RestoreLastImageSelection();
         }
         catch (OperationCanceledException)
         {
@@ -411,6 +422,7 @@ public partial class MainWindow : Window
         {
             PreviewImage.Source = source;
         }
+        UpdatePreviewMetadata(item, source);
         UpdateImageMarker();
         ApplyImageSelectionVisuals();
     }
@@ -500,16 +512,7 @@ public partial class MainWindow : Window
         _suppressExplorerSelection = false;
     }
 
-    private void RestoreLastImageSelection()
-    {
-        if (string.IsNullOrWhiteSpace(_lastSelectedImagePath)) return;
-        var item = _images.FirstOrDefault(i => i.FullPath.Equals(_lastSelectedImagePath, StringComparison.OrdinalIgnoreCase));
-        if (item is null) return;
-        ImageList.SelectedItem = item;
-        ImageList.ScrollIntoView(item);
-        UpdateImageMarker();
-        Dispatcher.BeginInvoke(new Action(ApplyImageSelectionVisuals), DispatcherPriority.Loaded);
-    }
+    private void RestoreLastImageSelection() => RestoreFolderViewState();
 
     private void ApplyImageSelectionVisuals()
     {
@@ -525,7 +528,7 @@ public partial class MainWindow : Window
                 container.BorderBrush = new SolidColorBrush(Color.FromRgb(43, 124, 211));
                 container.BorderThickness = new Thickness(2);
             }
-            else if (selected)
+            else if (selected && (ImageList.SelectedItems.Count > 1 || !last))
             {
                 container.Background = new SolidColorBrush(Color.FromRgb(220, 238, 255));
                 container.BorderBrush = new SolidColorBrush(Color.FromRgb(43, 124, 211));
@@ -629,7 +632,10 @@ public partial class MainWindow : Window
 
     private async void SortCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_initializingControls || _currentFolder is null) return;
+        if (_initializingControls) return;
+        UpdateSortDirectionLabels();
+        if (_currentFolder is null) return;
+        CaptureCurrentFolderViewState();
         var files = await Task.Run(() => Directory.GetFiles(_currentFolder).Where(FileService.IsImage).Select(p => new FileInfo(p)).ToList());
         await LoadImagesAsync(files);
         SaveSettings();
@@ -654,11 +660,15 @@ public partial class MainWindow : Window
     private async void ImageList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         var item = e.AddedItems.OfType<ImageItem>().LastOrDefault() ?? ImageList.SelectedItem as ImageItem;
-        if (item is not null) _lastSelectedImagePath = item.FullPath;
+        if (item is not null)
+        {
+            _lastSelectedImagePath = item.FullPath;
+            if (_currentFolder is not null) _settings.FolderLastSelectedImages[Path.GetFullPath(_currentFolder)] = item.FullPath;
+        }
         UpdateImageCount();
         UpdateImageMarker();
         ApplyImageSelectionVisuals();
-        if (item is not null && ImageList.SelectedItems.Count == 1) await ShowPreviewAsync(item);
+        if (!_suppressImageAutoPreview && item is not null && ImageList.SelectedItems.Count == 1) await ShowPreviewAsync(item);
     }
 
     private void BackToTextButton_Click(object sender, RoutedEventArgs e) => ShowTextMode();
@@ -853,7 +863,9 @@ public partial class MainWindow : Window
             if (groups.Count == 0) { ShowNotice(_loc.T("NoDuplicates")); StatusText.Text = _loc.T("Ready"); return; }
 
             var dialog = new DuplicateResultsWindow(_loc, groups) { Owner = this };
-            if (dialog.ShowDialog() == true && dialog.PathsToSelect.Count > 0)
+            var result = dialog.ShowDialog();
+            if (dialog.DeletedAny) await ReloadCurrentFolderAsync();
+            if (result == true && dialog.PathsToSelect.Count > 0)
             {
                 SelectImagesByPaths(dialog.PathsToSelect);
                 StatusText.Text = _loc.T("SelectedCount", dialog.PathsToSelect.Count);

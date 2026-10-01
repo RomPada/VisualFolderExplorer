@@ -1,9 +1,39 @@
-﻿# Visual Folder Explorer — Patch List / Список змін
+# Visual Folder Explorer — Patch List / Список змін
 
 This file is maintained for every release in English and Ukrainian.  
 Цей файл оновлюється для кожної версії англійською та українською мовами.
 
 ---
+
+## v1.3.0 — 2026-10-01
+
+**English**
+- Added a preview pane and direct Recycle Bin deletion to duplicate search results.
+- Replaced batch-rename conflict checkboxes with a warning marker and an explicit explanation of what a name conflict means.
+- Added context-aware sort direction labels for name, date, and size sorting.
+- Added a modern rounded scrollbar template.
+- Added image counts to the folder picker.
+- Added Drag & Drop for importing external files/folders and moving selected images onto Explorer folders.
+- Replaced the main address field with clickable breadcrumb navigation.
+- Added persistence for pane widths and image tile size.
+- Added per-folder scroll-position and last-selected-image restoration.
+- Added an image tile-size slider.
+- Added image metadata to preview (dimensions, file size, creation and modification dates).
+- Added a debounced folder watcher for external file changes.
+
+**Українська**
+- У результатах пошуку дублікатів додано прев'ю та пряме видалення вибраних файлів до Кошика.
+- У масовому перейменуванні checkbox конфлікту замінено на попереджувальний маркер та додано пояснення, що саме означає конфлікт назви.
+- Додано контекстні назви напрямку сортування для назви, дати та розміру.
+- Додано сучасний округлений стиль скролбарів.
+- У виборі папки додано лічильник зображень.
+- Додано Drag & Drop для імпорту зовнішніх файлів/папок і переміщення вибраних зображень на папки у «Провіднику».
+- Головний рядок адреси замінено на клікабельний breadcrumb.
+- Додано запам'ятовування ширини панелей та розміру плиток.
+- Додано відновлення позиції прокрутки та останнього вибраного зображення окремо для кожної папки.
+- Додано регулятор розміру плиток.
+- У preview додано метадані зображення: роздільність, розмір файла, дати створення та зміни.
+- Додано watcher відкритої папки з debounce для автоматичного підхоплення зовнішніх змін.
 
 ## v1.2.1 — 2026-10-01
 

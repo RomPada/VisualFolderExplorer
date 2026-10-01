@@ -37,7 +37,8 @@ public partial class BatchRenameWindow : Window
         ReplaceLabel.Text = _loc.T("Replace");
         OldColumn.Header = _loc.T("CurrentName");
         NewColumn.Header = _loc.T("NewName");
-        ConflictColumn.Header = _loc.T("Conflict");
+        ConflictColumn.Header = _loc.T("NameConflict");
+        ConflictHelpText.Text = _loc.T("ConflictHelp");
         CancelButton.Content = _loc.T("Cancel");
         ApplyButton.Content = _loc.T("ApplyRename");
     }
