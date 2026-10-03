@@ -1,29 +1,24 @@
-﻿# Visual Folder Explorer v1.4.1
+﻿# Visual Folder Explorer v1.5.0
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.4.1 is a scrollbar interaction fix:** image Drag & Drop no longer intercepts scrollbar dragging, and the selected-image marker is positioned from the real WPF scrollbar/track coordinates.
+**v1.5.0 adds local visual-similarity grouping.** The application can analyze the images in the current folder with a perceptual hash, preview the proposed groups, adjust the similarity threshold, exclude individual images, and only then create folders and move the selected files. No API, cloud service, Python, or AI model download is required.
 
 
-## What's new in v1.4.1
+## What's new in v1.5.0
 
-- Fixed the image scrollbar: dragging the thumb no longer starts image Drag & Drop.
-- Image file dragging is armed only when the mouse press starts on an actual image tile.
-- The selected-image blue marker now uses the real vertical ScrollBar and Track position instead of a fixed right-side offset.
-- The marker width is matched to the visible scrollbar thumb and stays aligned when layout/template sizes change.
-
-## What's new in v1.2.1
-
-- Removed `<UseWindowsForms>true</UseWindowsForms>` from the project.
-- Replaced `System.Windows.Forms.FolderBrowserDialog` with WPF `Microsoft.Win32.OpenFolderDialog`.
-- Fixes CS0104 ambiguous-reference build errors for `KeyEventArgs`, `MouseEventArgs`, `ContextMenu`, and `Point`.
-- Keeps the native Windows folder selection experience without an extra UI framework dependency.
-
-- Added a dedicated **Image actions** bar between the address toolbar and the main workspace. **Move images**, **Duplicates**, and **Batch rename** now live there instead of inside the Images header.
-- Removed the dedicated **Drive** selector from the shared folder picker. The new **Browse...** button opens the native Windows folder-browser tree while the custom current-path/subfolder picker remains available.
-- The same folder picker is used by the main **Choose folder** action and the move-images source/destination browse buttons.
-- The application remains bilingual (UA / EN) and the new controls follow the shared styles/localization system.
-
+- Added **Group by similarity** to the Image actions bar.
+- Similarity analysis is fully local and uses a 63-bit perceptual hash (low-frequency DCT / pHash-style comparison), not SHA-256.
+- The existing **Duplicates** command remains separate and continues to identify byte-identical files; similarity grouping is intended for visually related images, including resized or recompressed variants.
+- Added a remembered **Similarity threshold** slider. Higher values are stricter; lower values create broader visual groups.
+- Hashes are calculated once per analysis. Moving the threshold slider immediately rebuilds groups without decoding every source image again.
+- Added group preview with thumbnails, average similarity, group/file counts, and per-image checkboxes. Unchecked images stay in the current folder.
+- Nothing is moved until **Create folders and organize** is confirmed.
+- Output folders use `Similar_001`, `Similar_002`, ... by default; the prefix is editable. Existing folder names are skipped safely.
+- Filename conflicts inside generated folders still use the existing `_1`, `_2`, ... protection.
+- Images that do not belong to a group are left untouched.
+- Large folders are analyzed in parallel with visible progress and unreadable-file count.
+- The folder watcher is paused while the similarity dialog is open so bulk organization does not trigger repeated background refreshes.
 
 ## Requirements
 
@@ -92,6 +87,7 @@ See `DEPLOYMENT.md` for details.
 - UA / EN interface switch, remembered between launches.
 - Window size/state, pane layout, last folder, sorting, language, last image, scroll position, and move destination are persisted in `settings.json`.
 
+- Visual similarity grouping with local perceptual hashing, adjustable threshold, preview, exclusion controls, and safe folder creation.
 ## Architecture
 
 The rewrite separates responsibilities instead of keeping everything in one script:

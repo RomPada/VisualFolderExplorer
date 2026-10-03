@@ -118,6 +118,7 @@ public partial class MainWindow : Window
         ImageToolsTitle.Text = _loc.T("ImageTools");
         MoveImagesButton.Content = _loc.T("MoveImages");
         FindDuplicatesButton.Content = _loc.T("FindDuplicates");
+        SimilarityButton.Content = _loc.T("GroupBySimilarity");
         BatchRenameButton.Content = _loc.T("BatchRename");
         ExplorerTitle.Text = _loc.T("Explorer");
         ImagesTitle.Text = _loc.T("Images");
@@ -293,6 +294,7 @@ public partial class MainWindow : Window
         var selected = ImageList.SelectedItems.Count;
         ImageCountText.Text = selected > 0 ? $"{baseText}  •  {_loc.T("SelectedCount", selected)}" : baseText;
         BatchRenameButton.IsEnabled = selected > 0;
+        SimilarityButton.IsEnabled = value >= 2;
     }
 
     private async Task LoadTextFilesAsync(List<FileInfo> files)
@@ -903,6 +905,36 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) { ShowNotice(ex.Message, NoticeKind.Error); }
         finally { FindDuplicatesButton.IsEnabled = true; }
+    }
+
+    private async void SimilarityButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentFolder is null || _images.Count < 2)
+        {
+            ShowNotice(_loc.T("SimilarityNeedImages"), NoticeKind.Info);
+            return;
+        }
+
+        SimilarityButton.IsEnabled = false;
+        DisposeFolderWatcher();
+        try
+        {
+            var paths = _images.Select(x => x.FullPath).Where(File.Exists).ToList();
+            var dialog = new SimilarityGroupsWindow(_loc, paths, _currentFolder, _settings.SimilarityThreshold) { Owner = this };
+            var result = dialog.ShowDialog();
+            _settings.SimilarityThreshold = dialog.Threshold;
+            SaveSettings();
+            if (result == true && dialog.AppliedChanges)
+            {
+                StatusText.Text = _loc.T("SimilarityApplied", dialog.CreatedFolderCount, dialog.MovedFileCount);
+                await ReloadCurrentFolderAsync();
+            }
+        }
+        finally
+        {
+            SimilarityButton.IsEnabled = true;
+            if (_currentFolder is not null && Directory.Exists(_currentFolder)) ConfigureFolderWatcher(_currentFolder);
+        }
     }
 
     private async void BatchRenameButton_Click(object sender, RoutedEventArgs e) => await BatchRenameSelectedAsync();

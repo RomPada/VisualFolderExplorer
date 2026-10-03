@@ -5,6 +5,30 @@ This file is maintained for every release in English and Ukrainian.
 
 ---
 
+## v1.5.0 — 2026-10-01
+
+**English**
+- Added **Group by similarity** to the image-actions toolbar.
+- Added a fully local pHash-style perceptual similarity engine with no API or external package dependency.
+- Images are normalized to 32×32 grayscale, low-frequency DCT coefficients are converted to a 63-bit perceptual hash, and Hamming similarity is used for grouping.
+- Added parallel analysis with progress and unreadable-file count for large folders.
+- Added a remembered similarity-threshold slider; changing it rebuilds groups from cached hashes without recalculating source images.
+- Added a preview window with group thumbnails, average similarity, group/file summary, editable output-folder prefix, and per-image include/exclude checkboxes.
+- Added safe confirmed output into `Similar_001`, `Similar_002`, ... folders; ungrouped and unchecked images remain in place.
+- Existing filename conflict protection (`_1`, `_2`, ...) is reused during similarity grouping.
+- Temporarily pauses the open-folder watcher while the similarity workflow is active.
+
+**Українська**
+- До панелі операцій додано **«Групувати за схожістю»**.
+- Додано повністю локальний perceptual similarity engine у стилі pHash без API та сторонніх package-залежностей.
+- Картинки нормалізуються до 32×32 grayscale, низькочастотні DCT-коефіцієнти перетворюються на 63-бітний perceptual hash, а групування виконується за Hamming similarity.
+- Для великих папок додано паралельний аналіз із progress та лічильником файлів, які не вдалося прочитати.
+- Додано запам'ятовуваний slider порогу схожості; зміна порогу перебудовує групи з уже порахованих хешів без повторного аналізу оригіналів.
+- Додано preview-вікно з thumbnails груп, середньою схожістю, кількістю груп/файлів, редагованим префіксом папок і checkbox для включення/виключення окремих картинок.
+- Після підтвердження створюються `Similar_001`, `Similar_002`, ...; файли поза групами та зняті з вибору залишаються на місці.
+- Для конфліктів назв під час розкладання використовується існуюча логіка `_1`, `_2`, ...
+- Watcher відкритої папки тимчасово призупиняється на час роботи режиму схожості.
+
 ## v1.4.1 — 2026-10-01
 
 **English**

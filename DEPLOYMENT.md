@@ -1,8 +1,8 @@
 ﻿# Visual Folder Explorer deployment
 
-## Current release: v1.4.1
+## Current release: v1.5.0
 
-The current C# WPF source targets **.NET 10**. The portable self-contained build contains the runtime and does not require .NET on the target PC. v1.4.1 keeps the built-in WPF `Microsoft.Win32.OpenFolderDialog` for native folder browsing and adds the new image-management workflow without requiring Windows Forms.
+The current C# WPF source targets **.NET 10**. The portable self-contained build contains the runtime and does not require .NET on the target PC. v1.5.0 keeps the .NET 10 WPF deployment model and adds local perceptual similarity grouping without API calls, Python, external AI runtimes, or additional NuGet packages.
 
 ---
 
