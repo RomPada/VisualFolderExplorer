@@ -215,6 +215,14 @@ public partial class MainWindow : Window
     private void LoadExplorer(IEnumerable<FileSystemInfo> entries)
     {
         _explorerItems.Clear();
+        if (_currentFolder is not null)
+        {
+            // Always keep an explicit parent-navigation entry at the top of Explorer.
+            // At a filesystem root it simply points to the current root because there
+            // is no higher directory.
+            var parent = Directory.GetParent(_currentFolder)?.FullName ?? _currentFolder;
+            _explorerItems.Add(new ExplorerItem { Name = "...", FullPath = parent, Type = ExplorerItemType.ParentFolder });
+        }
         foreach (var directory in entries.OfType<DirectoryInfo>().OrderBy(d => d.Name, NaturalStringComparer.Instance))
             _explorerItems.Add(new ExplorerItem { Name = directory.Name, FullPath = directory.FullName, Type = ExplorerItemType.Folder });
         foreach (var file in entries.OfType<FileInfo>().Where(f => FileService.IsText(f.FullName)).OrderBy(f => f.Name, NaturalStringComparer.Instance))
@@ -682,7 +690,8 @@ public partial class MainWindow : Window
 
     private async void ExplorerList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        if (ExplorerList.SelectedItem is ExplorerItem { Type: ExplorerItemType.Folder } item)
+        if (ExplorerList.SelectedItem is ExplorerItem item &&
+            item.Type is ExplorerItemType.Folder or ExplorerItemType.ParentFolder)
             await NavigateToAsync(item.FullPath);
     }
 
@@ -805,7 +814,11 @@ public partial class MainWindow : Window
         if (container?.DataContext is ExplorerItem item)
         {
             ExplorerList.SelectedItem = item;
-            if (item.Type == ExplorerItemType.Folder)
+            if (item.Type == ExplorerItemType.ParentFolder)
+            {
+                AddMenuItem(menu, _loc.T("FolderUp"), () => _ = NavigateToAsync(item.FullPath));
+            }
+            else if (item.Type == ExplorerItemType.Folder)
             {
                 AddMenuItem(menu, _loc.T("Open"), () => _ = NavigateToAsync(item.FullPath));
                 menu.Items.Add(new Separator());

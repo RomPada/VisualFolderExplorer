@@ -325,7 +325,10 @@ public partial class MainWindow
     {
         if (_currentFolder is null || e.Data.GetData(DataFormats.FileDrop) is not string[] paths) return;
         var container = FindAncestor<ListBoxItem>(e.OriginalSource as DependencyObject);
-        var target = container?.DataContext is ExplorerItem { Type: ExplorerItemType.Folder } folder ? folder.FullPath : _currentFolder;
+        var target = container?.DataContext is ExplorerItem explorerTarget &&
+                     explorerTarget.Type is ExplorerItemType.Folder or ExplorerItemType.ParentFolder
+            ? explorerTarget.FullPath
+            : _currentFolder;
         var move = e.Data.GetDataPresent(InternalImageDragFormat);
         try
         {

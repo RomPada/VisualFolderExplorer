@@ -5,6 +5,20 @@ This file is maintained for every release in English and Ukrainian.
 
 ---
 
+## v1.5.1 — 2026-10-03
+
+**English**
+- Similarity threshold regrouping now runs only after the slider is released; ValueChanged only updates the displayed percentage while dragging.
+- Added keyboard-release commit behavior for the similarity threshold.
+- Added a permanent `...` parent-folder entry at the top of Explorer.
+- The parent entry safely supports navigation and Drag & Drop to the parent folder without exposing rename/delete/cut operations.
+
+**Українська**
+- Перебудова груп за порогом схожості тепер запускається лише після відпускання slider; під час руху ValueChanged оновлює тільки відсоток.
+- Для клавіатурної зміни порогу застосування відбувається після відпускання клавіші.
+- У верхній частині «Провідника» додано постійний елемент `...` для переходу до батьківської папки.
+- Для батьківського елемента безпечно працює навігація та Drag & Drop, але немає перейменування/видалення/вирізання.
+
 ## v1.5.0 — 2026-10-01
 
 **English**

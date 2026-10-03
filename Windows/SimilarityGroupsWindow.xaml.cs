@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using VisualFolderExplorer.Models;
 using VisualFolderExplorer.Services;
 
@@ -18,6 +20,7 @@ public partial class SimilarityGroupsWindow : Window
     private CancellationTokenSource? _thumbnailCts;
     private bool _analysisComplete;
     private bool _initializing = true;
+    private bool _thresholdCommitPending;
 
     public bool AppliedChanges { get; private set; }
     public int CreatedFolderCount { get; private set; }
@@ -31,6 +34,7 @@ public partial class SimilarityGroupsWindow : Window
         _paths = paths.Where(File.Exists).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         _folder = folder;
         ThresholdSlider.Value = Math.Clamp(initialThreshold, ThresholdSlider.Minimum, ThresholdSlider.Maximum);
+        ThresholdSlider.AddHandler(Thumb.DragCompletedEvent, new DragCompletedEventHandler(ThresholdSlider_DragCompleted));
         ApplyLanguage();
         _initializing = false;
         UpdateThresholdLabel();
@@ -178,10 +182,30 @@ public partial class SimilarityGroupsWindow : Window
 
     private void ThresholdSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
+        // While the thumb is moving we only update the percentage label.
+        // Rebuilding groups can be expensive for hundreds/thousands of images,
+        // so the actual regroup happens only after the user releases the slider.
         UpdateThresholdLabel();
         if (_initializing || !_analysisComplete) return;
+        _thresholdCommitPending = true;
+    }
+
+    private async void ThresholdSlider_DragCompleted(object sender, DragCompletedEventArgs e) => await CommitThresholdChangeAsync();
+
+    private async void ThresholdSlider_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e) => await CommitThresholdChangeAsync();
+
+    private async void ThresholdSlider_PreviewKeyUp(object sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down or Key.PageUp or Key.PageDown or Key.Home or Key.End)
+            await CommitThresholdChangeAsync();
+    }
+
+    private async Task CommitThresholdChangeAsync()
+    {
+        if (!_thresholdCommitPending || !_analysisComplete) return;
+        _thresholdCommitPending = false;
         Regroup();
-        _ = LoadVisibleThumbnailsAsync();
+        await LoadVisibleThumbnailsAsync();
     }
 
     private void UpdateThresholdLabel()

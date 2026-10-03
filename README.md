@@ -1,9 +1,18 @@
-﻿# Visual Folder Explorer v1.5.0
+﻿# Visual Folder Explorer v1.5.1
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.5.0 adds local visual-similarity grouping.** The application can analyze the images in the current folder with a perceptual hash, preview the proposed groups, adjust the similarity threshold, exclude individual images, and only then create folders and move the selected files. No API, cloud service, Python, or AI model download is required.
+**v1.5.1 refines similarity grouping and Explorer navigation.** The application can analyze the images in the current folder with a perceptual hash, preview the proposed groups, adjust the similarity threshold, exclude individual images, and only then create folders and move the selected files. No API, cloud service, Python, or AI model download is required.
 
+
+
+## What's new in v1.5.1
+
+- Moving the similarity-threshold slider now updates only the percentage while the mouse is held down; group rebuilding starts only when the thumb is released. This keeps the slider responsive in folders with hundreds or thousands of images.
+- Keyboard threshold changes are applied after the navigation key is released as well.
+- Explorer now always starts with a `...` parent-navigation item above folders/text files. Double-click it to go one directory up.
+- The `...` item has a safe context menu with only the **Up one level** action; rename/delete/cut operations are never offered for it.
+- Dragging files onto `...` targets the parent folder.
 
 ## What's new in v1.5.0
 
