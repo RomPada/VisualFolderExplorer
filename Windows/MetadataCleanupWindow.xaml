@@ -1,7 +1,8 @@
 <Window x:Class="VisualFolderExplorer.Windows.MetadataCleanupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Width="1120" Height="710" MinWidth="900" MinHeight="590"
+        Icon="/Assets/VisualFolderExplorer.ico"
+        Width="1170" Height="750" MinWidth="900" MinHeight="590"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         Background="{StaticResource WindowBg}" Loaded="Window_Loaded">
     <Grid Margin="14">
@@ -9,9 +10,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="10"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="10"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="10"/>
+            <RowDefinition Height="12"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="10"/>
             <RowDefinition Height="Auto"/>
@@ -23,74 +22,78 @@
 
         <Border Grid.Row="2" Style="{StaticResource CardBorder}" Padding="12">
             <Grid>
-                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0">
-                    <TextBlock x:Name="ScopeLabel" Foreground="{StaticResource MutedTextBrush}" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,6"/>
-                    <ComboBox x:Name="ScopeCombo" Height="36" Width="350" HorizontalAlignment="Left">
-                        <ComboBoxItem Tag="Selected"/>
-                        <ComboBoxItem Tag="All"/>
-                    </ComboBox>
+                    <TextBlock x:Name="FieldsLabel" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,8"/>
+                    <WrapPanel>
+                        <CheckBox x:Name="TitleCheck" Checked="FieldChoice_Changed" Unchecked="FieldChoice_Changed" IsChecked="True" Margin="0,0,22,0"/>
+                        <CheckBox x:Name="SubjectCheck" Checked="FieldChoice_Changed" Unchecked="FieldChoice_Changed" IsChecked="True" Margin="0,0,22,0"/>
+                        <CheckBox x:Name="CommentsCheck" Checked="FieldChoice_Changed" Unchecked="FieldChoice_Changed" IsChecked="True" Margin="0,0,22,0"/>
+                        <CheckBox x:Name="AuthorsCheck" Checked="FieldChoice_Changed" Unchecked="FieldChoice_Changed" IsChecked="True"/>
+                    </WrapPanel>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                    <TextBlock x:Name="FormatLabel" Foreground="{StaticResource MutedTextBrush}" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,6"/>
-                    <TextBlock Text="JPG · JPEG · PNG · MP4 · M4V · MOV" VerticalAlignment="Center" Margin="0,6,0,0"/>
-                </StackPanel>
-                <Button x:Name="ScanButton" Grid.Column="2" MinWidth="120" Margin="18,15,0,0" Click="ScanButton_Click"/>
+                <Button x:Name="ScanButton" Grid.Column="1" MinWidth="114" Margin="14,0,0,0" VerticalAlignment="Center" Click="ScanButton_Click"/>
             </Grid>
         </Border>
 
-        <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="12">
-            <Grid>
-                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="6"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                <TextBlock x:Name="FieldsLabel" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}"/>
-                <StackPanel Grid.Row="2" Orientation="Horizontal">
-                    <CheckBox x:Name="TitleCheck" Checked="FieldChoice_Changed" Unchecked="FieldChoice_Changed" IsChecked="True" Margin="0,0,22,0"/>
-                    <CheckBox x:Name="SubjectCheck" Checked="FieldChoice_Changed" Unchecked="FieldChoice_Changed" IsChecked="True" Margin="0,0,22,0"/>
-                    <CheckBox x:Name="CommentsCheck" Checked="FieldChoice_Changed" Unchecked="FieldChoice_Changed" IsChecked="True" Margin="0,0,22,0"/>
-                    <CheckBox x:Name="AuthorsCheck" Checked="FieldChoice_Changed" Unchecked="FieldChoice_Changed" IsChecked="True"/>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <Grid Grid.Row="6">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="325"/></Grid.ColumnDefinitions>
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="350"/></Grid.ColumnDefinitions>
             <Border Grid.Column="0" Style="{StaticResource CardBorder}" Padding="8">
-                <DataGrid x:Name="FilesGrid" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="False"
-                          SelectionMode="Single" SelectionUnit="FullRow" GridLinesVisibility="None"
-                          HeadersVisibility="Column" Background="Transparent" BorderThickness="0"
-                          SelectionChanged="FilesGrid_SelectionChanged">
-                    <DataGrid.Columns>
-                        <DataGridCheckBoxColumn x:Name="UseCol" Binding="{Binding Selected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="68"/>
-                        <DataGridTextColumn x:Name="FileCol" Binding="{Binding FileName}" IsReadOnly="True" Width="200"/>
-                        <DataGridTextColumn x:Name="TypeCol" Binding="{Binding Format}" IsReadOnly="True" Width="70"/>
-                        <DataGridTextColumn x:Name="TitleCol" Binding="{Binding Title}" IsReadOnly="True" Width="170"/>
-                        <DataGridTextColumn x:Name="SubjectCol" Binding="{Binding Subject}" IsReadOnly="True" Width="170"/>
-                        <DataGridTextColumn x:Name="CommentsCol" Binding="{Binding Comments}" IsReadOnly="True" Width="200"/>
-                        <DataGridTextColumn x:Name="AuthorsCol" Binding="{Binding Authors}" IsReadOnly="True" Width="150"/>
-                        <DataGridTextColumn x:Name="StatusCol" Binding="{Binding Status}" IsReadOnly="True" Width="210"/>
-                    </DataGrid.Columns>
-                </DataGrid>
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="8"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="6,2,6,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <CheckBox x:Name="SelectAllCheck" Grid.Column="0" Checked="SelectAllCheck_Changed" Unchecked="SelectAllCheck_Changed" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="FileSelectionSummary" Grid.Column="2" Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center" FontSize="12"/>
+                    </Grid>
+                    <DataGrid x:Name="FilesGrid" Grid.Row="2" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="False"
+                              SelectionMode="Single" SelectionUnit="FullRow" GridLinesVisibility="None" HeadersVisibility="Column"
+                              Background="Transparent" BorderThickness="0" RowHeight="38" ScrollViewer.CanContentScroll="True"
+                              ScrollViewer.HorizontalScrollBarVisibility="Visible" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              SelectionChanged="FilesGrid_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn x:Name="UseCol" Width="65">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding Selected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center" IsEnabled="{Binding CanClean}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn x:Name="FileCol" Binding="{Binding FileName}" IsReadOnly="True" Width="220" ElementStyle="{StaticResource MetadataCellText}"/>
+                            <DataGridTextColumn x:Name="TypeCol" Binding="{Binding Format}" IsReadOnly="True" Width="75" ElementStyle="{StaticResource MetadataCellText}"/>
+                            <DataGridTextColumn x:Name="TitleCol" Binding="{Binding Title}" IsReadOnly="True" Width="200" ElementStyle="{StaticResource MetadataCellText}"/>
+                            <DataGridTextColumn x:Name="SubjectCol" Binding="{Binding Subject}" IsReadOnly="True" Width="200" ElementStyle="{StaticResource MetadataCellText}"/>
+                            <DataGridTextColumn x:Name="CommentsCol" Binding="{Binding Comments}" IsReadOnly="True" Width="210" ElementStyle="{StaticResource MetadataCellText}"/>
+                            <DataGridTextColumn x:Name="AuthorsCol" Binding="{Binding Authors}" IsReadOnly="True" Width="170" ElementStyle="{StaticResource MetadataCellText}"/>
+                            <DataGridTextColumn x:Name="StatusCol" Binding="{Binding Status}" IsReadOnly="True" Width="210" ElementStyle="{StaticResource MetadataCellText}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
             </Border>
-
-            <Border Grid.Column="2" Style="{StaticResource CardBorder}" Padding="14">
-                <StackPanel>
-                    <TextBlock x:Name="PreviewTitle" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
-                    <TextBlock x:Name="PreviewFile" Margin="0,6,0,12" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
-                    <TextBlock x:Name="PreviewFields" TextWrapping="Wrap" FontSize="13"/>
-                    <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,14,0,14"/>
-                    <TextBlock x:Name="BackupLabel" FontWeight="SemiBold"/>
-                    <TextBlock x:Name="BackupPathText" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource MutedTextBrush}"/>
-                    <Button x:Name="OpenBackupButton" HorizontalAlignment="Left" MinWidth="150" Margin="0,9,0,0" IsEnabled="False" Click="OpenBackupButton_Click"/>
-                    <TextBlock x:Name="SafetyHint" Margin="0,14,0,0" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
-                </StackPanel>
+            <Border Grid.Column="2" Style="{StaticResource CardBorder}" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="10"/>
+                        <RowDefinition Height="*"/><RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="PreviewTitle" Grid.Row="0" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                    <TextBlock x:Name="PreviewFile" Grid.Row="1" Margin="0,6,0,0" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
+                    <Border Grid.Row="3" Background="#FAFBFD" CornerRadius="8" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="10,8" CanContentScroll="False">
+                            <TextBlock x:Name="PreviewFields" TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextBrush}"/>
+                        </ScrollViewer>
+                    </Border>
+                    <TextBlock x:Name="SafetyHint" Grid.Row="4" Margin="0,12,0,0" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
+                </Grid>
             </Border>
         </Grid>
 
-        <StackPanel Grid.Row="8">
+        <StackPanel Grid.Row="6">
             <TextBlock x:Name="SummaryText" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
             <ProgressBar x:Name="Progress" Minimum="0" Maximum="100" Height="5" Margin="0,8,0,0" Visibility="Collapsed"/>
         </StackPanel>
-        <StackPanel Grid.Row="10" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button x:Name="CloseButton" MinWidth="108" Margin="0,0,8,0" IsCancel="True" Click="CloseButton_Click"/>
             <Button x:Name="ApplyButton" MinWidth="180" Style="{StaticResource PrimaryButton}" IsEnabled="False" Click="ApplyButton_Click"/>
         </StackPanel>

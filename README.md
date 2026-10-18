@@ -1,12 +1,27 @@
-﻿# Visual Folder Explorer v1.6.0
+﻿# Visual Folder Explorer v1.6.1
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.6.0 adds selective descriptive-metadata cleanup for images and videos.** The operation previews Windows File Properties → Details values and backs up each original before attempting to clear only Title, Subject, Comments and/or Authors. It never invokes a video/image encoder.
+**v1.6.1 improves the metadata-cleaning interface and removes retained automatic backups at the user's request.** The four target fields remain Title, Subject, Comments, and Authors. Scanning and editing still use the Windows property handler rather than custom image/video encoding.
 
 
 
-## What's new in v1.6.0
+## What's new in v1.6.1
+
+- Added vertical scrolling to the `Before → After` preview panel, keeping the full long metadata values accessible without expanding the dialog.
+- The metadata-file DataGrid now has a permanently visible horizontal scrollbar at its bottom, using the shared rounded scrollbar template.
+- Aligned table text and row selection checkboxes vertically in the middle.
+- Added **Select all** above the metadata table with a live selected/available counter. Individual selections remain possible; files without cleanup-relevant fields cannot be selected.
+- Removed the nonfunctional **Files to scan** combo. All supported images and videos in the current folder are scanned; preselected images from the main window are checked first, but Select all can include every eligible file.
+- Removed automatic persistent backups, backup folder display, backup manifests and the backup-opening button. **This version never creates `_VFE_MetadataBackups`**.
+- Before applying edits, the program modifies a short-lived working file (same format/extension in the same directory), verifies the desired fields were cleared and for JPEG/PNG compares decoded pixel hashes. Only a verified working file replaces its source; the working file is deleted afterward. No user recovery backup is retained.
+- Updated confirmation text to warn that **the user must make a manual backup first**. The Windows property handler may not support write operations for all media formats.
+- Added a new app icon (`Assets/VisualFolderExplorer.ico`) to the EXE and all WPF windows, plus a full-resolution PNG preview.
+- Kept UA and EN localization, updated patch list, deployment instructions and GitHub release artifacts.
+
+**Important:** No automatic backup is retained. A failed or interrupted replacement cannot be assumed reversible. Test on disposable copies before batch operations. This is selective removal of four Windows properties, not a complete EXIF/XMP/privacy scrub or guarantee of identical video container bytes.
+
+## Historical: v1.6.0 (superseded backup behavior)
 
 - Added **Clean metadata** in the Image actions toolbar. It operates on selected image tiles or all supported files in the current directory, including videos not displayed as image tiles.
 - Scans the four Windows Shell properties `System.Title`, `System.Subject`, `System.Comment` and `System.Author` for `.jpg`, `.jpeg`, `.png`, `.mp4`, `.m4v` and `.mov`. Read/write availability is determined by the Windows metadata handler installed for that file and codec.

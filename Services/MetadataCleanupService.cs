@@ -1,6 +1,5 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Text.Json;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using VisualFolderExplorer.Models;
@@ -42,7 +41,7 @@ public static class MetadataCleanupService
         });
 
     public static Task<List<MetadataCleanupResult>> CleanAsync(
-        IReadOnlyList<MetadataCleanupRow> rows, MetadataFields selectedFields, string backupFolder,
+        IReadOnlyList<MetadataCleanupRow> rows, MetadataFields selectedFields,
         IProgress<(int Done, int Total)>? progress, CancellationToken cancellationToken)
         => RunStaAsync(() =>
         {
@@ -51,7 +50,11 @@ public static class MetadataCleanupService
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var row = rows[i];
-                var backupPath = Path.Combine(backupFolder, $"{i + 1:D5}_{row.FileName}");
+                // A short-lived working file is needed so a failed handler cannot corrupt
+                // the original. It is always deleted; NO backup directory is created.
+                var directory = Path.GetDirectoryName(row.Path) ?? throw new IOException("Invalid file path");
+                var temporaryPath = Path.Combine(directory,
+                    $".__vfe_work_{Guid.NewGuid():N}{Path.GetExtension(row.Path)}");
                 try
                 {
                     var candidate = ReadFile(row.Path);
@@ -64,68 +67,49 @@ public static class MetadataCleanupService
                     var populated = GetPopulatedFlags(candidate) & selectedFields;
                     if (populated == MetadataFields.None)
                     {
-                        result.Add(new MetadataCleanupResult(row.FileName, true, "No matching values", null));
+                        result.Add(new MetadataCleanupResult(row.FileName, true, "No matching values"));
                         continue;
                     }
 
-                    // Backup first. A successful copy is verified before touching the source.
-                    Directory.CreateDirectory(backupFolder);
-                    File.Copy(row.Path, backupPath, overwrite: false);
-                    if (new FileInfo(backupPath).Length != row.OriginalLength ||
-                        !FilesEqualSha256(row.Path, backupPath))
-                        throw new IOException("Backup verification failed. Original was not changed.");
+                    File.Copy(row.Path, temporaryPath, overwrite: false);
+                    if (!FilesEqualSha256(row.Path, temporaryPath))
+                        throw new IOException("Temporary working copy verification failed.");
 
-                    try
-                    {
-                        // JPEG/PNG: verify actual decoded pixels remain identical.
-                        // This is stronger than merely avoiding an explicit re-encode call.
-                        var pixelHashBefore = ComputeDecodedPixelHash(backupPath);
-                        ClearProperties(row.Path, populated);
-                        var pixelHashAfter = ComputeDecodedPixelHash(row.Path);
-                        if (pixelHashBefore is not null && (pixelHashAfter is null ||
-                            !pixelHashBefore.AsSpan().SequenceEqual(pixelHashAfter)))
-                            throw new IOException("Decoded image pixels changed. Original restored.");
+                    // Work only on the temporary file. For JPEG/PNG compare decoded pixels;
+                    // for video use the OS property handler without transcoding.
+                    var pixelsBefore = ComputeDecodedPixelHash(row.Path);
+                    ClearProperties(temporaryPath, populated);
+                    var pixelsAfter = ComputeDecodedPixelHash(temporaryPath);
+                    if (pixelsBefore is not null && (pixelsAfter is null ||
+                        !pixelsBefore.AsSpan().SequenceEqual(pixelsAfter)))
+                        throw new IOException("Decoded image pixels changed; original was left untouched.");
 
-                        // Verify with a *new* property store; avoid relying on the writer cache.
-                        var verified = ReadFile(row.Path);
-                        if (!string.IsNullOrWhiteSpace(verified.ScanError) ||
-                            (GetPopulatedFlags(verified) & populated) != MetadataFields.None)
-                            throw new IOException("Properties could not be verified as cleared.");
+                    var verified = ReadFile(temporaryPath);
+                    if (!string.IsNullOrWhiteSpace(verified.ScanError) ||
+                        (GetPopulatedFlags(verified) & populated) != MetadataFields.None)
+                        throw new IOException("Properties could not be verified as cleared.");
 
-                        // Retain filesystem timestamps (not part of the user's requested edit).
-                        File.SetCreationTimeUtc(row.Path, row.CreationUtc);
-                        File.SetLastWriteTimeUtc(row.Path, row.LastWriteUtc);
-                        result.Add(new MetadataCleanupResult(row.FileName, true, "Cleared and verified", backupPath));
-                    }
-                    catch
-                    {
-                        // Restore exactly the original bytes if the handler failed or verification failed.
-                        File.Copy(backupPath, row.Path, overwrite: true);
-                        File.SetCreationTimeUtc(row.Path, row.CreationUtc);
-                        File.SetLastWriteTimeUtc(row.Path, row.LastWriteUtc);
-                        throw;
-                    }
+                    // Do not overwrite a file that changed externally during processing.
+                    var current = new FileInfo(row.Path);
+                    if (!current.Exists || current.Length != row.OriginalLength ||
+                        current.LastWriteTimeUtc != row.LastWriteUtc)
+                        throw new IOException("Original file changed while processing. Rescan required.");
+
+                    File.SetCreationTimeUtc(temporaryPath, row.CreationUtc);
+                    File.SetLastWriteTimeUtc(temporaryPath, row.LastWriteUtc);
+                    File.Move(temporaryPath, row.Path, overwrite: true);
+                    result.Add(new MetadataCleanupResult(row.FileName, true, "Cleared and verified"));
                 }
                 catch (Exception ex)
                 {
-                    result.Add(new MetadataCleanupResult(row.FileName, false, ex.Message, File.Exists(backupPath) ? backupPath : null));
+                    result.Add(new MetadataCleanupResult(row.FileName, false, ex.Message));
+                }
+                finally
+                {
+                    try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); }
+                    catch { /* Best effort cleanup of a temporary working file. */ }
                 }
                 progress?.Report((i + 1, rows.Count));
-            }
-
-            // Map backups to original paths for manual restoration. No sensitive values in manifest.
-            if (Directory.Exists(backupFolder))
-            {
-                var manifest = rows.Zip(result, (row, entry) => new
-                {
-                    OriginalPath = row.Path, entry.BackupPath, entry.Succeeded, entry.Message
-                }).ToArray();
-                try
-                {
-                    File.WriteAllText(Path.Combine(backupFolder, "restore-map.json"),
-                        JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }));
-                }
-                catch (IOException) { /* Backups already exist; manifest is optional. */ }
             }
             return result;
         });
@@ -143,7 +127,7 @@ public static class MetadataCleanupService
     private static byte[]? ComputeDecodedPixelHash(string path)
     {
         var ext = Path.GetExtension(path).ToLowerInvariant();
-        // Backup file name preserves the source extension (e.g. 00001_photo.jpg).
+        // Temporary working files retain the original extension for codec support.
         if (ext is not ".jpg" and not ".jpeg" and not ".png") return null;
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
         var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);

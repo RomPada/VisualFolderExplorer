@@ -5,6 +5,30 @@ This file is maintained for every release in English and Ukrainian.
 
 ---
 
+## v1.6.1 — 2026-10-18
+
+**English**
+- Added an independent vertical scrollbar to long metadata preview content.
+- Made the DataGrid horizontal scrollbar visible at the bottom and applied the rounded scrollbar theme.
+- Centered file-list text and selection checkboxes vertically.
+- Added Select all + live selection count; kept per-file selection.
+- Removed the unnecessary Files to scan mode selector; scan always includes every supported file in the current folder.
+- Removed automatic persistent backup folders, manifests and backup UI at user request.
+- Reworked metadata processing to edit a short-lived working file, verify the requested property removal and JPEG/PNG pixels, then replace the source only on success. Working files are removed after processing; no recovery backups are retained.
+- Added an explicit manual-backup warning before modifying files.
+- Added app icon resources (.ico/.png) and wired icons to EXE and WPF windows.
+
+**Українська**
+- Додано незалежний вертикальний скрол у перегляді довгих метаданих.
+- Горизонтальний скрол таблиці постійно видимий унизу й використовує округлений дизайн.
+- Текст і чекбокси у рядках вирівняні по вертикальному центру.
+- Додано «Вибрати всі» та лічильник позначених файлів зі збереженням індивідуального вибору.
+- Прибрано перемикач режиму «Файли для перевірки»: скануються всі підтримувані файли поточної папки.
+- На запит користувача прибрано постійні автоматичні резервні копії, маніфести та елементи UI резервування.
+- Зміни виконуються на тимчасовому робочому файлі та застосовуються до оригіналу після перевірки потрібних властивостей і пікселів JPEG/PNG. Тимчасові файли видаляються; копії для відновлення не залишаються.
+- Додано попередження щодо ручного резервного копіювання перед змінами.
+- Створено і підключено іконку (.ico/.png) до EXE та вікон WPF.
+
 ## v1.6.0 — 2026-10-18
 
 **English**

@@ -10,9 +10,12 @@
     <RestoreIgnoreFailedSources>true</RestoreIgnoreFailedSources>
     <AssemblyName>VisualFolderExplorer</AssemblyName>
     <RootNamespace>VisualFolderExplorer</RootNamespace>
-    <ApplicationIcon></ApplicationIcon>
-    <Version>1.6.0</Version>
-    <FileVersion>1.6.0.0</FileVersion>
-    <AssemblyVersion>1.6.0.0</AssemblyVersion>
+    <ApplicationIcon>Assets\VisualFolderExplorer.ico</ApplicationIcon>
+    <Version>1.6.1</Version>
+    <FileVersion>1.6.1.0</FileVersion>
+    <AssemblyVersion>1.6.1.0</AssemblyVersion>
   </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Assets\VisualFolderExplorer.ico" />
+  </ItemGroup>
 </Project>

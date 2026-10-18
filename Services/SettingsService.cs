@@ -31,7 +31,7 @@ public sealed class SettingsService
 
     public void Save(AppSettings settings)
     {
-        settings.Version = "1.6.0";
+        settings.Version = "1.6.1";
         File.WriteAllText(_settingsPath, JsonSerializer.Serialize(settings, _options));
     }
 }
