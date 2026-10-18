@@ -5,6 +5,20 @@ This file is maintained for every release in English and Ukrainian.
 
 ---
 
+## v1.6.2 — 2026-10-18
+
+**English**
+- Simplified the metadata-cleanup confirmation message to ask only whether the selected properties should be cleared for the specified number of files.
+- Removed the backup/verification advisory paragraph from the metadata preview pane.
+- Removed unused safety-hint localization entries and retained UA/EN support.
+- No change to the metadata cleaning implementation.
+
+**Українська**
+- Скорочено підтвердження очищення метаданих: тепер показується тільки запит щодо вибраних властивостей і кількості файлів.
+- Прибрано інформаційний блок про резервні копії та перевірку з панелі попереднього перегляду.
+- Видалено невикористовувані локалізаційні рядки; підтримку UA/EN збережено.
+- Сам механізм очищення метаданих не змінювався.
+
 ## v1.6.1 — 2026-10-18
 
 **English**

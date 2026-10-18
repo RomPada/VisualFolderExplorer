@@ -1,10 +1,14 @@
-﻿# Visual Folder Explorer v1.6.1
+﻿# Visual Folder Explorer v1.6.2
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.6.1 improves the metadata-cleaning interface and removes retained automatic backups at the user's request.** The four target fields remain Title, Subject, Comments, and Authors. Scanning and editing still use the Windows property handler rather than custom image/video encoding.
+**v1.6.2 is a focused UI cleanup release.** The metadata-cleanup confirmation now only asks whether to clear the selected fields in the indicated number of files. The redundant advisory paragraph has been removed from the preview pane; metadata processing itself remains unchanged.
 
+## What's new in v1.6.2
 
+- Shortened the confirmation message for metadata cleanup (UA/EN).
+- Removed the no-backup/verification advisory paragraph from the preview panel.
+- No change to file processing or backup policy: the app still does not retain automatic backups.
 
 ## What's new in v1.6.1
 

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -41,7 +41,6 @@ public partial class MetadataCleanupWindow : Window
         CommentsCheck.Content = _loc.T("MetaComments");
         AuthorsCheck.Content = _loc.T("MetaAuthors");
         PreviewTitle.Text = _loc.T("MetaPreview");
-        SafetyHint.Text = _loc.T("MetaSafetyNoBackup");
         SelectAllCheck.Content = _loc.T("MetaSelectAll");
         UseCol.Header = _loc.T("MetaPick");
         FileCol.Header = _loc.T("Name");
@@ -186,7 +185,7 @@ public partial class MetadataCleanupWindow : Window
             (MetadataCleanupService.GetPopulatedFlags(r) & fields) != 0).ToList();
         if (selected.Count == 0) { ShowError(_loc.T("MetaNothing")); return; }
 
-        var confirmation = new ConfirmWindow(_loc.T("MetadataClean"), _loc.T("MetaConfirmNoBackup", selected.Count),
+        var confirmation = new ConfirmWindow(_loc.T("MetadataClean"), _loc.T("MetaConfirm", selected.Count),
             _loc.T("MetaApply"), string.Empty, _loc.T("Cancel"), false) { Owner = this };
         confirmation.ShowDialog();
         if (confirmation.Choice != ConfirmChoice.Primary) return;

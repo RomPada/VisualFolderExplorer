@@ -44,10 +44,9 @@ public sealed class LocalizationService
             ["FolderImageCount"] = "Зображень у папці: {0}", ["DropCopyHere"] = "Скопіювати сюди", ["DropMoveHere"] = "Перемістити сюди", ["DropDone"] = "Оброблено перетягуванням: {0}",
             ["MetadataClean"] = "Очистити метадані", ["MetaScope"] = "Файли для перевірки", ["MetaSelectedScope"] = "Вибрані зображення ({0})", ["MetaAllScope"] = "Усі підтримувані файли в цій папці", ["MetaFormats"] = "Формати (залежить від Windows)",
             ["MetaScan"] = "Сканувати", ["MetaFields"] = "Вибери лише поля, які потрібно очистити", ["MetaTitle"] = "Назва", ["MetaSubject"] = "Тема", ["MetaComments"] = "Примітки", ["MetaAuthors"] = "Автори", ["MetaPreview"] = "Попередній перегляд: до → після",
-            ["MetaSafetyNoBackup"] = "Оригінали не резервуються. Перед застосуванням зробіть власну копію. Зміни перевіряються на тимчасовому файлі й застосовуються лише після успішної перевірки. Для JPEG/PNG перевіряються пікселі; відео не перекодовується.",
             ["MetaPick"] = "Вибір", ["MetaFormat"] = "Формат", ["MetaStatus"] = "Стан", ["MetaApply"] = "Очистити вибрані поля", ["MetaScanHint"] = "Натисни «Сканувати» або зачекай автоматичного аналізу.", ["MetaScanning"] = "Аналіз метаданих: {0} / {1}",
             ["MetaScanned"] = "Файлів перевірено: {0}. Файлів із цими полями: {1}.", ["MetaReady"] = "Знайдено метадані", ["MetaEmpty"] = "Поля порожні", ["MetaPreviewHint"] = "Вибери файл для перегляду властивостей.",
-            ["MetaSelectFields"] = "Познач хоча б одне поле для очищення.", ["MetaNothing"] = "Немає вибраних файлів із цими метаданими.", ["MetaConfirmNoBackup"] = "Очистити вибрані властивості у {0} файлах? Автоматичні резервні копії НЕ створюються. Переконайтеся, що власні копії вже зроблено.",
+            ["MetaSelectFields"] = "Познач хоча б одне поле для очищення.", ["MetaNothing"] = "Немає вибраних файлів із цими метаданими.", ["MetaConfirm"] = "Очистити вибрані властивості у {0} файлах?",
             ["MetaProcessing"] = "Очищення: {0} / {1}", ["MetaDone"] = "Очищено та перевірено", ["MetaFailed"] = "Не вдалося", ["MetaFinished"] = "Завершено: успішно {0}, помилок {1}.", ["MetaSelectAll"] = "Вибрати всі", ["MetaSelectedSummary"] = "Вибрано: {0} із {1}",
             ["WatcherPending"] = "У папці є зовнішні зміни. Оновлення відбудеться після збереження тексту."
         },
@@ -89,10 +88,9 @@ public sealed class LocalizationService
             ["FolderImageCount"] = "Images in folder: {0}", ["DropCopyHere"] = "Copy here", ["DropMoveHere"] = "Move here", ["DropDone"] = "Drag & drop processed: {0}",
             ["MetadataClean"] = "Clean metadata", ["MetaScope"] = "Files to scan", ["MetaSelectedScope"] = "Selected images ({0})", ["MetaAllScope"] = "All supported files in this folder", ["MetaFormats"] = "Formats (Windows dependent)",
             ["MetaScan"] = "Scan", ["MetaFields"] = "Choose only the properties to remove", ["MetaTitle"] = "Title", ["MetaSubject"] = "Subject", ["MetaComments"] = "Comments", ["MetaAuthors"] = "Authors", ["MetaPreview"] = "Preview: before → after",
-            ["MetaSafetyNoBackup"] = "No backup is retained. Make your own copy first. Changes are verified on a temporary working file and applied only after successful verification. JPEG/PNG pixels are checked; video is not transcoded.",
             ["MetaPick"] = "Select", ["MetaFormat"] = "Format", ["MetaStatus"] = "Status", ["MetaApply"] = "Clear selected properties", ["MetaScanHint"] = "Click Scan or wait for the automatic scan.", ["MetaScanning"] = "Scanning metadata: {0} / {1}",
             ["MetaScanned"] = "Files scanned: {0}. Files with matching properties: {1}.", ["MetaReady"] = "Metadata found", ["MetaEmpty"] = "Fields are empty", ["MetaPreviewHint"] = "Select a file to preview its properties.",
-            ["MetaSelectFields"] = "Select at least one property to clear.", ["MetaNothing"] = "No selected files have the requested metadata.", ["MetaConfirmNoBackup"] = "Clear selected properties in {0} files? Automatic backups are NOT created. Make sure you have your own copies.",
+            ["MetaSelectFields"] = "Select at least one property to clear.", ["MetaNothing"] = "No selected files have the requested metadata.", ["MetaConfirm"] = "Clear selected properties in {0} files?",
             ["MetaProcessing"] = "Cleaning: {0} / {1}", ["MetaDone"] = "Cleared and verified", ["MetaFailed"] = "Failed", ["MetaFinished"] = "Finished: {0} successful, {1} failed.", ["MetaSelectAll"] = "Select all", ["MetaSelectedSummary"] = "Selected: {0} of {1}",
             ["WatcherPending"] = "The folder changed externally. It will refresh after the text is saved."
         }

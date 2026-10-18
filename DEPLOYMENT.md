@@ -1,8 +1,8 @@
 ﻿# Visual Folder Explorer deployment
 
-## Current release: v1.6.1
+## Current release: v1.6.2
 
-The current C# WPF source targets **.NET 10**. The portable self-contained build contains the runtime and does not require .NET on the target PC. v1.6.1 keeps the same self-contained .NET 10 WPF deployment model and uses native Windows Shell COM metadata editing and now includes a custom EXE/window icon. It retains no automatic user backup files; temporary working copies are deleted after processing.
+The current C# WPF source targets **.NET 10**. The portable self-contained build contains the runtime and does not require .NET on the target PC. v1.6.2 keeps the same self-contained .NET 10 WPF deployment model and uses native Windows Shell COM metadata editing and now includes a custom EXE/window icon. It retains no automatic user backup files; temporary working copies are deleted after processing.
 
 ---
 
