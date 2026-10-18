@@ -1,8 +1,8 @@
 ﻿# Visual Folder Explorer deployment
 
-## Current release: v1.5.1
+## Current release: v1.6.0
 
-The current C# WPF source targets **.NET 10**. The portable self-contained build contains the runtime and does not require .NET on the target PC. v1.5.1 keeps the .NET 10 WPF deployment model and adds local perceptual similarity grouping without API calls, Python, external AI runtimes, or additional NuGet packages.
+The current C# WPF source targets **.NET 10**. The portable self-contained build contains the runtime and does not require .NET on the target PC. v1.6.0 keeps the same self-contained .NET 10 WPF deployment model and adds native Windows Shell metadata editing through built-in COM APIs, without external encoders, executables or NuGet dependencies.
 
 ---
 

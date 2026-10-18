@@ -42,6 +42,13 @@ public sealed class LocalizationService
             ["SortNameAsc"] = "Від А до Я", ["SortNameDesc"] = "Від Я до А", ["SortDateAsc"] = "Від старіших до новіших", ["SortDateDesc"] = "Від новіших до старіших", ["SortSizeAsc"] = "Від меншого до більшого", ["SortSizeDesc"] = "Від більшого до меншого",
             ["TileSize"] = "Плитки", ["Dimensions"] = "Розмір", ["FileSize"] = "Файл", ["Created"] = "Створено", ["Modified"] = "Змінено",
             ["FolderImageCount"] = "Зображень у папці: {0}", ["DropCopyHere"] = "Скопіювати сюди", ["DropMoveHere"] = "Перемістити сюди", ["DropDone"] = "Оброблено перетягуванням: {0}",
+            ["MetadataClean"] = "Очистити метадані", ["MetaScope"] = "Файли для перевірки", ["MetaSelectedScope"] = "Вибрані зображення ({0})", ["MetaAllScope"] = "Усі підтримувані файли в цій папці", ["MetaFormats"] = "Формати (залежить від Windows)",
+            ["MetaScan"] = "Сканувати", ["MetaFields"] = "Вибери лише поля, які потрібно очистити", ["MetaTitle"] = "Назва", ["MetaSubject"] = "Тема", ["MetaComments"] = "Примітки", ["MetaAuthors"] = "Автори", ["MetaPreview"] = "Попередній перегляд: до → після",
+            ["MetaBackup"] = "Резервні копії", ["MetaSafety"] = "Редагуються лише вибрані властивості Windows. Без перекодування зображень і відео. Якщо формат або обробник Windows не дозволяє редагування — файл залишиться без змін. Перед записом оригінал копіюється і перевіряється SHA-256.",
+            ["MetaPick"] = "Вибір", ["MetaFormat"] = "Формат", ["MetaStatus"] = "Стан", ["MetaApply"] = "Очистити вибрані поля", ["MetaScanHint"] = "Натисни «Сканувати» або зачекай автоматичного аналізу.", ["MetaScanning"] = "Аналіз метаданих: {0} / {1}",
+            ["MetaScanned"] = "Файлів перевірено: {0}. Файлів із цими полями: {1}.", ["MetaReady"] = "Знайдено метадані", ["MetaEmpty"] = "Поля порожні", ["MetaPreviewHint"] = "Вибери файл для перегляду властивостей.",
+            ["MetaSelectFields"] = "Познач хоча б одне поле для очищення.", ["MetaNothing"] = "Немає вибраних файлів із цими метаданими.", ["MetaConfirm"] = "Очистити вибрані властивості у {0} файлах? Перед змінами буде створено резервні копії в папці: {1}",
+            ["MetaProcessing"] = "Очищення: {0} / {1}", ["MetaDone"] = "Очищено та перевірено", ["MetaFailed"] = "Не вдалося", ["MetaFinished"] = "Завершено: успішно {0}, помилок {1}.", ["MetaBackupLocation"] = "Папка резервних копій: {0}", ["MetaOpenBackup"] = "Відкрити резервні копії",
             ["WatcherPending"] = "У папці є зовнішні зміни. Оновлення відбудеться після збереження тексту."
         },
         ["EN"] = new(StringComparer.OrdinalIgnoreCase)
@@ -80,6 +87,13 @@ public sealed class LocalizationService
             ["SortNameAsc"] = "A to Z", ["SortNameDesc"] = "Z to A", ["SortDateAsc"] = "Oldest to newest", ["SortDateDesc"] = "Newest to oldest", ["SortSizeAsc"] = "Smallest to largest", ["SortSizeDesc"] = "Largest to smallest",
             ["TileSize"] = "Tiles", ["Dimensions"] = "Dimensions", ["FileSize"] = "File", ["Created"] = "Created", ["Modified"] = "Modified",
             ["FolderImageCount"] = "Images in folder: {0}", ["DropCopyHere"] = "Copy here", ["DropMoveHere"] = "Move here", ["DropDone"] = "Drag & drop processed: {0}",
+            ["MetadataClean"] = "Clean metadata", ["MetaScope"] = "Files to scan", ["MetaSelectedScope"] = "Selected images ({0})", ["MetaAllScope"] = "All supported files in this folder", ["MetaFormats"] = "Formats (Windows dependent)",
+            ["MetaScan"] = "Scan", ["MetaFields"] = "Choose only the properties to remove", ["MetaTitle"] = "Title", ["MetaSubject"] = "Subject", ["MetaComments"] = "Comments", ["MetaAuthors"] = "Authors", ["MetaPreview"] = "Preview: before → after",
+            ["MetaBackup"] = "Backups", ["MetaSafety"] = "Only selected Windows Shell properties are edited, without re-encoding images or video. Files that cannot be edited by their Windows metadata handler remain unchanged. Originals are backed up and SHA-256 verified before changes.",
+            ["MetaPick"] = "Select", ["MetaFormat"] = "Format", ["MetaStatus"] = "Status", ["MetaApply"] = "Clear selected properties", ["MetaScanHint"] = "Click Scan or wait for the automatic scan.", ["MetaScanning"] = "Scanning metadata: {0} / {1}",
+            ["MetaScanned"] = "Files scanned: {0}. Files with matching properties: {1}.", ["MetaReady"] = "Metadata found", ["MetaEmpty"] = "Fields are empty", ["MetaPreviewHint"] = "Select a file to preview its properties.",
+            ["MetaSelectFields"] = "Select at least one property to clear.", ["MetaNothing"] = "No selected files have the requested metadata.", ["MetaConfirm"] = "Clear selected properties in {0} files? Before editing, backups will be created in: {1}",
+            ["MetaProcessing"] = "Cleaning: {0} / {1}", ["MetaDone"] = "Cleared and verified", ["MetaFailed"] = "Failed", ["MetaFinished"] = "Finished: {0} successful, {1} failed.", ["MetaBackupLocation"] = "Backup folder: {0}", ["MetaOpenBackup"] = "Open backup folder",
             ["WatcherPending"] = "The folder changed externally. It will refresh after the text is saved."
         }
     };

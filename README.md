@@ -1,10 +1,30 @@
-﻿# Visual Folder Explorer v1.5.1
+﻿# Visual Folder Explorer v1.6.0
 
 Visual Folder Explorer is a Windows desktop application for working with folders that contain large image collections together with TXT/Markdown descriptions.
 
-**v1.5.1 refines similarity grouping and Explorer navigation.** The application can analyze the images in the current folder with a perceptual hash, preview the proposed groups, adjust the similarity threshold, exclude individual images, and only then create folders and move the selected files. No API, cloud service, Python, or AI model download is required.
+**v1.6.0 adds selective descriptive-metadata cleanup for images and videos.** The operation previews Windows File Properties → Details values and backs up each original before attempting to clear only Title, Subject, Comments and/or Authors. It never invokes a video/image encoder.
 
 
+
+## What's new in v1.6.0
+
+- Added **Clean metadata** in the Image actions toolbar. It operates on selected image tiles or all supported files in the current directory, including videos not displayed as image tiles.
+- Scans the four Windows Shell properties `System.Title`, `System.Subject`, `System.Comment` and `System.Author` for `.jpg`, `.jpeg`, `.png`, `.mp4`, `.m4v` and `.mov`. Read/write availability is determined by the Windows metadata handler installed for that file and codec.
+- Displays a per-file preview of the current values and expected cleared values (`before → after`). File and property selections are independent.
+- Creates mandatory per-operation backups in `<current folder>/_VFE_MetadataBackups/<timestamp>_<id>/` and checks SHA-256 of each original vs. its backup before changing anything.
+- Uses the native Windows `IPropertyStore` handler with `VT_EMPTY` and `Commit`, so no decoding/re-encoding of the picture/video stream is requested. For JPEG/PNG, decoded pixel hashes are compared before/after; a separate property-store read verifies that the selected values are empty afterwards.
+- If a property handler rejects writing, or verification fails, the original bytes are restored from backup. Individual file results report failures; unsupported formats are never modified.
+- Retains original filesystem creation and modification times where the OS allows. Successful rows are scanned again, so the preview shows the actual updated values.
+- Provides progress, confirmation, UA/EN labels, an **Open backup folder** control and a `restore-map.json` mapping in each backup folder to aid manual restoration.
+
+**Important limitations:** This is a targeted cleanup of four *Windows Shell properties*, **not** an exhaustive scrub of EXIF, XMP, location, device identifiers, hidden application tags or all container metadata. MP4/MOV handlers on some Windows systems are read-only and may report a failed/unsupported edit. No media transcoding is requested, but the exact storage implementation is controlled by the Windows property handler; for irreplaceable originals, test one file first and retain the backup. Backups themselves still contain the original metadata.
+
+## What's new in v1.5.2
+
+- The `...` **parent-folder** control is now pinned directly under the Explorer heading, outside its scrolling file list. It stays visible while you scroll hundreds of folders and TXT/MD entries.
+- One click on the pinned `...` goes one directory up. Drag & Drop onto the pinned control still targets the parent directory. The control stays visible but is disabled at a filesystem root.
+- Rename dialogs for files select only the filename stem. For example, `text.txt` opens with only `text` selected, leaving `.txt` unchanged by default. Folder renames and new-file dialogs continue to select their entire text.
+- At v1.5.2 no metadata was removed. The confirmed backup-aware operation was added in v1.6.0.
 
 ## What's new in v1.5.1
 

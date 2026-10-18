@@ -1,0 +1,98 @@
+<Window x:Class="VisualFolderExplorer.Windows.MetadataCleanupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="1120" Height="710" MinWidth="900" MinHeight="590"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{StaticResource WindowBg}" Loaded="Window_Loaded">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Name="HeadingText" Grid.Row="0" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+
+        <Border Grid.Row="2" Style="{StaticResource CardBorder}" Padding="12">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock x:Name="ScopeLabel" Foreground="{StaticResource MutedTextBrush}" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,6"/>
+                    <ComboBox x:Name="ScopeCombo" Height="36" Width="350" HorizontalAlignment="Left">
+                        <ComboBoxItem Tag="Selected"/>
+                        <ComboBoxItem Tag="All"/>
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                    <TextBlock x:Name="FormatLabel" Foreground="{StaticResource MutedTextBrush}" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,6"/>
+                    <TextBlock Text="JPG · JPEG · PNG · MP4 · M4V · MOV" VerticalAlignment="Center" Margin="0,6,0,0"/>
+                </StackPanel>
+                <Button x:Name="ScanButton" Grid.Column="2" MinWidth="120" Margin="18,15,0,0" Click="ScanButton_Click"/>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="12">
+            <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="6"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <TextBlock x:Name="FieldsLabel" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}"/>
+                <StackPanel Grid.Row="2" Orientation="Horizontal">
+                    <CheckBox x:Name="TitleCheck" Checked="FieldChoice_Changed" Unchecked="FieldChoice_Changed" IsChecked="True" Margin="0,0,22,0"/>
+                    <CheckBox x:Name="SubjectCheck" Checked="FieldChoice_Changed" Unchecked="FieldChoice_Changed" IsChecked="True" Margin="0,0,22,0"/>
+                    <CheckBox x:Name="CommentsCheck" Checked="FieldChoice_Changed" Unchecked="FieldChoice_Changed" IsChecked="True" Margin="0,0,22,0"/>
+                    <CheckBox x:Name="AuthorsCheck" Checked="FieldChoice_Changed" Unchecked="FieldChoice_Changed" IsChecked="True"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="6">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="325"/></Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource CardBorder}" Padding="8">
+                <DataGrid x:Name="FilesGrid" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="False"
+                          SelectionMode="Single" SelectionUnit="FullRow" GridLinesVisibility="None"
+                          HeadersVisibility="Column" Background="Transparent" BorderThickness="0"
+                          SelectionChanged="FilesGrid_SelectionChanged">
+                    <DataGrid.Columns>
+                        <DataGridCheckBoxColumn x:Name="UseCol" Binding="{Binding Selected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="68"/>
+                        <DataGridTextColumn x:Name="FileCol" Binding="{Binding FileName}" IsReadOnly="True" Width="200"/>
+                        <DataGridTextColumn x:Name="TypeCol" Binding="{Binding Format}" IsReadOnly="True" Width="70"/>
+                        <DataGridTextColumn x:Name="TitleCol" Binding="{Binding Title}" IsReadOnly="True" Width="170"/>
+                        <DataGridTextColumn x:Name="SubjectCol" Binding="{Binding Subject}" IsReadOnly="True" Width="170"/>
+                        <DataGridTextColumn x:Name="CommentsCol" Binding="{Binding Comments}" IsReadOnly="True" Width="200"/>
+                        <DataGridTextColumn x:Name="AuthorsCol" Binding="{Binding Authors}" IsReadOnly="True" Width="150"/>
+                        <DataGridTextColumn x:Name="StatusCol" Binding="{Binding Status}" IsReadOnly="True" Width="210"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource CardBorder}" Padding="14">
+                <StackPanel>
+                    <TextBlock x:Name="PreviewTitle" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                    <TextBlock x:Name="PreviewFile" Margin="0,6,0,12" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="PreviewFields" TextWrapping="Wrap" FontSize="13"/>
+                    <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,14,0,14"/>
+                    <TextBlock x:Name="BackupLabel" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="BackupPathText" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource MutedTextBrush}"/>
+                    <Button x:Name="OpenBackupButton" HorizontalAlignment="Left" MinWidth="150" Margin="0,9,0,0" IsEnabled="False" Click="OpenBackupButton_Click"/>
+                    <TextBlock x:Name="SafetyHint" Margin="0,14,0,0" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <StackPanel Grid.Row="8">
+            <TextBlock x:Name="SummaryText" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
+            <ProgressBar x:Name="Progress" Minimum="0" Maximum="100" Height="5" Margin="0,8,0,0" Visibility="Collapsed"/>
+        </StackPanel>
+        <StackPanel Grid.Row="10" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="CloseButton" MinWidth="108" Margin="0,0,8,0" IsCancel="True" Click="CloseButton_Click"/>
+            <Button x:Name="ApplyButton" MinWidth="180" Style="{StaticResource PrimaryButton}" IsEnabled="False" Click="ApplyButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

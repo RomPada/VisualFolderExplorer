@@ -5,6 +5,40 @@ This file is maintained for every release in English and Ukrainian.
 
 ---
 
+## v1.6.0 — 2026-10-18
+
+**English**
+- Added selective metadata cleanup for the Windows Shell `System.Title`, `System.Subject`, `System.Comment` and `System.Author` properties, with JPEG/PNG/MP4/M4V/MOV discovery.
+- Added a bilingual scan/preview dialog for selected image tiles or all supported files (including videos) in the current folder.
+- Added per-file selection, per-property selection, current values → proposed cleared values, progress and confirmation.
+- Added mandatory original-file backups verified byte-for-byte by SHA-256 before edits, with per-operation backup folder and `restore-map.json`.
+- Cleared metadata through Windows `IPropertyStore::SetValue(VT_EMPTY)` and `Commit` (no application-level transcoding), then verified values with a fresh store and checked pixel hashes for JPEG/PNG.
+- Added automatic restoration of original bytes on handler failure/verification failure, per-file error reports and UI refresh of successfully changed entries.
+- Windows property-handler capabilities vary; unsupported or read-only formats are not force-modified. This does not attempt a full privacy/EXIF scrub.
+
+**Українська**
+- Додано вибіркове очищення властивостей Windows Shell `System.Title`, `System.Subject`, `System.Comment` і `System.Author` із виявленням JPEG/PNG/MP4/M4V/MOV.
+- Додано двомовне вікно аналізу й preview для вибраних картинок або всіх підтримуваних файлів поточної папки, включно з відео.
+- Додано вибір файлів і полів, перегляд поточних/майбутніх значень, progress та підтвердження.
+- Додано обов'язкові резервні копії з SHA-256 перевіркою до будь-яких змін, окрему папку операції й `restore-map.json`.
+- Очищення відбувається через Windows `IPropertyStore::SetValue(VT_EMPTY)` та `Commit` без власного перекодування, із повторною перевіркою значень і хешів декодованих пікселів для JPEG/PNG.
+- При помилці запису/верифікації оригінальні байти автоматично повертаються; є результати по кожному файлу й оновлення прев'ю успішних.
+- Можливості Windows property handler залежать від формату; невідповідні/read-only файли не змінюються. Повне очищення EXIF/приватних тегів не входить у цей реліз.
+
+## v1.5.2 — 2026-10-18
+
+**English**
+- Fixed the parent-folder `...` control disappearing during Explorer scrolling by moving it out of the `ListBox` into a dedicated, permanently visible row.
+- Preserved one-click upward navigation, root-folder disabled state, and Drag & Drop onto `...` with the parent directory as target.
+- Improved rename dialogs: selected text now excludes the file extension by default for TXT/MD/image files; folder rename and create dialogs still select the full name.
+- Documented the proposed descriptive metadata cleanup feature (image/video title, subject, comments, authors) for a separate safe implementation; no metadata is changed by this patch.
+
+**Українська**
+- Виправлено зникнення елемента `...` під час прокрутки «Провідника»: його винесено зі списку `ListBox` в окремий постійно видимий рядок.
+- Збережено перехід до батьківської папки одним кліком, недоступний стан у корені диска і Drag & Drop на `...` до батьківської папки.
+- Покращено вікна перейменування: для TXT/MD/зображень за замовчуванням виділяється тільки назва без розширення; для папок та створення нового файла залишається повне виділення.
+- Описано майбутню функцію безпечного очищення описових метаданих (назва, тема, примітки, автори) з фото/відео; у цьому patch-релізі метадані не змінюються.
+
 ## v1.5.1 — 2026-10-03
 
 **English**

@@ -314,6 +314,38 @@ public partial class MainWindow
         DragDrop.DoDragDrop(ImageList, data, DragDropEffects.Move | DragDropEffects.Copy);
     }
 
+    private void ParentFolderButton_DragOver(object sender, DragEventArgs e)
+    {
+        var parent = _currentFolder is null ? null : Directory.GetParent(_currentFolder);
+        if (parent is null || !e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            e.Effects = DragDropEffects.None;
+            e.Handled = true;
+            return;
+        }
+        e.Effects = e.Data.GetDataPresent(InternalImageDragFormat) ? DragDropEffects.Move : DragDropEffects.Copy;
+        e.Handled = true;
+    }
+
+    private async void ParentFolderButton_Drop(object sender, DragEventArgs e)
+    {
+        var parent = _currentFolder is null ? null : Directory.GetParent(_currentFolder);
+        if (parent is null || e.Data.GetData(DataFormats.FileDrop) is not string[] paths)
+        {
+            e.Handled = true;
+            return;
+        }
+        try
+        {
+            var move = e.Data.GetDataPresent(InternalImageDragFormat);
+            await FileService.MoveOrCopyAsync(paths, parent.FullName, move);
+            StatusText.Text = _loc.T("DropDone", paths.Length);
+            await ReloadCurrentFolderAsync();
+        }
+        catch (Exception ex) { ShowNotice(ex.Message, NoticeKind.Error); }
+        e.Handled = true;
+    }
+
     private void ExplorerList_DragOver(object sender, DragEventArgs e)
     {
         if (!e.Data.GetDataPresent(DataFormats.FileDrop) || _currentFolder is null) { e.Effects = DragDropEffects.None; return; }

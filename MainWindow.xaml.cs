@@ -120,7 +120,9 @@ public partial class MainWindow : Window
         FindDuplicatesButton.Content = _loc.T("FindDuplicates");
         SimilarityButton.Content = _loc.T("GroupBySimilarity");
         BatchRenameButton.Content = _loc.T("BatchRename");
+        MetadataButton.Content = _loc.T("MetadataClean");
         ExplorerTitle.Text = _loc.T("Explorer");
+        ParentFolderButton.ToolTip = _loc.T("FolderUp");
         ImagesTitle.Text = _loc.T("Images");
         SideTitle.Text = PreviewPanel.Visibility == Visibility.Visible ? _loc.T("Preview") : _loc.T("Text");
         SaveTextButton.Content = _loc.T("Save");
@@ -163,6 +165,25 @@ public partial class MainWindow : Window
     private async void MoveImagesButton_Click(object sender, RoutedEventArgs e)
     {
         await OpenMoveImagesAsync(GetSelectedImagePathsInVisualOrder());
+    }
+
+    private async void MetadataButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_currentFolder) || !Directory.Exists(_currentFolder)) return;
+        MetadataButton.IsEnabled = false;
+        DisposeFolderWatcher();
+        try
+        {
+            var dialog = new MetadataCleanupWindow(_loc, _currentFolder, GetSelectedImagePathsInVisualOrder()) { Owner = this };
+            dialog.ShowDialog();
+            if (dialog.AppliedChanges) await ReloadCurrentFolderAsync();
+        }
+        catch (Exception ex) { ShowNotice(ex.Message, NoticeKind.Error); }
+        finally
+        {
+            MetadataButton.IsEnabled = true;
+            if (_currentFolder is not null && Directory.Exists(_currentFolder)) ConfigureFolderWatcher(_currentFolder);
+        }
     }
 
     private async Task NavigateToAsync(string folder, bool addHistory = true, bool confirmChanges = true)
@@ -215,14 +236,8 @@ public partial class MainWindow : Window
     private void LoadExplorer(IEnumerable<FileSystemInfo> entries)
     {
         _explorerItems.Clear();
-        if (_currentFolder is not null)
-        {
-            // Always keep an explicit parent-navigation entry at the top of Explorer.
-            // At a filesystem root it simply points to the current root because there
-            // is no higher directory.
-            var parent = Directory.GetParent(_currentFolder)?.FullName ?? _currentFolder;
-            _explorerItems.Add(new ExplorerItem { Name = "...", FullPath = parent, Type = ExplorerItemType.ParentFolder });
-        }
+        // Parent navigation is now a fixed button above the scrolling ListBox.
+        // Do not reinsert it as a regular list item, or it will scroll away.
         foreach (var directory in entries.OfType<DirectoryInfo>().OrderBy(d => d.Name, NaturalStringComparer.Instance))
             _explorerItems.Add(new ExplorerItem { Name = directory.Name, FullPath = directory.FullName, Type = ExplorerItemType.Folder });
         foreach (var file in entries.OfType<FileInfo>().Where(f => FileService.IsText(f.FullName)).OrderBy(f => f.Name, NaturalStringComparer.Instance))
@@ -607,6 +622,7 @@ public partial class MainWindow : Window
 
     private void UpdateNavigationButtons()
     {
+        ParentFolderButton.IsEnabled = _currentFolder is not null && Directory.GetParent(_currentFolder) is not null;
         BackButton.IsEnabled = _history.Count > 0;
         HomeButton.IsEnabled = _rootFolder is not null && _currentFolder is not null && !_currentFolder.Equals(_rootFolder, StringComparison.OrdinalIgnoreCase);
         UpButton.IsEnabled = _currentFolder is not null && Directory.GetParent(_currentFolder) is not null;
@@ -676,6 +692,13 @@ public partial class MainWindow : Window
         var files = await Task.Run(() => Directory.GetFiles(_currentFolder).Where(FileService.IsImage).Select(p => new FileInfo(p)).ToList());
         await LoadImagesAsync(files);
         SaveSettings();
+    }
+
+    private async void ParentFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentFolder is null) return;
+        var parent = Directory.GetParent(_currentFolder);
+        if (parent is not null) await NavigateToAsync(parent.FullName);
     }
 
     private async void ExplorerList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1018,7 +1041,7 @@ public partial class MainWindow : Window
     private void RenameExplorerItem(ExplorerItem item)
     {
         if (!ConfirmPendingTextChanges()) return;
-        var dialog = new TextInputWindow(_loc.T("Rename"), _loc.T("RenamePrompt"), item.Name, _loc.T("Yes"), _loc.T("Cancel")) { Owner = this };
+        var dialog = new TextInputWindow(_loc.T("Rename"), _loc.T("RenamePrompt"), item.Name, _loc.T("Yes"), _loc.T("Cancel"), selectStemOnly: item.Type == ExplorerItemType.TextFile) { Owner = this };
         if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.Value) || dialog.Value == item.Name) return;
         var name = dialog.Value.Trim();
         if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || Path.GetFileName(name) != name) return;
@@ -1046,7 +1069,7 @@ public partial class MainWindow : Window
 
     private void RenameImage(ImageItem item)
     {
-        var dialog = new TextInputWindow(_loc.T("Rename"), _loc.T("RenamePrompt"), item.Name, _loc.T("Yes"), _loc.T("Cancel")) { Owner = this };
+        var dialog = new TextInputWindow(_loc.T("Rename"), _loc.T("RenamePrompt"), item.Name, _loc.T("Yes"), _loc.T("Cancel"), selectStemOnly: true) { Owner = this };
         if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.Value) || dialog.Value == item.Name) return;
         var name = dialog.Value.Trim();
         if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || Path.GetFileName(name) != name) return;
